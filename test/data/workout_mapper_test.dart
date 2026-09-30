@@ -2,6 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 
 void main() {
+  test('unfinished workouts never enter history even if supplied by the server',
+      () {
+    final workouts = mapWorkoutRows(
+      workoutRows: [
+        {'id': 1, 'start_time': '2026-07-25T09:00:00Z', 'end_time': null},
+        {
+          'id': 2,
+          'start_time': '2026-07-25T09:00:00Z',
+          'end_time': '2026-07-25T10:00:00Z'
+        },
+      ],
+      exerciseRows: [],
+      setRows: [],
+    );
+    expect(workouts.map((workout) => workout.id).toList(), [2]);
+  });
   test('maps Supabase workout rows into the existing workout model', () {
     final workouts = mapWorkoutRows(
       workoutRows: [

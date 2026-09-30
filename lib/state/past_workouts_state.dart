@@ -1,9 +1,9 @@
 import 'dart:developer';
 
+import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'past_workouts_state.g.dart';
 
@@ -15,6 +15,7 @@ const PastWorkoutsStateData initialPastWorkoutsStateData = (workouts: [],);
 
 @Riverpod(keepAlive: true)
 class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
+  int _requestGeneration = 0;
   @override
   PastWorkoutsStateData build() => initialPastWorkoutsStateData;
 
@@ -24,30 +25,55 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
     state = (workouts: workouts ?? state.workouts,);
   }
 
-  void resetState() => state = initialPastWorkoutsStateData;
+  void resetState() {
+    _requestGeneration++;
+    state = initialPastWorkoutsStateData;
+  }
 
   Future<void> getWorkoutsFromRemote() async {
-    final client = Supabase.instance.client;
+    final client = ref.read(supabaseClientProvider);
     final user = client.auth.currentUser;
     if (user == null) {
       resetState();
       return;
     }
 
+    final generation = ++_requestGeneration;
     try {
       final workoutRows = await client
           .from('workouts')
           .select('id, start_time, end_time')
           .eq('user_id', user.id)
+          .not('end_time', 'is', null)
           .order('start_time', ascending: false);
+      if (!ref.mounted ||
+          generation != _requestGeneration ||
+          client.auth.currentUser?.id != user.id) {
+        return;
+      }
+      if (workoutRows.isEmpty) {
+        _setState(workouts: []);
+        return;
+      }
       final exerciseRows = await client
           .from('exercises')
           .select('id, workout_id, name, start_time, end_time')
+          .inFilter('workout_id', workoutRows.map((row) => row['id']).toList())
           .order('start_time');
-      final setRows = await client
-          .from('exercise_sets')
-          .select('id, exercise_id, weight, reps')
-          .order('id');
+      final setRows = exerciseRows.isEmpty
+          ? <Map<String, dynamic>>[]
+          : await client
+              .from('exercise_sets')
+              .select('id, exercise_id, weight, reps')
+              .inFilter(
+                  'exercise_id', exerciseRows.map((row) => row['id']).toList())
+              .order('id');
+
+      if (!ref.mounted ||
+          generation != _requestGeneration ||
+          client.auth.currentUser?.id != user.id) {
+        return;
+      }
 
       _setState(
         workouts: mapWorkoutRows(
@@ -66,7 +92,7 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
   }
 
   Future<void> deleteWorkout(int workoutId) async {
-    final client = Supabase.instance.client;
+    final client = ref.read(supabaseClientProvider);
     final user = client.auth.currentUser;
     if (user == null) {
       return;
@@ -102,6 +128,9 @@ List<Workout> mapWorkoutRows({
   final Map<int, Workout> workouts = {};
 
   for (final row in workoutRows) {
+    if (row['end_time'] == null) {
+      continue;
+    }
     final workoutId = (row['id'] as num).toInt();
     workouts[workoutId] = Workout(
       workoutId,
