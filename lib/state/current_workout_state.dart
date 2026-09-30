@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
@@ -8,6 +9,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'current_workout_state.g.dart';
 
+enum WorkoutRecoveryStatus { pending, loading, ready, failed }
+
+const workoutRecoveryWindow = Duration(hours: 12);
+
 typedef CurrentWorkoutStateData = ({
   int? workoutId,
   DateTime? workoutStartDateTime,
@@ -15,6 +20,8 @@ typedef CurrentWorkoutStateData = ({
   bool isInProgress,
   List<Exercise> exercises,
   Exercise? currentExercise,
+  WorkoutRecoveryStatus recoveryStatus,
+  bool isStartingWorkout,
 });
 
 const CurrentWorkoutStateData initialCurrentWorkoutStateData = (
@@ -24,14 +31,21 @@ const CurrentWorkoutStateData initialCurrentWorkoutStateData = (
   isInProgress: false,
   exercises: [],
   currentExercise: null,
+  recoveryStatus: WorkoutRecoveryStatus.pending,
+  isStartingWorkout: false,
 );
 
 @Riverpod(keepAlive: true)
 class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
-  @override
-  CurrentWorkoutStateData build() => initialCurrentWorkoutStateData;
+  int _recoveryGeneration = 0;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  @override
+  CurrentWorkoutStateData build() {
+    ref.onDispose(() => _recoveryGeneration++);
+    return initialCurrentWorkoutStateData;
+  }
+
+  SupabaseClient get _client => ref.read(supabaseClientProvider);
 
   Exercise _cloneExerciseWithSets(
       Exercise exercise, Map<int, ExerciseSet> sets) {
@@ -54,6 +68,8 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     bool? isInProgress,
     List<Exercise>? exercises,
     Exercise? currentExercise,
+    WorkoutRecoveryStatus? recoveryStatus,
+    bool? isStartingWorkout,
   }) {
     state = (
       workoutId: workoutId ?? state.workoutId,
@@ -62,6 +78,8 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       isInProgress: isInProgress ?? state.isInProgress,
       exercises: exercises ?? state.exercises,
       currentExercise: currentExercise ?? state.currentExercise,
+      recoveryStatus: recoveryStatus ?? state.recoveryStatus,
+      isStartingWorkout: isStartingWorkout ?? state.isStartingWorkout,
     );
   }
 
@@ -93,17 +111,80 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       currentExercise: currentExercise == true
           ? initialCurrentWorkoutStateData.currentExercise
           : state.currentExercise,
+      recoveryStatus: state.recoveryStatus,
+      isStartingWorkout: state.isStartingWorkout,
     );
   }
 
-  void resetState() => state = initialCurrentWorkoutStateData;
+  void resetState() {
+    _recoveryGeneration++;
+    state = initialCurrentWorkoutStateData;
+  }
+
+  Future<void> restoreActiveWorkout() async {
+    if (state.recoveryStatus == WorkoutRecoveryStatus.loading ||
+        state.isInProgress ||
+        state.isStartingWorkout) {
+      return;
+    }
+    final client = _client;
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) {
+      resetState();
+      return;
+    }
+
+    final generation = ++_recoveryGeneration;
+    _setState(recoveryStatus: WorkoutRecoveryStatus.loading);
+    bool isCurrentRequest() =>
+        ref.mounted &&
+        generation == _recoveryGeneration &&
+        client.auth.currentUser?.id == userId;
+
+    try {
+      // Do not filter unfinished/age here: only the latest workout may resume.
+      final row = await client
+          .from('workouts')
+          .select('''
+            id, start_time, end_time,
+            exercises (
+              id, name, start_time, end_time,
+              exercise_sets (id, set_number, reps, weight)
+            )
+          ''')
+          .eq('user_id', userId)
+          .order('start_time', ascending: false, nullsFirst: false)
+          .order('id', ascending: false)
+          .limit(1)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 15));
+      if (!isCurrentRequest()) {
+        return;
+      }
+      state = mapActiveWorkoutRow(row, now: DateTime.now());
+    } catch (error, stackTrace) {
+      if (!isCurrentRequest()) {
+        return;
+      }
+      _setState(recoveryStatus: WorkoutRecoveryStatus.failed);
+      log('Failed to restore the active workout.',
+          error: error, stackTrace: stackTrace);
+    }
+  }
 
   Future<void> startWorkout() async {
+    if (state.recoveryStatus != WorkoutRecoveryStatus.ready ||
+        state.isInProgress ||
+        state.isStartingWorkout) {
+      return;
+    }
     final user = _client.auth.currentUser;
     if (user == null) {
       return;
     }
 
+    final generation = _recoveryGeneration;
+    _setState(isStartingWorkout: true);
     try {
       final startTime = DateTime.now();
       final row = await _client
@@ -117,6 +198,12 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
           .single();
       final rowId = (row['id'] as num).toInt();
 
+      if (!ref.mounted ||
+          generation != _recoveryGeneration ||
+          _client.auth.currentUser?.id != user.id) {
+        return;
+      }
+
       _setState(
         isInProgress: true,
         workoutStartDateTime: startTime,
@@ -128,6 +215,10 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
         error: error,
         stackTrace: stackTrace,
       );
+    } finally {
+      if (ref.mounted && generation == _recoveryGeneration) {
+        _setState(isStartingWorkout: false);
+      }
     }
   }
 
@@ -156,6 +247,7 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       }
 
       resetState();
+      _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
       await ref.read(pastWorkoutsProvider.notifier).getWorkoutsFromRemote();
     } catch (error, stackTrace) {
       log(
@@ -333,4 +425,89 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       );
     }
   }
+}
+
+/// Reconstructs one snapshot without changing saved timestamps or finishing it.
+CurrentWorkoutStateData mapActiveWorkoutRow(
+  Map<String, dynamic>? row, {
+  required DateTime now,
+}) {
+  final empty = (
+    workoutId: initialCurrentWorkoutStateData.workoutId,
+    workoutStartDateTime: initialCurrentWorkoutStateData.workoutStartDateTime,
+    workoutEndDateTime: initialCurrentWorkoutStateData.workoutEndDateTime,
+    isInProgress: false,
+    exercises: <Exercise>[],
+    currentExercise: initialCurrentWorkoutStateData.currentExercise,
+    recoveryStatus: WorkoutRecoveryStatus.ready,
+    isStartingWorkout: false,
+  );
+  if (row == null || row['end_time'] != null) {
+    return empty;
+  }
+  final startTime = DateTime.tryParse(row['start_time'] as String? ?? '');
+  if (startTime == null) {
+    return empty;
+  }
+  final age = now.difference(startTime);
+  if (age.isNegative || age >= workoutRecoveryWindow) {
+    return empty;
+  }
+
+  final exerciseRows =
+      List<Map<String, dynamic>>.from(row['exercises'] as List);
+  exerciseRows.sort((a, b) {
+    final timeOrder = DateTime.parse(a['start_time'] as String)
+        .compareTo(DateTime.parse(b['start_time'] as String));
+    return timeOrder != 0
+        ? timeOrder
+        : (a['id'] as num).compareTo(b['id'] as num);
+  });
+  final completedExercises = <Exercise>[];
+  Exercise? currentExercise;
+  for (final exerciseRow in exerciseRows) {
+    final exercise = Exercise(
+      exerciseRow['name'] as String,
+      {},
+      (exerciseRow['id'] as num).toInt(),
+      DateTime.parse(exerciseRow['start_time'] as String).toLocal(),
+    );
+    final setRows =
+        List<Map<String, dynamic>>.from(exerciseRow['exercise_sets'] as List);
+    setRows.sort((a, b) {
+      final order = ((a['set_number'] as num?) ?? 0)
+          .compareTo((b['set_number'] as num?) ?? 0);
+      return order != 0 ? order : (a['id'] as num).compareTo(b['id'] as num);
+    });
+    for (final setRow in setRows) {
+      String formatNumber(num value) => value == value.roundToDouble()
+          ? value.toInt().toString()
+          : value.toString();
+      exercise.addSet(ExerciseSet(
+        formatNumber(setRow['weight'] as num),
+        formatNumber(setRow['reps'] as num),
+        (setRow['id'] as num).toInt(),
+      ));
+    }
+    if (exerciseRow['end_time'] != null) {
+      exercise.setEndTime(
+          DateTime.parse(exerciseRow['end_time'] as String).toLocal());
+      completedExercises.add(exercise);
+    } else {
+      if (currentExercise != null) {
+        throw const FormatException('Workout has multiple active exercises.');
+      }
+      currentExercise = exercise;
+    }
+  }
+  return (
+    workoutId: (row['id'] as num).toInt(),
+    workoutStartDateTime: startTime.toLocal(),
+    workoutEndDateTime: null,
+    isInProgress: true,
+    exercises: completedExercises,
+    currentExercise: currentExercise,
+    recoveryStatus: WorkoutRecoveryStatus.ready,
+    isStartingWorkout: false,
+  );
 }

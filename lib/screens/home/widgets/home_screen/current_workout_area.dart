@@ -18,6 +18,32 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
   @override
   Widget build(BuildContext context) {
     var workoutProvider = ref.watch(currentWorkoutProvider);
+    if (workoutProvider.recoveryStatus == WorkoutRecoveryStatus.pending ||
+        workoutProvider.recoveryStatus == WorkoutRecoveryStatus.loading) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Color(0xffB6E3FF)),
+            SizedBox(height: 16),
+            Text('Checking for an unfinished workout…',
+                style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      );
+    }
+    if (workoutProvider.recoveryStatus == WorkoutRecoveryStatus.failed) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Text(
+            'Could not check your saved workout.\nCheck your connection and retry.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
     bool workoutInProgress = workoutProvider.isInProgress;
     bool exerciseInProgress = workoutProvider.currentExercise != null;
     final sets = workoutProvider.currentExercise?.sets.values
