@@ -19,17 +19,30 @@ class TimerCount extends ConsumerStatefulWidget {
   ConsumerState<TimerCount> createState() => _TimerCountState();
 }
 
-class _TimerCountState extends ConsumerState<TimerCount> {
+class _TimerCountState extends ConsumerState<TimerCount>
+    with WidgetsBindingObserver {
   late Duration _elapsed;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _updateElapsed();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       _updateElapsed();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant TimerCount oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.startTime != widget.startTime) _updateElapsed();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _updateElapsed();
   }
 
   void _updateElapsed() {
@@ -41,16 +54,8 @@ class _TimerCountState extends ConsumerState<TimerCount> {
   @override
   void dispose() {
     _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours.toString().padLeft(2, '0');
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return widget.includeHours
-        ? '$hours:$minutes:$seconds'
-        : '$minutes:$seconds';
   }
 
   @override
@@ -64,7 +69,7 @@ class _TimerCountState extends ConsumerState<TimerCount> {
         spacing: 8,
         children: [
           Text(
-            _formatDuration(_elapsed),
+            formatTimerDuration(_elapsed, includeHours: widget.includeHours),
             style: GoogleFonts.kodeMono(
               color: widget.isSecondary
                   ? Color.fromRGBO(192, 192, 192, .5)
@@ -77,4 +82,15 @@ class _TimerCountState extends ConsumerState<TimerCount> {
       ),
     );
   }
+}
+
+String formatTimerDuration(Duration duration, {bool includeHours = false}) {
+  final elapsed = duration.isNegative ? Duration.zero : duration;
+  final hours = elapsed.inHours.toString().padLeft(2, '0');
+  final minutes = elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
+  // Long-running exercises must also show hours after recovery.
+  return includeHours || elapsed.inHours > 0
+      ? '$hours:$minutes:$seconds'
+      : '$minutes:$seconds';
 }

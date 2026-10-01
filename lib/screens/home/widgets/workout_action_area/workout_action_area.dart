@@ -18,6 +18,18 @@ class _WorkoutActionAreaState extends ConsumerState<WorkoutActionArea> {
     final workoutState = ref.watch(currentWorkoutProvider);
     final workoutNotifier = ref.watch(currentWorkoutProvider.notifier);
 
+    if (workoutState.recoveryStatus == WorkoutRecoveryStatus.failed) {
+      return CardButton(
+        onTap: () => workoutNotifier.restoreActiveWorkout(),
+        icon: Icons.refresh,
+        label: 'Retry workout recovery',
+      );
+    }
+    if (workoutState.recoveryStatus != WorkoutRecoveryStatus.ready ||
+        workoutState.isStartingWorkout) {
+      return const SizedBox.shrink();
+    }
+
     final bool workoutInProgress = workoutState.isInProgress;
     final bool exerciseInProgress = workoutState.currentExercise != null;
 

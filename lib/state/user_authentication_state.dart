@@ -54,11 +54,17 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
   }
 
   Future<void> _completeSignIn({String? firstName}) async {
+    // Start recovery before exposing the home screen and its workout actions.
+    final recovery =
+        ref.read(currentWorkoutProvider.notifier).restoreActiveWorkout();
     _setState(
       isSignedIn: AuthStatus.signedIn,
       firstName: firstName,
     );
-    await ref.read(pastWorkoutsProvider.notifier).getWorkoutsFromRemote();
+    await Future.wait([
+      recovery,
+      ref.read(pastWorkoutsProvider.notifier).getWorkoutsFromRemote(),
+    ]);
   }
 
   void _resetSignedOutState() {
