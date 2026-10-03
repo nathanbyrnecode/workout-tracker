@@ -48,13 +48,13 @@ abstract class _$PastWorkoutsNotifier extends $Notifier<PastWorkoutsStateData> {
   PastWorkoutsStateData build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<PastWorkoutsStateData, PastWorkoutsStateData>;
     final element = ref.element as $ClassProviderElement<
         AnyNotifier<PastWorkoutsStateData, PastWorkoutsStateData>,
         PastWorkoutsStateData,
         Object?,
         Object?>;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
