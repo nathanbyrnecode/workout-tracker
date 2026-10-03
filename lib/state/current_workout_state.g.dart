@@ -49,7 +49,7 @@ abstract class _$CurrentWorkoutNotifier
   CurrentWorkoutStateData build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref as $Ref<CurrentWorkoutStateData, CurrentWorkoutStateData>;
     final element = ref.element as $ClassProviderElement<
@@ -57,6 +57,6 @@ abstract class _$CurrentWorkoutNotifier
         CurrentWorkoutStateData,
         Object?,
         Object?>;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

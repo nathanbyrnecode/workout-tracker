@@ -12,7 +12,7 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: 'https://kxcxkducxaryjzzrtcpa.supabase.co',
-    anonKey: 'sb_publishable_bB5NM_o_iumfnA_AUzsBzA_9b28Je4m',
+    publishableKey: 'sb_publishable_bB5NM_o_iumfnA_AUzsBzA_9b28Je4m',
   );
 
   const webClientId =
