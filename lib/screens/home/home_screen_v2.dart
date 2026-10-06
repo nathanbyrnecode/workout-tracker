@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/screens/home/widgets/home_screen/current_workout_area.dart';
 import 'package:gym_tracker_app/screens/home/widgets/home_screen/previous_workouts_area.dart';
 import 'package:gym_tracker_app/screens/home/widgets/timer_count.dart';
-import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_action_area.dart';
 import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
@@ -129,30 +128,6 @@ class _HomeScreenState extends ConsumerState<HomeScreenV2> {
             else if (currentTabState.currentTab == TabItem.previousWorkouts)
               Expanded(child: PreviousWorkoutsArea()),
           ],
-        ),
-        Positioned(
-          width: MediaQuery.of(context).size.width,
-          bottom: 0,
-          child: Stack(alignment: Alignment.bottomCenter, children: [
-            Container(
-              height: 100,
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Color(0xff202730),
-                    Color.from(alpha: 0, red: 0.125, green: 0.153, blue: 0.188),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-              child: WorkoutActionArea(),
-            ),
-          ]),
         ),
       ]),
     );

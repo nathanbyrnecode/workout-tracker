@@ -40,7 +40,37 @@ Supabase (Postgres + RLS, auth, edge functions)
 There is no router package. `AuthenticatorController`
 (`lib/widgets/authentication_controller.dart`) shows the Welcome screen or the
 app shell depending on the session. `MainBottomNavigation`
-(`lib/main_bottom_navigation.dart`) holds the selected tab index in `setState`.
+(`lib/main_bottom_navigation.dart`) holds the selected `AppTab` in `setState`
+and hands the screen for it to `AppShell`.
+
+`AppShell` (`lib/widgets/app_shell.dart`) is the frame around the four main
+screens. From back to front it stacks:
+
+1. `AppBackground`: the background colour and the two blurred glows.
+2. The current screen.
+3. An optional row of floating actions, 106 above the bottom edge. Screens do
+   not position these themselves; `MainBottomNavigation` passes them in.
+4. `AppTabBar`, 26 above the bottom edge.
+
+Screens pushed with `Navigator` (Summary, the detail screens) cover the shell,
+which is how they hide the tab bar. Screens inside the shell should not paint
+their own background, or they hide the glows.
+
+Bottom sheets open with `showAppSheet` (`lib/widgets/app_bottom_sheet.dart`),
+which supplies the surface, grab handle, scrim and scrolling.
+
+### Liquid glass
+
+`AppTabBar` is `GlassTabBar.bottom` from `liquid_glass_widgets`, sized and
+coloured from tokens. The package is initialised in `lib/main.dart`
+(`LiquidGlassWidgets.initialize()` and `.wrap(...)`). It works without that
+setup in tests, where it detects the test environment and draws a simplified
+surface with no shaders, so goldens show the layout and colours but not the
+real refraction. Check the real glass on a device.
+
+`GlassScaffold` is not used: the bar has a fixed size and position and shares
+the bottom of the screen with the floating actions, which a plain `Stack`
+handles directly.
 
 ## Current schema
 

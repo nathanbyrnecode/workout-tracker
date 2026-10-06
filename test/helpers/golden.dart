@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -29,6 +30,14 @@ Future<void> loadAppFonts() async {
   if (_fontsLoaded) {
     return;
   }
+  // Icon fonts ship inside their package, so the test has to find the file.
+  final lucide = File(
+    '${_packageRoot('lucide_icons_flutter')}/assets/lucide.ttf',
+  ).readAsBytesSync();
+  await (FontLoader('packages/lucide_icons_flutter/Lucide')
+        ..addFont(Future.value(ByteData.sublistView(lucide))))
+      .load();
+
   for (final MapEntry(key: family, value: files) in _fontFiles.entries) {
     final loader = FontLoader(family);
     for (final file in files) {
@@ -38,6 +47,20 @@ Future<void> loadAppFonts() async {
     await loader.load();
   }
   _fontsLoaded = true;
+}
+
+/// Where pub put [package], read from `.dart_tool/package_config.json`.
+String _packageRoot(String package) {
+  final config = jsonDecode(
+    File('.dart_tool/package_config.json').readAsStringSync(),
+  ) as Map<String, dynamic>;
+  final entry = (config['packages'] as List)
+      .cast<Map<String, dynamic>>()
+      .firstWhere((entry) => entry['name'] == package);
+  return Directory('.dart_tool')
+      .uri
+      .resolve(entry['rootUri'] as String)
+      .toFilePath();
 }
 
 /// Wraps [child] in the app theme for [brightness], as the real app does.
@@ -76,6 +99,8 @@ void goldenTest(
       skip: !_goldensEnabled,
       (tester) async {
         await loadAppFonts();
+        // Tests draw shadows as solid blocks unless this is switched off.
+        debugDisableShadows = false;
         await tester.binding.setSurfaceSize(goldenSurfaceSize);
         tester.view.devicePixelRatio = 1;
         addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -91,10 +116,15 @@ void goldenTest(
           await setUp(tester);
         }
 
-        await expectLater(
-          find.byType(MaterialApp),
-          matchesGoldenFile('goldens/${name}_${brightness.name}.png'),
-        );
+        try {
+          await expectLater(
+            find.byType(MaterialApp),
+            matchesGoldenFile('goldens/${name}_${brightness.name}.png'),
+          );
+        } finally {
+          // The test binding checks this is back to its default.
+          debugDisableShadows = true;
+        }
       },
     );
   }
