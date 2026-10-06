@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)",
+      "Bash(flutter test *)",
+      "Bash(flutter pub get)",
+      "Bash(flutter pub outdated)",
+      "Bash(dart format *)",
+      "Bash(dart run build_runner *)",
+      "Bash(bd *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(node design/workout-tracker/scripts/*)",
+      "Bash(tool/check_colours.sh)"
+    ],
+    "ask": [
+      "Bash(supabase db push *)",
+      "Edit(codemagic.yaml)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
+            "timeout": 600,
+            "statusMessage": "Setting up Flutter and beads"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-dart.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

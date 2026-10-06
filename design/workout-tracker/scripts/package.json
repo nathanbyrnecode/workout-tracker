@@ -1,0 +1,11 @@
+{
+  "name": "workout-tracker-design-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "node capture_screens.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}
