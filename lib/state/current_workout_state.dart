@@ -149,7 +149,7 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
             id, start_time, end_time,
             exercises (
               id, name, start_time, end_time,
-              exercise_sets (id, set_number, reps, weight)
+              exercise_sets (id, set_number, reps, weight, created_at)
             )
           ''')
           .eq('user_id', userId)
@@ -347,9 +347,10 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
             'reps': parsedReps,
             'weight': parsedWeight,
           })
-          .select('id')
+          .select('id, created_at')
           .single();
       final rowId = (row['id'] as num).toInt();
+      final savedAt = DateTime.tryParse(row['created_at'] as String? ?? '');
 
       final currentExercise = state.currentExercise;
       if (currentExercise == null) {
@@ -357,7 +358,12 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       }
 
       final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
-      updatedSets[rowId] = ExerciseSet(weight, reps, rowId);
+      updatedSets[rowId] = ExerciseSet(
+        parsedWeight,
+        parsedReps,
+        rowId,
+        savedAt: (savedAt ?? DateTime.now()).toLocal(),
+      );
 
       _setState(
         currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
@@ -480,13 +486,12 @@ CurrentWorkoutStateData mapActiveWorkoutRow(
       return order != 0 ? order : (a['id'] as num).compareTo(b['id'] as num);
     });
     for (final setRow in setRows) {
-      String formatNumber(num value) => value == value.roundToDouble()
-          ? value.toInt().toString()
-          : value.toString();
       exercise.addSet(ExerciseSet(
-        formatNumber(setRow['weight'] as num),
-        formatNumber(setRow['reps'] as num),
+        (setRow['weight'] as num).toDouble(),
+        (setRow['reps'] as num).toInt(),
         (setRow['id'] as num).toInt(),
+        savedAt:
+            DateTime.tryParse(setRow['created_at'] as String? ?? '')?.toLocal(),
       ));
     }
     if (exerciseRow['end_time'] != null) {

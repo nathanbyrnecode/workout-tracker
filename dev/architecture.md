@@ -49,12 +49,18 @@ has no access.
 
 ```
 workouts        id bigint PK, user_id uuid → auth.users (cascade),
-                start_time, end_time, created_at
+                start_time, end_time, created_at,
+                title, location_type (Gym|Home|Park|Other),
+                place_name, place_address, place_lat, place_lng  (all nullable)
 exercises       id bigint PK, workout_id → workouts (cascade), name,
                 start_time, end_time, exercise_number,
                 sets, reps, weight          (legacy columns, unused)
 exercise_sets   id bigint PK, exercise_id → exercises (cascade),
-                set_number, reps integer, weight double precision
+                set_number, reps integer, weight double precision,
+                created_at timestamptz default now() (null on older rows)
+manual_workouts id bigint PK, user_id uuid → auth.users (cascade),
+                date date, title, location_type, place_* columns, created_at.
+                Many rows per date. Removed with the user by the cascade.
 apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
                    service_role only; used by the edge functions.
 ```
@@ -62,6 +68,13 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
 - A workout is owned through `workouts.user_id`. Exercises and sets are
   authorised by joining up to the owning workout in their RLS policies.
 - An unfinished workout is a row whose `end_time` is null.
+- `title` and `location_type` are null while a workout is in progress and on
+  rows written before the redesign (or by an older build). The UI falls back
+  to `Workout.displayTitle` ("Workout") and `displayLocationType` (Gym).
+- The redesign columns and `manual_workouts` come from
+  `20261007090000_add_workout_details_and_manual_workouts.sql`. Until that
+  migration is applied to a project, builds from `redesign` cannot load
+  history or recover a workout from it, because they select the new columns.
 
 ### When rows are written
 
@@ -87,29 +100,21 @@ storage and full account deletion. See
 
 The target model is in the design README under "State / Data model".
 
-| Design model | Today | Change needed |
-|---|---|---|
-| `Workout.id`, `start` | `workouts.id`, `start_time` | none |
-| `Workout.durationSec` | derived from `end_time − start_time` | none; keep deriving it |
-| `Workout.title` | missing | add `workouts.title text` |
-| `Workout.locationType` (Gym, Home, Park, Other) | missing | add `workouts.location_type` with a check constraint |
-| `Workout.place {name, address, lat?, lng?}` | missing | add nullable `place_name`, `place_address`, `place_lat`, `place_lng` |
-| `Exercise {name, start, end}` | `exercises` | none |
-| `Set {kg, reps}` | `exercise_sets.weight`, `reps` | none in the schema; the Dart `ExerciseSet` holds both as `String` and should become `double` / `int` |
-| `Set.savedAt` (drives the rest timer) | missing | add `exercise_sets.created_at timestamptz default now()` |
-| `ManualWorkout {id, date, title, locationType, place?}` | missing | new `manual_workouts` table with RLS, many rows per date |
-| Notifications | none | not in the schema yet; the design uses placeholder data |
-| UI state (screen, tab, selected day, sheet, theme) | `currentTabProvider` only | client-side Riverpod state, nothing in Supabase except possibly theme (kept local) |
+| Design model | Where it lives |
+|---|---|
+| `Workout.id`, `start` | `workouts.id`, `start_time` |
+| `Workout.durationSec` | derived from `end_time − start_time` |
+| `Workout.title`, `locationType`, `place` | `workouts.title`, `location_type`, `place_*`; `Workout` in `lib/models/workout.dart` |
+| `Exercise {name, start, end}` | `exercises` |
+| `Set {kg, reps, savedAt}` | `exercise_sets.weight`, `reps`, `created_at`; `ExerciseSet` holds `double`, `int`, `DateTime?` |
+| `ManualWorkout` | `manual_workouts`; `lib/models/manual_workout.dart`, mapped by `lib/data/manual_workout_mapper.dart` |
+| Notifications | not in the schema (`dev/decisions.md` 17) |
+| UI state (screen, tab, selected day, sheet, theme) | client-side Riverpod state, nothing in Supabase |
 
-Notes for the migration task:
-
-- Existing rows have no title or location. Columns must be nullable or have
-  defaults, and the UI needs a fallback (the prototype uses "Workout" and "Gym").
-- `title` is required by the UI when ending a workout, but is written at the
-  end, so the column cannot be `not null` while a workout is in progress.
-- `manual_workouts.date` is a calendar date (`date`, not `timestamptz`): the
-  tracker groups by the user's local day.
-- New migrations are new timestamped files. Never edit an applied migration.
+`manual_workouts.date` is a calendar date, not an instant: the tracker groups
+by the user's local day, so it is parsed with `parseCalendarDate` and never
+shifted by time zone. The shared `location_type` and `place_*` columns are read
+and written through `lib/data/location_mapper.dart`.
 
 Derived values (per-day map, heat level, streak, month count, total days,
 per-exercise volume) are computed on the client from workouts and manual

@@ -152,7 +152,7 @@ void main() {
             .currentExercise
             ?.sets[100]
             ?.weight,
-        '80');
+        80);
     expect(container.read(currentWorkoutProvider).recoveryStatus,
         WorkoutRecoveryStatus.ready);
   });
@@ -197,7 +197,7 @@ void main() {
         ]);
       }
       if (request.method == 'POST') {
-        return jsonResponse({'id': 101});
+        return jsonResponse({'id': 101, 'created_at': '2026-09-30T09:30:00Z'});
       }
       return jsonResponse([]);
     };
@@ -211,7 +211,15 @@ void main() {
             .currentExercise
             ?.sets[101]
             ?.weight,
-        '82.5');
+        82.5);
+    expect(
+        container
+            .read(currentWorkoutProvider)
+            .currentExercise
+            ?.sets[101]
+            ?.savedAt
+            ?.toUtc(),
+        DateTime.utc(2026, 9, 30, 9, 30));
     final insertion = requests.last;
     expect(jsonDecode(insertion.body), {
       'exercise_id': 20,
@@ -227,6 +235,17 @@ void main() {
     expect(requests, hasLength(1));
     expect(requests.single.url.queryParameters['end_time'], 'not.is.null');
     expect(requests.single.url.queryParameters['user_id'], 'eq.user-a');
+    final columns = requests.single.url.queryParameters['select']!;
+    for (final column in [
+      'title',
+      'location_type',
+      'place_name',
+      'place_address',
+      'place_lat',
+      'place_lng',
+    ]) {
+      expect(columns, contains(column));
+    }
   });
 
   test('new workout starts only once after a successful empty recovery',
