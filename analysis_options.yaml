@@ -32,6 +32,7 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    - design/**
 
 # Riverpod lints via the Dart analyzer plugin system (replaces custom_lint).
 plugins:

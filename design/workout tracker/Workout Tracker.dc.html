@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0}a{color:inherit}a:hover{opacity:.8}input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}*::-webkit-scrollbar{display:none}</style>
+</helmet>
+<div style="width:390px;height:844px;margin:11px;position:relative;overflow:hidden;border-radius:54px;background:var(--bg);color:var(--fg);font-family:'Geist',system-ui,sans-serif;box-shadow:0 0 0 10px #1c1e22,0 0 0 11px #33363c,0 40px 100px rgba(0,0,0,0.45);--bg:{{ t.bg }};--card:{{ t.card }};--card2:{{ t.card2 }};--line:{{ t.line }};--fg:{{ t.fg }};--muted:{{ t.muted }};--accent:{{ t.accent }};--accentInk:{{ t.accentInk }};--accentText:{{ t.accentText }};--danger:{{ t.danger }};--dangerBg:{{ t.dangerBg }};--sheet:{{ t.sheet }};--scrim:{{ t.scrim }};--glass:{{ t.glass }};--glassLine:{{ t.glassLine }};--glassHi:{{ t.glassHi }};--glassLo:{{ t.glassLo }};--glassShadow:{{ t.glassShadow }};--glassBubble:{{ t.glassBubble }};--sheen:{{ t.sheen }};--orb1:{{ t.orb1 }};--orb2:{{ t.orb2 }}">
+  <div style="position:absolute;width:320px;height:320px;border-radius:50%;right:-140px;top:120px;background:var(--orb1);filter:blur(70px);pointer-events:none"></div>
+  <div style="position:absolute;width:300px;height:260px;border-radius:50%;left:-120px;bottom:-40px;background:var(--orb2);filter:blur(70px);pointer-events:none"></div>
+
+  <div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:122px;height:35px;border-radius:20px;background:#000;z-index:90"></div>
+  <div style="position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:2px 32px 0 42px;box-sizing:border-box;z-index:80;background:{{ statusBg }};backdrop-filter:{{ statusBlur }};-webkit-backdrop-filter:{{ statusBlur }};font-size:16px;font-weight:600">
+    <span>9:41</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="display:flex;align-items:flex-end;gap:2px;height:11px"><div style="width:3px;height:4px;background:var(--fg);border-radius:1px"></div><div style="width:3px;height:6px;background:var(--fg);border-radius:1px"></div><div style="width:3px;height:8px;background:var(--fg);border-radius:1px"></div><div style="width:3px;height:11px;background:var(--fg);border-radius:1px"></div></div>
+      <div style="width:24px;height:12px;border-radius:4px;border:1px solid var(--muted);padding:1.5px;box-sizing:border-box"><div style="width:80%;height:100%;background:var(--fg);border-radius:2px"></div></div>
+    </div>
+  </div>
+
+  <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:96px 24px 44px;box-sizing:border-box;z-index:5">
+      <div style="display:flex;flex-direction:column;gap:28px">
+        <div style="width:64px;height:64px;border-radius:18px;overflow:hidden"><img src="assets/logo.png" alt="Logo" style="width:100%;height:100%;display:block;transform:scale(1.12)"></div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--accentText)">WELCOME</span>
+          <span style="font-size:44px;font-weight:600;letter-spacing:-0.04em;line-height:1.02">Track your workouts. Crush your goals.</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button onClick="{{ signIn }}" style="height:56px;border-radius:18px;border:none;background:var(--fg);color:var(--bg);font:600 16px 'Geist',sans-serif;cursor:pointer">Sign in with Apple</button>
+        <button onClick="{{ signIn }}" style="height:56px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:600 16px 'Geist',sans-serif;cursor:pointer">Sign in with Google</button>
+        <a href="#" style="text-align:center;font-size:13px;color:var(--muted);text-decoration:none;margin-top:12px">Privacy Policy</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ inApp }}" hint-placeholder-val="{{ true }}">
+    <div onScroll="{{ onScroll }}" style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:54px 0 210px;box-sizing:border-box;z-index:5">
+
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Home">
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 20px 0">
+            <div style="width:44px;height:44px;border-radius:14px;background:var(--accent);color:var(--accentInk);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex-shrink:0">N</div>
+            <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:13px;color:var(--muted)">{{ greeting }}</span><span style="font-size:20px;font-weight:600;letter-spacing:-0.02em">Nathan</span></div>
+            <button onClick="{{ goNotif }}" style="width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg>
+              <sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--card)"></span></sc-if>
+            </button>
+          </div>
+
+          <div style="padding:26px 20px 0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">WORKOUT</span>
+              <sc-if value="{{ hasWorkout }}" hint-placeholder-val="{{ true }}">
+                <span style="display:flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:6px;background:var(--accent);color:var(--accentInk);font:600 11px 'Geist Mono',monospace;letter-spacing:0.1em"><span style="width:6px;height:6px;border-radius:50%;background:var(--accentInk)"></span>ACTIVE</span>
+              </sc-if>
+              <sc-if value="{{ noWorkout }}" hint-placeholder-val="{{ false }}">
+                <span style="height:22px;line-height:22px;padding:0 9px;border-radius:6px;background:var(--card2);color:var(--muted);font:600 11px 'Geist Mono',monospace;letter-spacing:0.1em">INACTIVE</span>
+              </sc-if>
+            </div>
+            <div style="font:500 64px 'Geist Mono',monospace;letter-spacing:-0.05em;line-height:1;color:{{ timerColor }}">{{ workoutTimer }}</div>
+            <sc-if value="{{ hasWorkout }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;gap:16px;font:500 12px 'Geist Mono',monospace;letter-spacing:0.06em;color:var(--muted)"><span>{{ st.ex }} EX</span><span>{{ st.sets }} SETS</span><span>{{ st.vol }} KG VOL</span></div>
+            </sc-if>
+          </div>
+
+          <div style="margin:22px 20px 0;height:46px;border-radius:23px;position:relative;display:flex;padding:4px;box-sizing:border-box;background:var(--glass);backdrop-filter:blur(24px) saturate(190%);-webkit-backdrop-filter:blur(24px) saturate(190%);border:1px solid var(--glassLine);box-shadow:inset 0 1px 1px var(--glassHi),inset 0 -1px 1px var(--glassLo),0 6px 18px var(--glassShadow)">
+            <div style="position:absolute;top:4px;left:{{ segLeft }}px;width:170px;height:36px;border-radius:18px;background:var(--glassBubble);box-shadow:inset 0 1px 1px var(--glassHi),0 2px 8px var(--glassShadow);transition:left 0.45s cubic-bezier(.3,1.35,.5,1)"></div>
+            <button onClick="{{ tabCurrent }}" style="flex:1;position:relative;background:none;border:none;font:600 14px 'Geist',sans-serif;color:{{ segCur }};cursor:pointer">Current</button>
+            <button onClick="{{ tabPrevious }}" style="flex:1;position:relative;background:none;border:none;font:600 14px 'Geist',sans-serif;color:{{ segPrev }};cursor:pointer">Previous</button>
+          </div>
+
+          <sc-if value="{{ isCurrent }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:18px 20px 0;display:flex;flex-direction:column;gap:10px">
+              <sc-if value="{{ showIdle }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:64px 32px;text-align:center;font-size:15px;color:var(--muted)">Get started by starting a workout!</div>
+              </sc-if>
+              <sc-if value="{{ showEmptyEx }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:64px 40px;text-align:center;font-size:15px;color:var(--muted);text-wrap:pretty">No exercises have been added to this workout yet</div>
+              </sc-if>
+
+              <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ true }}">
+                <div style="border-radius:24px;background:var(--card);border:1px solid var(--line);padding:20px;display:flex;flex-direction:column;gap:14px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:var(--accentText);font-weight:600">In progress · {{ activeTimer }}</span><span style="font-size:21px;font-weight:600;letter-spacing:-0.02em">{{ activeName }}</span></div>
+                    <sc-if value="{{ hasRest }}" hint-placeholder-val="{{ true }}">
+                      <span style="display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:12px;background:var(--card2);color:var(--accentText);font:500 14px 'Geist Mono',monospace;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2M9 2h6"></path></svg>{{ restTimer }}</span>
+                    </sc-if>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <sc-for list="{{ activeSets }}" as="s" hint-placeholder-count="2">
+                      <div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 6px 0 8px;border-radius:16px;background:var(--card2)">
+                        <span style="width:36px;height:36px;border-radius:11px;background:var(--card);display:flex;align-items:center;justify-content:center;font:500 13px 'Geist Mono',monospace;color:var(--muted)">{{ s.num }}</span>
+                        <div style="flex:1;display:flex;align-items:baseline;gap:4px"><span style="font-size:20px;font-weight:600">{{ s.kg }}</span><span style="font-size:13px;color:var(--muted)">kg</span></div>
+                        <div style="flex:1;display:flex;align-items:baseline;gap:4px"><span style="font-size:20px;font-weight:600">{{ s.reps }}</span><span style="font-size:13px;color:var(--muted)">reps</span></div>
+                        <button onClick="{{ s.onMenu }}" style="width:40px;height:40px;border:none;background:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg></button>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ noSets }}" hint-placeholder-val="{{ false }}">
+                      <div style="height:56px;border-radius:16px;border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted)">No sets added yet</div>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ hasSets }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>{{ activeSetCount }} sets · {{ activeReps }} reps</span><span style="color:var(--fg);font-weight:600">{{ activeVol }} kg volume</span></div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-for list="{{ doneList }}" as="e" hint-placeholder-count="1">
+                <div style="border-radius:20px;background:var(--card);border:1px solid {{ e.border }};display:flex;flex-direction:column;transition:border-color 0.2s">
+                  <div onClick="{{ e.onTap }}" style="padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer">
+                    <span style="width:40px;height:40px;border-radius:12px;background:var(--card2);color:var(--accentText);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></span>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.name }}</span><span style="font-size:13px;color:var(--muted)">{{ e.sets }} sets · {{ e.reps }} reps · {{ e.dur }}</span></div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font:500 17px 'Geist Mono',monospace">{{ e.vol }}</span><span style="font-size:11px;color:var(--muted)">kg vol</span></div>
+                    <svg width="16" height="16" style="flex-shrink:0;transform:rotate({{ e.rot }}deg);transition:transform 0.25s" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg>
+                  </div>
+                  <sc-if value="{{ e.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:6px">
+                    <sc-for list="{{ e.rows }}" as="r" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px 0 6px;border-radius:14px;background:var(--card2);font-size:15px">
+                        <span style="width:30px;height:30px;border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;font:500 12px 'Geist Mono',monospace;color:var(--muted);flex-shrink:0">{{ r.num }}</span>
+                        <span style="flex:1;font-weight:600">{{ r.kg }} <span style="font-size:12px;font-weight:500;color:var(--muted)">kg</span></span>
+                        <span style="flex:1;font-weight:600">{{ r.reps }} <span style="font-size:12px;font-weight:500;color:var(--muted)">reps</span></span>
+                        <span style="font:500 13px 'Geist Mono',monospace;color:var(--muted)">{{ r.vol }}</span>
+                      </div>
+                    </sc-for>
+                    <div style="display:flex;justify-content:space-between;padding:6px 2px 0;font:500 11px 'Geist Mono',monospace;letter-spacing:0.08em;color:var(--muted)"><span>TOP SET {{ e.top }}</span><span>AVG {{ e.avg }} KG</span></div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isPrevious }}" hint-placeholder-val="{{ false }}">
+            <div ref="{{ listRef }}" style="padding:10px 20px 0;display:flex;flex-direction:column">
+              <sc-for list="{{ prevYears }}" as="y" hint-placeholder-count="1">
+                <div style="display:flex;flex-direction:column">
+                  <div style="position:sticky;top:0;z-index:12;margin:0 -20px;padding:0 20px;height:44px;display:flex;align-items:center;background:{{ hdrBg }};backdrop-filter:{{ hdrBlur }};-webkit-backdrop-filter:{{ hdrBlur }};transition:background 0.2s">
+                    <span style="font:500 26px 'Geist Mono',monospace;letter-spacing:-0.04em">{{ y.year }}</span>
+                  </div>
+                  <sc-for list="{{ y.months }}" as="m" hint-placeholder-count="2">
+                    <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:14px">
+                      <div style="position:sticky;top:44px;z-index:11;margin:0 -20px;padding:0 20px;height:34px;display:flex;align-items:center;justify-content:space-between;background:{{ hdrBg }};backdrop-filter:{{ hdrBlur }};-webkit-backdrop-filter:{{ hdrBlur }};transition:background 0.2s;border-bottom:1px solid var(--line)">
+                        <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--accentText)">{{ m.label }}</span>
+                        <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.12em;color:var(--muted)">{{ m.count }}</span>
+                      </div>
+                      <sc-for list="{{ m.items }}" as="w" hint-placeholder-count="3">
+                        <div onClick="{{ w.onOpen }}" style="border-radius:20px;background:var(--card);border:1px solid var(--line);padding:16px 18px;display:flex;flex-direction:column;gap:14px;cursor:pointer">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div style="display:flex;gap:8px;align-items:center;flex:1;min-width:0;margin-right:10px"><span style="font-size:16px;font-weight:600;flex-shrink:0">{{ w.date }}</span><span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:7px;background:var(--card2);font-size:12px;font-weight:500;color:var(--muted);min-width:0;flex-shrink:1;overflow:hidden"><svg width="11" height="11" style="flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ w.locIcon }}"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">{{ w.locText }}</span></span></div>
+                    <div style="display:flex;align-items:center;gap:6px;color:var(--muted);flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));font-family:'Geist Mono',monospace">
+                    <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:20px;font-weight:500">{{ w.ex }}</span><span style="font-size:10px;letter-spacing:0.14em;color:var(--muted)">EX</span></div>
+                    <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:20px;font-weight:500">{{ w.sets }}</span><span style="font-size:10px;letter-spacing:0.14em;color:var(--muted)">SETS</span></div>
+                    <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:20px;font-weight:500">{{ w.reps }}</span><span style="font-size:10px;letter-spacing:0.14em;color:var(--muted)">REPS</span></div>
+                    <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:20px;font-weight:500;color:var(--accentText)">{{ w.vol }}</span><span style="font-size:10px;letter-spacing:0.14em;color:var(--muted)">KG</span></div>
+                  </div>
+                </div>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTracker }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Tracker" style="padding:16px 20px 0;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">ACTIVITY</span><span style="font-size:30px;font-weight:600;letter-spacing:-0.035em">Tracker</span></div>
+            <button onClick="{{ openLog }}" style="height:44px;padding:0 14px 0 10px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);display:flex;align-items:center;gap:6px;font:600 14px 'Geist',sans-serif;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Log workout</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+            <div style="border-radius:18px;background:var(--accent);color:var(--accentInk);padding:12px 14px;display:flex;flex-direction:column;gap:2px"><span style="font:500 26px 'Geist Mono',monospace;letter-spacing:-0.03em">{{ streak }}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em">DAY STREAK</span></div>
+            <div style="border-radius:18px;background:var(--card);border:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:2px"><span style="font:500 26px 'Geist Mono',monospace;letter-spacing:-0.03em">{{ monthDays }}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">{{ monthCaps }}</span></div>
+            <div style="border-radius:18px;background:var(--card);border:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:2px"><span style="font:500 26px 'Geist Mono',monospace;letter-spacing:-0.03em">{{ totalDays }}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">TOTAL DAYS</span></div>
+          </div>
+          <div style="border-radius:24px;background:var(--card);border:1px solid var(--line);padding:16px 14px 14px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:6px">
+              <div style="display:flex;flex-direction:column;gap:3px;padding-top:18px;font:500 9px 'Geist Mono',monospace;color:var(--muted)">
+                <span style="height:14px;line-height:14px">M</span><span style="height:14px"></span><span style="height:14px;line-height:14px">W</span><span style="height:14px"></span><span style="height:14px;line-height:14px">F</span><span style="height:14px"></span><span style="height:14px;line-height:14px">S</span>
+              </div>
+              <div style="display:flex;gap:3px">
+                <sc-for list="{{ weeks }}" as="wk" hint-placeholder-count="17">
+                  <div style="display:flex;flex-direction:column;gap:3px;width:14px">
+                    <span style="height:15px;font:500 9px 'Geist Mono',monospace;color:var(--muted);white-space:nowrap">{{ wk.label }}</span>
+                    <sc-for list="{{ wk.days }}" as="d" hint-placeholder-count="7">
+                      <button onClick="{{ d.onPick }}" title="{{ d.title }}" style="width:14px;height:14px;border-radius:4px;border:none;padding:0;background:{{ d.bg }};box-shadow:{{ d.ring }};cursor:{{ d.cursor }}"></button>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font:500 10px 'Geist Mono',monospace;letter-spacing:0.08em;color:var(--muted)">
+              <span>LAST 17 WEEKS</span>
+              <div style="display:flex;align-items:center;gap:3px"><span style="margin-right:3px">LESS</span><span style="width:10px;height:10px;border-radius:3px;background:var(--card2)"></span><span style="width:10px;height:10px;border-radius:3px;background:color-mix(in oklch, var(--accent) 35%, var(--card2))"></span><span style="width:10px;height:10px;border-radius:3px;background:color-mix(in oklch, var(--accent) 65%, var(--card2))"></span><span style="width:10px;height:10px;border-radius:3px;background:var(--accent)"></span><span style="margin-left:3px">MORE</span></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 2px 0"><span style="font-size:18px;font-weight:600;letter-spacing:-0.02em">{{ selLabel }}</span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.12em;color:var(--muted)">{{ selSub }}</span></div>
+          <sc-for list="{{ dayItems }}" as="e" hint-placeholder-count="1">
+            <div onClick="{{ e.onOpen }}" style="border-radius:20px;background:var(--card);border:1px solid var(--line);padding:14px 14px 14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">
+              <span style="width:40px;height:40px;border-radius:12px;box-sizing:border-box;background:{{ e.tileBg }};border:{{ e.tileBorder }};color:{{ e.tileColor }};display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ e.icon }}"></path></svg></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font-size:15px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.title }}</span><sc-if value="{{ e.hasLoc }}" hint-placeholder-val="{{ true }}"><span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:7px;background:var(--card2);font-size:12px;font-weight:500;color:var(--muted);box-sizing:border-box;max-width:50%;flex-shrink:0;margin-left:auto;overflow:hidden"><svg width="11" height="11" style="flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ e.locIcon }}"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">{{ e.locText }}</span></span></sc-if></div>
+                <span style="font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.sub }}</span>
+              </div>
+              <svg width="16" height="16" style="flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg>
+            </div>
+          </sc-for>
+          <sc-if value="{{ dayEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="border-radius:20px;border:1.5px dashed var(--line);padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+              <span style="font-size:14px;color:var(--muted)">No workout logged on this day</span>
+              <button onClick="{{ openLog }}" style="height:44px;padding:0 18px;border-radius:14px;border:none;background:var(--accent);color:var(--accentInk);font:600 14px 'Geist',sans-serif;cursor:pointer">Log a workout</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Workout detail" style="padding:12px 20px 0;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <button onClick="{{ back }}" style="width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <button onClick="{{ openEditW }}" style="height:44px;padding:0 14px 0 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);display:flex;align-items:center;gap:6px;font:600 14px 'Geist',sans-serif;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"></path></svg>Edit</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:26px;font-weight:600;letter-spacing:-0.025em;line-height:1.15;text-wrap:pretty;overflow-wrap:anywhere">{{ dv.title }}</span>
+            <div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted);flex-shrink:0">{{ dv.date }} · {{ dv.time }}</span><span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:7px;background:var(--card2);font-size:12px;font-weight:500;color:var(--muted);min-width:0;flex-shrink:1;overflow:hidden"><svg width="11" height="11" style="flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ dv.locIcon }}"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">{{ dv.locText }}</span></span></div>
+            <span style="font:500 52px 'Geist Mono',monospace;letter-spacing:-0.05em;line-height:1">{{ dv.dur }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+            <div style="border-radius:18px;background:var(--card);border:1px solid var(--line);padding:14px 16px;display:flex;flex-direction:column;gap:2px"><span style="font:500 26px 'Geist Mono',monospace">{{ dv.sets }}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">SETS</span></div>
+            <div style="border-radius:18px;background:var(--card);border:1px solid var(--line);padding:14px 16px;display:flex;flex-direction:column;gap:2px"><span style="font:500 26px 'Geist Mono',monospace">{{ dv.reps }}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">REPS</span></div>
+            <div style="grid-column:span 2;border-radius:18px;background:var(--accent);color:var(--accentInk);padding:14px 16px;display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em">TOTAL VOLUME</span><span style="font:600 26px 'Geist Mono',monospace">{{ dv.vol }} kg</span></div>
+          </div>
+          <sc-for list="{{ dv.exercises }}" as="e" hint-placeholder-count="1">
+            <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:0 2px 4px"><span style="font-size:16px;font-weight:600">{{ e.name }}</span><span style="font:500 12px 'Geist Mono',monospace;color:var(--muted)">{{ e.dur }}</span></div>
+              <sc-for list="{{ e.rows }}" as="r" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px 0 6px;border-radius:14px;background:var(--card2);font-size:15px"><span style="width:30px;height:30px;border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;font:500 12px 'Geist Mono',monospace;color:var(--muted)">{{ r.num }}</span><span style="flex:1;font-weight:600">{{ r.kg }} kg</span><span style="flex:1;font-weight:600">{{ r.reps }} reps</span><span style="font:500 13px 'Geist Mono',monospace;color:var(--muted)">{{ r.vol }}</span></div>
+              </sc-for>
+            </div>
+          </sc-for>
+          <button onClick="{{ openDelW }}" style="height:52px;border-radius:18px;border:none;background:var(--dangerBg);color:var(--danger);font:600 15px 'Geist',sans-serif;cursor:pointer">Delete workout</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMDetail }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Manual workout detail" style="padding:12px 20px 0;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <button onClick="{{ back }}" style="width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <button onClick="{{ openEditW }}" style="height:44px;padding:0 14px 0 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);display:flex;align-items:center;gap:6px;font:600 14px 'Geist',sans-serif;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"></path></svg>Edit</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="align-self:flex-start;display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:7px;border:1.5px dashed var(--line);font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"></path></svg>LOGGED MANUALLY</span>
+            <span style="font-size:26px;font-weight:600;letter-spacing:-0.025em;line-height:1.15;text-wrap:pretty;overflow-wrap:anywhere">{{ mv.title }}</span>
+            <div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted);flex-shrink:0">{{ mv.date }}</span><span style="display:flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:7px;background:var(--card2);font-size:12px;font-weight:500;color:var(--muted);min-width:0;flex-shrink:1;overflow:hidden"><svg width="11" height="11" style="flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ mv.locIcon }}"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">{{ mv.locText }}</span></span></div>
+          </div>
+          <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);padding:4px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">DATE</span><span style="font-size:15px;font-weight:500">{{ mv.dateFull }}</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">TYPE</span><span style="display:flex;align-items:center;gap:6px;font-size:15px;font-weight:500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ mv.locIcon }}"></path></svg>{{ mv.loc }}</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted);flex-shrink:0">PLACE</span><div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0"><span style="font-size:15px;font-weight:500;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mv.placeName }}</span><sc-if value="{{ mv.hasAddr }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mv.placeAddr }}</span></sc-if></div></div>
+          </div>
+          <span style="font-size:14px;color:var(--muted);line-height:1.5;padding:0 2px">No exercise details were recorded for this workout.</span>
+          <button onClick="{{ openDelW }}" style="height:52px;border-radius:18px;border:none;background:var(--dangerBg);color:var(--danger);font:600 15px 'Geist',sans-serif;cursor:pointer">Delete workout</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSummary }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Workout summary" style="padding:40px 20px 0;display:flex;flex-direction:column;gap:22px">
+          <div style="width:52px;height:52px;border-radius:16px;background:var(--accent);color:var(--accentInk);display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--accentText)">WORKOUT COMPLETE</span>
+            <span style="font-size:24px;font-weight:600;letter-spacing:-0.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sv.title }}</span>
+            <span style="font:500 60px 'Geist Mono',monospace;letter-spacing:-0.05em;line-height:1">{{ sv.dur }}</span>
+            <span style="font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sv.date }} · {{ sv.time }} · {{ sv.locText }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+            <div style="border-radius:18px;background:var(--card);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:2px"><span style="font:500 24px 'Geist Mono',monospace">{{ sv.ex }}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">EXERCISES</span></div>
+            <div style="border-radius:18px;background:var(--card);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:2px"><span style="font:500 24px 'Geist Mono',monospace">{{ sv.sets }}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">SETS</span></div>
+            <div style="border-radius:18px;background:var(--card);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:2px"><span style="font:500 24px 'Geist Mono',monospace">{{ sv.reps }}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">REPS</span></div>
+          </div>
+          <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);padding:16px 18px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">VOLUME BY EXERCISE</span><span style="font:600 16px 'Geist Mono',monospace">{{ sv.vol }} kg</span></div>
+            <sc-for list="{{ sv.exercises }}" as="e" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;justify-content:space-between;font-size:14px"><span>{{ e.name }}</span><span style="font-family:'Geist Mono',monospace;color:var(--muted)">{{ e.vol }}</span></div>
+                <div style="height:8px;border-radius:4px;background:var(--card2);overflow:hidden"><div style="height:100%;width:{{ e.pct }}%;background:var(--accent);border-radius:4px"></div></div>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ closeSummary }}" style="height:56px;border-radius:18px;border:none;background:var(--fg);color:var(--bg);font:600 16px 'Geist',sans-serif;cursor:pointer">Done</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isNotif }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Notifications" style="padding:16px 20px 0;display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:30px;font-weight:600;letter-spacing:-0.035em">Notifications</span>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="3">
+              <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+                <span style="width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;background:{{ n.dot }}"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                  <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:15px;font-weight:600">{{ n.title }}</span><span style="font:500 11px 'Geist Mono',monospace;color:var(--muted)">{{ n.time }}</span></div>
+                  <span style="font-size:14px;color:var(--muted);line-height:1.4">{{ n.body }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Profile" style="padding:16px 20px 0;display:flex;flex-direction:column;gap:22px">
+          <span style="font-size:30px;font-weight:600;letter-spacing:-0.035em">Profile</span>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:60px;height:60px;border-radius:18px;background:var(--accent);color:var(--accentInk);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">N</div>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:20px;font-weight:600">Nathan</span><span style="font:500 12px 'Geist Mono',monospace;color:var(--muted)">{{ prevCount }} WORKOUTS LOGGED</span></div>
+          </div>
+          <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);padding:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 12px">
+              <span style="font-size:15px">Appearance</span>
+              <div style="display:flex;gap:2px;padding:3px;border-radius:12px;background:var(--card2)">
+                <button onClick="{{ setDark }}" style="height:30px;padding:0 12px;border-radius:9px;border:none;background:{{ apDark }};color:var(--fg);font:500 13px 'Geist',sans-serif;cursor:pointer">Dark</button>
+                <button onClick="{{ setLight }}" style="height:30px;padding:0 12px;border-radius:9px;border:none;background:{{ apLight }};color:var(--fg);font:500 13px 'Geist',sans-serif;cursor:pointer">Light</button>
+              </div>
+            </div>
+            <div style="height:1px;background:var(--line);margin:0 12px"></div>
+            <a href="#" style="display:flex;align-items:center;justify-content:space-between;padding:14px 12px;text-decoration:none;font-size:15px">Privacy Policy<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="opacity:.5"><path d="m9 18 6-6-6-6"></path></svg></a>
+            <div style="height:1px;background:var(--line);margin:0 12px"></div>
+            <button onClick="{{ signOut }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 12px;border:none;background:none;color:var(--fg);font:400 15px 'Geist',sans-serif;cursor:pointer">Sign out<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><path d="M15 4h4v16h-4M10 16l4-4-4-4M14 12H4"></path></svg></button>
+          </div>
+          <button onClick="{{ openDelete }}" style="height:52px;border-radius:18px;border:none;background:var(--dangerBg);color:var(--danger);font:600 15px 'Geist',sans-serif;cursor:pointer">Delete account</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showActions }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;left:20px;right:20px;bottom:106px;display:flex;gap:8px;z-index:30">
+      <sc-if value="{{ actStart }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ startWorkout }}" style="flex:1;height:58px;border-radius:18px;border:none;background:var(--accent);color:var(--accentInk);font:600 16px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 10px 30px var(--glassShadow)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12"></path></svg>Start workout</button>
+      </sc-if>
+      <sc-if value="{{ actWorkout }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ openAddEx }}" style="flex:1.4;height:58px;border-radius:18px;border:none;background:var(--accent);color:var(--accentInk);font:600 16px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 10px 30px var(--glassShadow)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add exercise</button>
+        <button onClick="{{ openEndWorkout }}" style="flex:1;height:58px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--danger);font:600 16px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 10px 30px var(--glassShadow)"><span style="width:12px;height:12px;border-radius:3px;background:var(--danger)"></span>End workout</button>
+      </sc-if>
+      <sc-if value="{{ actExercise }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ openAddSet }}" style="flex:1.4;height:58px;border-radius:18px;border:none;background:var(--accent);color:var(--accentInk);font:600 16px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 10px 30px var(--glassShadow)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add set</button>
+        <button onClick="{{ endExercise }}" style="flex:1;height:58px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--danger);font:600 16px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 10px 30px var(--glassShadow)"><span style="width:12px;height:12px;border-radius:3px;background:var(--danger)"></span>End exercise</button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:26px;width:340px;height:66px;border-radius:33px;display:flex;padding:6px;box-sizing:border-box;z-index:40;background:var(--glass);backdrop-filter:blur(24px) saturate(190%);-webkit-backdrop-filter:blur(24px) saturate(190%);border:1px solid var(--glassLine);box-shadow:inset 0 1px 1px var(--glassHi),inset 0 -1px 1px var(--glassLo),0 14px 36px var(--glassShadow)">
+      <div style="position:absolute;inset:0;border-radius:33px;background:linear-gradient(180deg,var(--sheen),transparent 50%);pointer-events:none"></div>
+      <div style="position:absolute;top:6px;left:{{ tabLeft }}px;width:82px;height:52px;border-radius:26px;background:var(--glassBubble);box-shadow:inset 0 1px 1px var(--glassHi),0 2px 10px var(--glassShadow);transition:left 0.5s cubic-bezier(.3,1.4,.5,1)"></div>
+      <button onClick="{{ goHome }}" style="flex:1;position:relative;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ c0 }};font:600 10px 'Geist',sans-serif;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Home</button>
+      <button onClick="{{ goTracker }}" style="flex:1;position:relative;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ c1 }};font:600 10px 'Geist',sans-serif;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"></rect><rect x="14" y="4" width="6" height="6" rx="1.5"></rect><rect x="4" y="14" width="6" height="6" rx="1.5"></rect><rect x="14" y="14" width="6" height="6" rx="1.5"></rect></svg>Tracker</button>
+      <button onClick="{{ goNotif }}" style="flex:1;position:relative;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ c2 }};font:600 10px 'Geist',sans-serif;cursor:pointer"><span style="position:relative;display:flex"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg><sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:0;right:1px;width:7px;height:7px;border-radius:50%;background:var(--danger)"></span></sc-if></span>Notifications</button>
+      <button onClick="{{ goProfile }}" style="flex:1;position:relative;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ c3 }};font:600 10px 'Geist',sans-serif;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Profile</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ anySheet }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:var(--scrim);z-index:60"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:61;max-height:800px;overflow-y:auto;scrollbar-width:none;box-sizing:border-box;background:var(--sheet);border-radius:32px 32px 0 0;padding:10px 20px 40px;display:flex;flex-direction:column;gap:18px;box-shadow:0 -10px 40px rgba(0,0,0,0.3)">
+      <div style="width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center"></div>
+      <sc-if value="{{ sheetAddEx }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">New exercise</span>
+        <input value="{{ form.name }}" onChange="{{ onName }}" placeholder="Exercise name" style="height:56px;border-radius:16px;border:1px solid var(--line);background:var(--card2);color:var(--fg);padding:0 16px;font:500 17px 'Geist',sans-serif;outline:none">
+        <button onClick="{{ confirmAddEx }}" style="height:56px;border-radius:18px;border:none;background:var(--accent);color:var(--accentInk);font:600 16px 'Geist',sans-serif;cursor:pointer">Start exercise</button>
+      </sc-if>
+      <sc-if value="{{ sheetSet }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">{{ setTitle }}</span>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+          <div style="border-radius:20px;background:var(--card2);padding:14px;display:flex;flex-direction:column;gap:10px">
+            <span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">WEIGHT · KG</span>
+            <input type="number" value="{{ form.kg }}" onChange="{{ onKg }}" style="width:100%;border:none;background:none;color:var(--fg);font:500 40px 'Geist Mono',monospace;letter-spacing:-0.04em;outline:none;padding:0">
+            <div style="display:flex;gap:6px"><button onClick="{{ kgDec }}" style="flex:1;height:40px;border-radius:12px;border:none;background:var(--card);color:var(--fg);font:500 20px 'Geist',sans-serif;cursor:pointer">−</button><button onClick="{{ kgInc }}" style="flex:1;height:40px;border-radius:12px;border:none;background:var(--card);color:var(--fg);font:500 20px 'Geist',sans-serif;cursor:pointer">+</button></div>
+          </div>
+          <div style="border-radius:20px;background:var(--card2);padding:14px;display:flex;flex-direction:column;gap:10px">
+            <span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">REPS</span>
+            <input type="number" value="{{ form.reps }}" onChange="{{ onReps }}" style="width:100%;border:none;background:none;color:var(--fg);font:500 40px 'Geist Mono',monospace;letter-spacing:-0.04em;outline:none;padding:0">
+            <div style="display:flex;gap:6px"><button onClick="{{ repsDec }}" style="flex:1;height:40px;border-radius:12px;border:none;background:var(--card);color:var(--fg);font:500 20px 'Geist',sans-serif;cursor:pointer">−</button><button onClick="{{ repsInc }}" style="flex:1;height:40px;border-radius:12px;border:none;background:var(--card);color:var(--fg);font:500 20px 'Geist',sans-serif;cursor:pointer">+</button></div>
+          </div>
+        </div>
+        <button onClick="{{ confirmSet }}" style="height:56px;border-radius:18px;border:none;background:var(--accent);color:var(--accentInk);font:600 16px 'Geist',sans-serif;cursor:pointer">{{ setCta }}</button>
+      </sc-if>
+      <sc-if value="{{ sheetMenu }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:22px;font-weight:600">{{ menuTitle }}</span><span style="font:500 13px 'Geist Mono',monospace;color:var(--muted)">{{ menuSub }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button onClick="{{ editSet }}" style="height:54px;border-radius:16px;border:none;background:var(--card2);color:var(--fg);font:600 15px 'Geist',sans-serif;cursor:pointer">Edit set</button>
+          <button onClick="{{ deleteSet }}" style="height:54px;border-radius:16px;border:none;background:var(--dangerBg);color:var(--danger);font:600 15px 'Geist',sans-serif;cursor:pointer">Delete set</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ sheetEnd }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:22px;font-weight:600">End workout?</span><span style="font-size:15px;color:var(--muted)">{{ endLine }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">WORKOUT NAME</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:{{ titleReqColor }}">REQUIRED</span></div>
+          <input value="{{ form.title }}" onChange="{{ onTitle }}" maxLength="40" placeholder="e.g. Push day" style="height:56px;border-radius:16px;border:1px solid var(--line);background:var(--card2);color:var(--fg);padding:0 16px;font:500 17px 'Geist',sans-serif;outline:none">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">LOCATION</span>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+            <sc-for list="{{ locOpts }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.onPick }}" style="height:64px;border-radius:16px;border:none;background:{{ o.bg }};color:{{ o.fg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:600 13px 'Geist',sans-serif;cursor:pointer;transition:background 0.2s"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ o.icon }}"></path></svg>{{ o.name }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">PLACE</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">OPTIONAL</span></div>
+          <sc-if value="{{ hasPlace }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;border-radius:16px;background:var(--card2);padding:8px 6px 8px 8px">
+              <span style="width:40px;height:40px;border-radius:12px;background:var(--accent);color:var(--accentInk);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"></path></svg></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ form.place.name }}</span><span style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ form.place.addr }}</span></div>
+              <button onClick="{{ openPlace }}" style="height:36px;padding:0 10px;border-radius:11px;border:none;background:var(--card);color:var(--fg);font:600 13px 'Geist',sans-serif;cursor:pointer">Change</button>
+              <button onClick="{{ clearPlace }}" aria-label="Remove place" style="width:36px;height:36px;border-radius:11px;border:none;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ placeIdle }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ openPlace }}" style="height:52px;border-radius:16px;border:1.5px dashed var(--line);background:none;color:var(--muted);display:flex;align-items:center;gap:10px;padding:0 14px;font:500 15px 'Geist',sans-serif;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>{{ placeCta }}</button>
+          </sc-if>
+          <sc-if value="{{ placeSearching }}" hint-placeholder-val="{{ false }}">
+            <div style="border-radius:18px;background:var(--card2);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:10px;height:52px;padding:0 4px 0 14px;color:var(--muted)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                <input autoFocus="true" value="{{ form.placeQ }}" onChange="{{ onPlaceQ }}" placeholder="{{ placeHint }}" style="flex:1;min-width:0;border:none;background:none;color:var(--fg);font:500 15px 'Geist',sans-serif;outline:none">
+                <button onClick="{{ closePlace }}" style="height:40px;padding:0 10px;border:none;background:none;color:var(--accentText);font:600 14px 'Geist',sans-serif;cursor:pointer">Cancel</button>
+              </div>
+              <div style="max-height:230px;overflow-y:auto;scrollbar-width:none">
+                <button onClick="{{ useCurrent }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;border:none;border-top:1px solid var(--line);background:none;color:var(--fg);text-align:left;cursor:pointer">
+                  <span style="width:32px;height:32px;border-radius:10px;background:var(--card);color:var(--accentText);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg></span>
+                  <span style="font:600 14px 'Geist',sans-serif">Use current location</span>
+                </button>
+                <div style="padding:10px 14px 4px;border-top:1px solid var(--line);font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">{{ resultsLabel }}</div>
+                <sc-for list="{{ placeResults }}" as="p" hint-placeholder-count="3">
+                  <button onClick="{{ p.onPick }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:9px 14px;border:none;background:none;color:var(--fg);text-align:left;cursor:pointer">
+                    <span style="width:32px;height:32px;border-radius:10px;background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ p.icon }}"></path></svg></span>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font:600 14px 'Geist',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span><span style="font:400 12px 'Geist',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.addr }}</span></div>
+                    <span style="font:500 11px 'Geist Mono',monospace;color:var(--muted);flex-shrink:0">{{ p.dist }}</span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;text-align:center;font-size:13px;color:var(--muted)">No places match “{{ form.placeQ }}”</div></sc-if>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button onClick="{{ confirmEndWorkout }}" onPointerDown="{{ holdDown }}" onPointerUp="{{ holdUp }}" onPointerLeave="{{ holdUp }}" onPointerCancel="{{ holdUp }}" onContextMenu="{{ noMenu }}" style="position:relative;overflow:hidden;height:62px;border-radius:18px;border:none;background:var(--danger);color:#fff;font:600 16px 'Geist',sans-serif;cursor:{{ endCursor }};opacity:{{ endOp }};transition:opacity 0.2s;user-select:none;-webkit-user-select:none;touch-action:none">
+            <span style="position:absolute;left:0;top:0;bottom:0;width:{{ holdPct }}%;background:rgba(0,0,0,0.32);pointer-events:none"></span>
+            <span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px"><span>{{ endLabel }}</span><sc-if value="{{ notHolding }}" hint-placeholder-val="{{ true }}"><span style="font:500 12px 'Geist',sans-serif;color:rgba(255,255,255,0.82)">Hold to discard workout</span></sc-if></span>
+          </button>
+          <button onClick="{{ closeSheet }}" style="height:56px;border-radius:18px;border:none;background:var(--card2);color:var(--fg);font:600 16px 'Geist',sans-serif;cursor:pointer">Keep going</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ sheetLog }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">Log a workout</span><span style="font-size:14px;color:var(--muted)">For workouts you didn't record in the app.</span></div>
+        <div style="display:flex;align-items:center;gap:8px;border-radius:20px;background:var(--card2);padding:8px">
+          <button onClick="{{ logPrev }}" style="width:44px;height:44px;border-radius:14px;border:none;background:var(--card);color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:18px;font-weight:600">{{ logLabel }}</span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:0.12em;color:var(--muted)">{{ logSub }}</span></div>
+          <button onClick="{{ logNext }}" style="width:44px;height:44px;border-radius:14px;border:none;background:var(--card);color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:{{ logNextOp }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">WORKOUT NAME</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:{{ titleReqColor }}">REQUIRED</span></div>
+          <input value="{{ form.title }}" onChange="{{ onTitle }}" maxLength="40" placeholder="e.g. Morning run" style="height:56px;border-radius:16px;border:1px solid var(--line);background:var(--card2);color:var(--fg);padding:0 16px;font:500 17px 'Geist',sans-serif;outline:none">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">LOCATION</span>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+            <sc-for list="{{ locOpts }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.onPick }}" style="height:64px;border-radius:16px;border:none;background:{{ o.bg }};color:{{ o.fg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:600 13px 'Geist',sans-serif;cursor:pointer;transition:background 0.2s"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ o.icon }}"></path></svg>{{ o.name }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">PLACE</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">OPTIONAL</span></div>
+          <sc-if value="{{ hasPlace }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;border-radius:16px;background:var(--card2);padding:8px 6px 8px 8px">
+              <span style="width:40px;height:40px;border-radius:12px;background:var(--accent);color:var(--accentInk);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"></path></svg></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ form.place.name }}</span><span style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ form.place.addr }}</span></div>
+              <button onClick="{{ openPlace }}" style="height:36px;padding:0 10px;border-radius:11px;border:none;background:var(--card);color:var(--fg);font:600 13px 'Geist',sans-serif;cursor:pointer">Change</button>
+              <button onClick="{{ clearPlace }}" aria-label="Remove place" style="width:36px;height:36px;border-radius:11px;border:none;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ placeIdle }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ openPlace }}" style="height:52px;border-radius:16px;border:1.5px dashed var(--line);background:none;color:var(--muted);display:flex;align-items:center;gap:10px;padding:0 14px;font:500 15px 'Geist',sans-serif;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>{{ placeCta }}</button>
+          </sc-if>
+          <sc-if value="{{ placeSearching }}" hint-placeholder-val="{{ false }}">
+            <div style="border-radius:18px;background:var(--card2);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:10px;height:52px;padding:0 4px 0 14px;color:var(--muted)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                <input autoFocus="true" value="{{ form.placeQ }}" onChange="{{ onPlaceQ }}" placeholder="{{ placeHint }}" style="flex:1;min-width:0;border:none;background:none;color:var(--fg);font:500 15px 'Geist',sans-serif;outline:none">
+                <button onClick="{{ closePlace }}" style="height:40px;padding:0 10px;border:none;background:none;color:var(--accentText);font:600 14px 'Geist',sans-serif;cursor:pointer">Cancel</button>
+              </div>
+              <div style="max-height:230px;overflow-y:auto;scrollbar-width:none">
+                <button onClick="{{ useCurrent }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;border:none;border-top:1px solid var(--line);background:none;color:var(--fg);text-align:left;cursor:pointer">
+                  <span style="width:32px;height:32px;border-radius:10px;background:var(--card);color:var(--accentText);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg></span>
+                  <span style="font:600 14px 'Geist',sans-serif">Use current location</span>
+                </button>
+                <div style="padding:10px 14px 4px;border-top:1px solid var(--line);font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">{{ resultsLabel }}</div>
+                <sc-for list="{{ placeResults }}" as="p" hint-placeholder-count="3">
+                  <button onClick="{{ p.onPick }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:9px 14px;border:none;background:none;color:var(--fg);text-align:left;cursor:pointer">
+                    <span style="width:32px;height:32px;border-radius:10px;background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ p.icon }}"></path></svg></span>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font:600 14px 'Geist',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span><span style="font:400 12px 'Geist',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.addr }}</span></div>
+                    <span style="font:500 11px 'Geist Mono',monospace;color:var(--muted);flex-shrink:0">{{ p.dist }}</span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;text-align:center;font-size:13px;color:var(--muted)">No places match “{{ form.placeQ }}”</div></sc-if>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <button onClick="{{ confirmLog }}" style="height:56px;border-radius:18px;border:none;background:var(--accent);color:var(--accentInk);font:600 16px 'Geist',sans-serif;cursor:{{ titleCursor }};opacity:{{ titleOp }};transition:opacity 0.2s">Add workout</button>
+      </sc-if>
+      <sc-if value="{{ sheetEx }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="display:flex;align-items:center;gap:6px;font:500 11px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--accentText)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg>COMPLETED · {{ xv.dur }}</span><span style="font-size:24px;font-weight:600;letter-spacing:-0.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ xv.name }}</span></div>
+          <button onClick="{{ closeSheet }}" aria-label="Close" style="width:36px;height:36px;border-radius:12px;border:none;background:var(--card2);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+          <div style="border-radius:16px;background:var(--card2);padding:12px;display:flex;flex-direction:column;gap:2px"><span style="font:500 20px 'Geist Mono',monospace">{{ xv.sets }}</span><span style="font:500 9px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">SETS</span></div>
+          <div style="border-radius:16px;background:var(--card2);padding:12px;display:flex;flex-direction:column;gap:2px"><span style="font:500 20px 'Geist Mono',monospace">{{ xv.reps }}</span><span style="font:500 9px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">REPS</span></div>
+          <div style="border-radius:16px;background:var(--card2);padding:12px;display:flex;flex-direction:column;gap:2px"><span style="font:500 20px 'Geist Mono',monospace">{{ xv.topKg }}</span><span style="font:500 9px 'Geist Mono',monospace;letter-spacing:0.14em;color:var(--muted)">TOP KG</span></div>
+          <div style="border-radius:16px;background:var(--accent);color:var(--accentInk);padding:12px;display:flex;flex-direction:column;gap:2px"><span style="font:500 20px 'Geist Mono',monospace">{{ xv.vol }}</span><span style="font:500 9px 'Geist Mono',monospace;letter-spacing:0.14em">KG VOL</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">SETS</span>
+          <sc-for list="{{ xv.rows }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:baseline;gap:12px">
+                <span style="width:22px;font:500 12px 'Geist Mono',monospace;color:var(--muted)">S{{ r.num }}</span>
+                <span style="flex:1;font-size:17px;font-weight:600">{{ r.kg }} <span style="font-size:12px;font-weight:500;color:var(--muted)">kg</span> <span style="color:var(--muted);font-weight:500">×</span> {{ r.reps }}</span>
+                <span style="font:500 13px 'Geist Mono',monospace;color:var(--muted)">{{ r.vol }} kg</span>
+              </div>
+              <div style="margin-left:34px;height:6px;border-radius:3px;background:var(--card2);overflow:hidden"><div style="height:100%;width:{{ r.pct }}%;background:var(--accent);border-radius:3px"></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ sheetEditW }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">Edit workout</span>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">WORKOUT NAME</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:{{ titleReqColor }}">REQUIRED</span></div>
+          <input value="{{ form.title }}" onChange="{{ onTitle }}" maxLength="40" placeholder="Workout name" style="height:56px;border-radius:16px;border:1px solid var(--line);background:var(--card2);color:var(--fg);padding:0 16px;font:500 17px 'Geist',sans-serif;outline:none">
+        </div>
+        <sc-if value="{{ true }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">LOCATION</span>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+            <sc-for list="{{ locOpts }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.onPick }}" style="height:64px;border-radius:16px;border:none;background:{{ o.bg }};color:{{ o.fg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:600 13px 'Geist',sans-serif;cursor:pointer;transition:background 0.2s"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ o.icon }}"></path></svg>{{ o.name }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">PLACE</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">OPTIONAL</span></div>
+          <sc-if value="{{ hasPlace }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;border-radius:16px;background:var(--card2);padding:8px 6px 8px 8px">
+              <span style="width:40px;height:40px;border-radius:12px;background:var(--accent);color:var(--accentInk);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"></path></svg></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ form.place.name }}</span><span style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ form.place.addr }}</span></div>
+              <button onClick="{{ openPlace }}" style="height:36px;padding:0 10px;border-radius:11px;border:none;background:var(--card);color:var(--fg);font:600 13px 'Geist',sans-serif;cursor:pointer">Change</button>
+              <button onClick="{{ clearPlace }}" aria-label="Remove place" style="width:36px;height:36px;border-radius:11px;border:none;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ placeIdle }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ openPlace }}" style="height:52px;border-radius:16px;border:1.5px dashed var(--line);background:none;color:var(--muted);display:flex;align-items:center;gap:10px;padding:0 14px;font:500 15px 'Geist',sans-serif;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>{{ placeCta }}</button>
+          </sc-if>
+          <sc-if value="{{ placeSearching }}" hint-placeholder-val="{{ false }}">
+            <div style="border-radius:18px;background:var(--card2);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:10px;height:52px;padding:0 4px 0 14px;color:var(--muted)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                <input autoFocus="true" value="{{ form.placeQ }}" onChange="{{ onPlaceQ }}" placeholder="{{ placeHint }}" style="flex:1;min-width:0;border:none;background:none;color:var(--fg);font:500 15px 'Geist',sans-serif;outline:none">
+                <button onClick="{{ closePlace }}" style="height:40px;padding:0 10px;border:none;background:none;color:var(--accentText);font:600 14px 'Geist',sans-serif;cursor:pointer">Cancel</button>
+              </div>
+              <div style="max-height:230px;overflow-y:auto;scrollbar-width:none">
+                <button onClick="{{ useCurrent }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;border:none;border-top:1px solid var(--line);background:none;color:var(--fg);text-align:left;cursor:pointer">
+                  <span style="width:32px;height:32px;border-radius:10px;background:var(--card);color:var(--accentText);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg></span>
+                  <span style="font:600 14px 'Geist',sans-serif">Use current location</span>
+                </button>
+                <div style="padding:10px 14px 4px;border-top:1px solid var(--line);font:500 10px 'Geist Mono',monospace;letter-spacing:0.16em;color:var(--muted)">{{ resultsLabel }}</div>
+                <sc-for list="{{ placeResults }}" as="p" hint-placeholder-count="3">
+                  <button onClick="{{ p.onPick }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:9px 14px;border:none;background:none;color:var(--fg);text-align:left;cursor:pointer">
+                    <span style="width:32px;height:32px;border-radius:10px;background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ p.icon }}"></path></svg></span>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font:600 14px 'Geist',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span><span style="font:400 12px 'Geist',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.addr }}</span></div>
+                    <span style="font:500 11px 'Geist Mono',monospace;color:var(--muted);flex-shrink:0">{{ p.dist }}</span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;text-align:center;font-size:13px;color:var(--muted)">No places match “{{ form.placeQ }}”</div></sc-if>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button onClick="{{ saveEditW }}" style="height:56px;border-radius:18px;border:none;background:var(--accent);color:var(--accentInk);font:600 16px 'Geist',sans-serif;cursor:{{ titleCursor }};opacity:{{ titleOp }};transition:opacity 0.2s">Save changes</button>
+          <button onClick="{{ closeSheet }}" style="height:56px;border-radius:18px;border:none;background:var(--card2);color:var(--fg);font:600 16px 'Geist',sans-serif;cursor:pointer">Cancel</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ sheetDelW }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:22px;font-weight:600">Delete workout?</span><span style="font-size:15px;color:var(--muted);line-height:1.45">“{{ delName }}” will be removed from your history and the tracker.</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button onClick="{{ confirmDelW }}" style="height:56px;border-radius:18px;border:none;background:var(--danger);color:#fff;font:600 16px 'Geist',sans-serif;cursor:pointer">Delete workout</button>
+          <button onClick="{{ closeSheet }}" style="height:56px;border-radius:18px;border:none;background:var(--card2);color:var(--fg);font:600 16px 'Geist',sans-serif;cursor:pointer">Cancel</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ sheetDelete }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:22px;font-weight:600">Delete account?</span><span style="font-size:15px;color:var(--muted);line-height:1.45">This permanently removes your account and all workout history.</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button onClick="{{ confirmDelete }}" style="height:56px;border-radius:18px;border:none;background:var(--danger);color:#fff;font:600 16px 'Geist',sans-serif;cursor:pointer">Delete account</button>
+          <button onClick="{{ closeSheet }}" style="height:56px;border-radius:18px;border:none;background:var(--card2);color:var(--fg);font:600 16px 'Geist',sans-serif;cursor:pointer">Cancel</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:410,&quot;height&quot;:864},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;start&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;welcome&quot;,&quot;idle&quot;,&quot;mid&quot;],&quot;default&quot;:&quot;mid&quot;,&quot;tsType&quot;:&quot;'welcome'|'idle'|'mid'&quot;},&quot;exDetail&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;expand&quot;,&quot;sheet&quot;],&quot;default&quot;:&quot;expand&quot;,&quot;tsType&quot;:&quot;'expand'|'sheet'&quot;}}">
+class Component extends DCLogic {
+  T = {
+    dark: { bg:'#0a0b0d', card:'#15171a', card2:'#1f2125', line:'rgba(255,255,255,0.08)', fg:'#f3f4ef', muted:'#8b8f88', accent:'oklch(0.9 0.2 125)', accentInk:'#0a0b0d', accentText:'oklch(0.9 0.2 125)', danger:'oklch(0.7 0.19 25)', dangerBg:'oklch(0.7 0.19 25 / 0.13)', sheet:'#141619', scrim:'rgba(0,0,0,0.55)', glass:'rgba(255,255,255,0.07)', glassLine:'rgba(255,255,255,0.14)', glassHi:'rgba(255,255,255,0.32)', glassLo:'rgba(255,255,255,0.05)', glassShadow:'rgba(0,0,0,0.45)', glassBubble:'rgba(255,255,255,0.13)', sheen:'rgba(255,255,255,0.10)', orb1:'oklch(0.9 0.2 125 / 0.14)', orb2:'oklch(0.7 0.12 200 / 0.14)' },
+    light: { bg:'#f3f4ef', card:'#ffffff', card2:'#ebede6', line:'rgba(10,12,8,0.08)', fg:'#0f110d', muted:'#666b63', accent:'oklch(0.9 0.2 125)', accentInk:'#0f110d', accentText:'oklch(0.5 0.15 130)', danger:'oklch(0.56 0.2 25)', dangerBg:'oklch(0.56 0.2 25 / 0.1)', sheet:'#ffffff', scrim:'rgba(10,12,8,0.35)', glass:'rgba(255,255,255,0.5)', glassLine:'rgba(255,255,255,0.85)', glassHi:'rgba(255,255,255,1)', glassLo:'rgba(0,0,0,0.04)', glassShadow:'rgba(20,24,16,0.14)', glassBubble:'rgba(15,17,13,0.07)', sheen:'rgba(255,255,255,0.5)', orb1:'oklch(0.9 0.2 125 / 0.4)', orb2:'oklch(0.82 0.1 200 / 0.3)' }
+  };
+  PLACES = [
+    { type:'Gym', name:'PureGym Manchester Piccadilly', addr:'1 Ducie St, Manchester M1 2JN', dist:'0.4 mi' },
+    { type:'Gym', name:'The Gym Group Manchester Central', addr:'2 Oxford Rd, Manchester M1 5QA', dist:'0.8 mi' },
+    { type:'Gym', name:'Anytime Fitness Ancoats', addr:'21 Murray St, Manchester M4 6HS', dist:'1.1 mi' },
+    { type:'Gym', name:'David Lloyd Manchester Trafford', addr:'Trafford Way, Manchester M41 7JA', dist:'5.2 mi' },
+    { type:'Home', name:'Home', addr:'14 Oak Avenue, Manchester M20 6RT', dist:'3.0 mi' },
+    { type:'Home', name:"Mum's house", addr:'8 Elm Grove, Stockport SK4 2BD', dist:'6.4 mi' },
+    { type:'Park', name:'Mayfield Park', addr:'Baring St, Manchester M1 2PY', dist:'0.5 mi' },
+    { type:'Park', name:'Platt Fields Park', addr:'Wilmslow Rd, Manchester M14 5LL', dist:'2.3 mi' },
+    { type:'Park', name:'Heaton Park', addr:'Middleton Rd, Manchester M25 2SW', dist:'4.1 mi' },
+    { type:'Other', name:'Manchester Aquatics Centre', addr:'2 Booth St E, Manchester M13 9SS', dist:'1.0 mi' },
+    { type:'Other', name:'Castlefield Bowl', addr:'Rice St, Manchester M3 4JF', dist:'0.9 mi' }
+  ];
+  ICONS = { Gym:'M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12', Home:'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z', Park:'M12 22v-6M12 2 5 12h4l-3 4h12l-3-4h4z', Other:'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z' };
+  state = this.init();
+  init() {
+    const now = Date.now(), s = 1000, start = this.props.start ?? 'mid';
+    const prev = this.genHistory(now);
+    const workout = start === 'mid' ? { start:now-147*s, exercises:[
+      { name:'Bench press', start:now-140*s, end:now-62*s, sets:[{kg:60,reps:8,at:now-120*s},{kg:70,reps:6,at:now-95*s},{kg:70,reps:6,at:now-70*s}] },
+      { name:'Incline DB press', start:now-55*s, end:null, sets:[{kg:22,reps:10,at:now-48*s},{kg:24,reps:8,at:now-38*s}] }
+    ] } : null;
+    return { screen: start === 'welcome' ? 'welcome' : 'home', tab:'current', dark:(this.props.theme ?? 'dark') === 'dark', workout, prev, sheet:null, form:{name:'',kg:20,reps:10,loc:'Gym',title:''}, editIdx:null, summaryId:null, detailId:null, now, read:false, manual:[{ id:'m1', key:this.key(now - 16*864e5), title:'Park run', loc:'Park', place:this.PLACES[6] || null }, { id:'m2', key:this.key(now - 16*864e5), title:'Evening yoga session at home', loc:'Home', place:null }], mdetailId:null, editKind:null, selDay:this.key(now), backTo:'home', logDate:null };
+  }
+  componentDidMount() { this.iv = setInterval(() => this.setState({ now: Date.now() }), 1000); }
+  componentWillUnmount() { clearInterval(this.iv); clearInterval(this.hiv); }
+  componentDidUpdate(pp) {
+    if (pp.theme !== this.props.theme && this.props.theme) this.setState({ dark: this.props.theme === 'dark' });
+    if (pp.start !== this.props.start && this.props.start) this.setState(this.init());
+  }
+  pad(n) { return String(n).padStart(2, '0'); }
+  hms(sec) { sec = Math.max(0, Math.floor(sec)); return `${this.pad(Math.floor(sec/3600))}:${this.pad(Math.floor(sec%3600/60))}:${this.pad(sec%60)}`; }
+  ms(sec) { sec = Math.max(0, Math.floor(sec)); return `${this.pad(Math.floor(sec/60))}:${this.pad(sec%60)}`; }
+  human(sec) { sec = Math.round(sec); return sec < 60 ? `${sec}s` : `${Math.floor(sec/60)}m ${sec%60}s`; }
+  n(v) { return Math.round(v).toLocaleString('en-GB'); }
+  kg(v) { return Number.isInteger(v) ? String(v) : v.toFixed(1); }
+  vol(sets) { return sets.reduce((a, s) => a + s.kg * s.reps, 0); }
+  date(t) { const d = new Date(t); return `${this.pad(d.getDate())}/${this.pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)}`; }
+  dateLong(t) { const d = new Date(t); return d.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short' }).toUpperCase().replace(',', ''); }
+  time(t) { const d = new Date(t); return `${this.pad(d.getHours())}:${this.pad(d.getMinutes())}`; }
+  stats(exs) { let sets = 0, reps = 0, vol = 0; exs.forEach(e => e.sets.forEach(s => { sets++; reps += s.reps; vol += s.kg * s.reps; })); return { ex: exs.length, sets, reps, vol: this.n(vol), volRaw: vol }; }
+  mutate(fn) { const w = JSON.parse(JSON.stringify(this.state.workout)); fn(w); this.setState({ workout: w }); }
+  view(p) {
+    if (!p) return { exercises: [] };
+    const st = this.stats(p.exercises), maxV = Math.max(1, ...p.exercises.map(e => this.vol(e.sets)));
+    return { title:p.title || 'Workout', loc:p.loc || 'Gym', locIcon:this.ICONS[p.loc || 'Gym'] || this.ICONS.Other, locText:p.place ? p.place.name : (p.loc || 'Gym'), date:this.date(p.start), dateLong:this.dateLong(p.start), time:this.time(p.start), dur:this.hms(p.dur), ex:st.ex, sets:st.sets, reps:st.reps, vol:st.vol,
+      exercises: p.exercises.map(e => ({ name:e.name, dur:this.human(e.dur), sets:e.sets.length, reps:e.sets.reduce((a,s)=>a+s.reps,0), vol:this.n(this.vol(e.sets)), pct:Math.max(4, Math.round(this.vol(e.sets)/maxV*100)),
+        rows: e.sets.map((s, i) => ({ num:i+1, kg:this.kg(s.kg), reps:s.reps, vol:this.n(s.kg*s.reps) })) })),
+      onOpen: () => this.setState({ screen:'detail', detailId:p.id, backTo:this.state.screen }) };
+  }
+  key(t) { const d = new Date(t); return d.getFullYear() + '-' + this.pad(d.getMonth() + 1) + '-' + this.pad(d.getDate()); }
+  fromKey(k) { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); }
+  shiftKey(k, n) { const d = this.fromKey(k); d.setDate(d.getDate() + n); return this.key(d); }
+  placeVals(f, setForm, ICON) {
+    const q = (f.placeQ || '').trim().toLowerCase(), loc = f.loc || 'Gym';
+    let res = q ? this.PLACES.filter(p => (p.name + ' ' + p.addr).toLowerCase().includes(q)) : this.PLACES.slice().sort((a, b) => parseFloat(a.dist) - parseFloat(b.dist));
+    res = res.slice(0, 5);
+    const noun = { Gym:'gym', Home:'address', Park:'park', Other:'place' }[loc];
+    return {
+      hasPlace: !!f.place && !f.placeOpen, placeIdle: !f.place && !f.placeOpen, placeSearching: !!f.placeOpen,
+      placeCta: 'Search for a location', placeHint: 'Name, address or postcode…',
+      resultsLabel: q ? 'RESULTS' : 'NEARBY',
+      placeResults: res.map(p => ({ ...p, icon:'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z', onPick: () => setForm({ place:{ name:p.name, addr:p.addr }, placeOpen:false }) })),
+      noResults: !!q && !res.length,
+      openPlace: () => setForm({ placeOpen:true, placeQ:'' }), closePlace: () => setForm({ placeOpen:false }), clearPlace: () => setForm({ place:null }),
+      onPlaceQ: e => setForm({ placeQ:e.target.value }),
+      useCurrent: () => setForm({ place:{ name:'Current location', addr:'Near Piccadilly, Manchester M1' }, placeOpen:false })
+    };
+  }
+  genHistory(now) {
+    let seed = 11; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const pool = [['Bench press',60],['Back squat',80],['Deadlift',100],['Overhead press',40],['Pull-ups',0],['Bicep curl',12],['Lunges',20],['Push-ups',0],['Leg press',120],['Barbell row',50]];
+    const locs = ['Gym','Gym','Gym','Home','Park'], out = [], base = new Date(now); base.setHours(0, 0, 0, 0);
+    for (let d = 1; d <= 330; d++) {
+      if (r() > 0.45) continue;
+      const t = new Date(base); t.setDate(t.getDate() - d); t.setHours(7 + Math.floor(r() * 13), Math.floor(r() * 60));
+      const exs = [], nEx = 1 + Math.floor(r() * 3); let dur = 0;
+      for (let i = 0; i < nEx; i++) { const p = pool[Math.floor(r() * pool.length)], ns = 2 + Math.floor(r() * 3), sets = []; for (let j = 0; j < ns; j++) sets.push({ kg: p[1] ? p[1] + Math.floor(r() * 4) * 5 : 0, reps: 5 + Math.floor(r() * 8) }); const ed = 240 + Math.floor(r() * 600); dur += ed + 60; exs.push({ name:p[0], dur:ed, sets }); }
+      const loc = locs[Math.floor(r() * locs.length)], pr = r(), place = loc === 'Gym' ? (pr < 0.55 ? this.PLACES[0] : pr < 0.8 ? this.PLACES[1] : null) : loc === 'Park' && pr < 0.6 ? this.PLACES[6] : null;
+      const TT = ['Push day','Pull day','Leg day','Upper body','Full body','Lower body strength','Arms & shoulders','Back and biceps hypertrophy block'];
+      out.push({ id:'h' + d, title:TT[Math.floor(r() * TT.length)], start:t.getTime(), dur, loc, place, exercises:exs });
+    }
+    return out;
+  }
+  tracker(S, w, st, set, setForm) {
+    const now = S.now, today = this.key(now), t0 = this.fromKey(today), f = S.form;
+    const ICON = { Gym:'M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12', Home:'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z', Park:'M12 22v-6M12 2 5 12h4l-3 4h12l-3-4h4z', Other:'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z' };
+    const byDay = {}, add = (k, e) => (byDay[k] = byDay[k] || []).push(e);
+    S.prev.forEach(p => { const x = this.stats(p.exercises); if (x.sets > 0) add(this.key(p.start), { type:'w', p, x }); });
+    if (w && st.sets > 0) add(this.key(w.start), { type:'live' });
+    S.manual.forEach((m, i) => add(m.key, { type:'m', m, i }));
+    const level = k => { const es = byDay[k]; if (!es) return 0; let n = 0; es.forEach(e => { if (e.type === 'w') n += e.x.sets; if (e.type === 'live') n += st.sets; }); return n === 0 ? 2 : n <= 5 ? 1 : n <= 9 ? 2 : 3; };
+    const BG = ['var(--card2)', 'color-mix(in oklch, var(--accent) 35%, var(--card2))', 'color-mix(in oklch, var(--accent) 65%, var(--card2))', 'var(--accent)'];
+    const start = new Date(t0); start.setDate(start.getDate() - (t0.getDay() + 6) % 7 - 16 * 7);
+    const weeks = [];
+    for (let c = 0; c < 17; c++) {
+      const days = []; let label = '';
+      for (let r = 0; r < 7; r++) {
+        const dt = new Date(start); dt.setDate(start.getDate() + c * 7 + r);
+        const k = this.key(dt), fut = dt > t0, sel = k === S.selDay;
+        if (dt.getDate() === 1) label = dt.toLocaleDateString('en-GB', { month:'short' });
+        days.push({ title:k, bg: fut ? 'transparent' : BG[level(k)], ring: sel ? '0 0 0 2px var(--bg), 0 0 0 3.5px var(--fg)' : fut ? 'inset 0 0 0 1px var(--line)' : 'none', cursor: fut ? 'default' : 'pointer', onPick: fut ? undefined : () => set({ selDay:k }) });
+      }
+      weeks.push({ label, days });
+    }
+    let streak = 0, k = byDay[today] ? today : this.shiftKey(today, -1);
+    while (byDay[k]) { streak++; k = this.shiftKey(k, -1); }
+    const ym = today.slice(0, 7), monthDays = Object.keys(byDay).filter(x => x.startsWith(ym)).length;
+    const rel = key => key === today ? 'Today' : key === this.shiftKey(today, -1) ? 'Yesterday' : this.fromKey(key).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+    const items = (byDay[S.selDay] || []).map(e => {
+      const REAL = { tileBg:'var(--card2)', tileBorder:'none', tileColor:'var(--accentText)' };
+      if (e.type === 'w') { const v = this.view(e.p); return { ...REAL, title:v.title, sub:`${v.time} · ${this.human(e.p.dur)} · ${e.x.ex} ex · ${e.x.sets} sets · ${e.x.vol} kg`, locText:v.locText, locIcon:v.locIcon, hasLoc:true, icon:ICON[v.loc] || ICON.Other, onOpen:v.onOpen }; }
+      if (e.type === 'live') return { ...REAL, title:'In progress', sub:`${st.ex} ex · ${st.sets} sets · ${st.vol} kg so far`, hasLoc:false, icon:'M12 6v6l4 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', isWorkout:true, isManual:false, cursor:'pointer', onOpen:() => set({ screen:'home', tab:'current' }) };
+      return { tileBg:'var(--card2)', tileBorder:'none', tileColor:'var(--muted)', title:e.m.title, sub:'Logged manually', locText:e.m.place ? e.m.place.name : e.m.loc, locIcon:this.ICONS[e.m.loc] || this.ICONS.Other, hasLoc:true, icon:ICON[e.m.loc] || ICON.Other, onOpen:() => set({ screen:'mdetail', mdetailId:e.m.id, backTo:'tracker' }) };
+    });
+    const ld = S.logDate || S.selDay;
+    return {
+      weeks, streak, monthDays, totalDays:Object.keys(byDay).length,
+      monthCaps: t0.toLocaleDateString('en-GB', { month:'long' }).toUpperCase(),
+      selLabel: rel(S.selDay), selSub: items.length ? (items.length + (items.length > 1 ? ' ENTRIES' : ' ENTRY')) : '', dayItems: items, dayEmpty: !items.length,
+      sheetLog: S.sheet === 'log', logLabel: rel(ld), logSub: this.fromKey(ld).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase(), logNextOp: ld >= today ? 0.3 : 1,
+      logPrev: () => set({ logDate:this.shiftKey(ld, -1) }), logNext: () => { if (ld < today) set({ logDate:this.shiftKey(ld, 1) }); },
+      locOpts: ['Gym','Home','Park','Other'].map(n => ({ name:n, icon:ICON[n], bg: f.loc === n ? 'var(--accent)' : 'var(--card2)', fg: f.loc === n ? 'var(--accentInk)' : 'var(--fg)', onPick: () => setForm({ loc:n }) })),
+      openLog: () => set({ sheet:'log', logDate:S.selDay, form:{ ...f, title:'', loc:(S.prev[0] && S.prev[0].loc) || 'Gym', place:null, placeQ:'', placeOpen:false } }),
+      ...this.placeVals(f, setForm, ICON),
+      confirmLog: () => { const fm = this.state.form, title = (fm.title || '').trim(); if (!title) return; const k2 = this.state.logDate || S.selDay; set({ manual:[...this.state.manual, { id:'m' + Date.now(), key:k2, title, loc:fm.loc, place:fm.place || null }], selDay:k2, sheet:null, screen:'tracker' }); }
+    };
+  }
+  listRef = React.createRef();
+  renderVals() {
+    const S = this.state, stuck = !!S.stuck && S.screen === 'home' && S.tab === 'previous', now = S.now, w = S.workout, set = o => this.setState(o);
+    const t = this.T[S.dark ? 'dark' : 'light'];
+    const ex = w ? w.exercises : [];
+    const active = ex.find(e => !e.end) || null;
+    const done = ex.filter(e => e.end).slice().reverse();
+    const st = this.stats(ex);
+    const scr = S.screen, home = scr === 'home';
+    const tabIdx = (scr === 'tracker' || ((scr === 'detail' || scr === 'mdetail') && S.backTo === 'tracker')) ? 1 : scr === 'notif' ? 2 : scr === 'profile' ? 3 : 0;
+    const on = v => v ? 'var(--fg)' : 'var(--muted)';
+    const elapsed = w ? (now - w.start) / 1000 : 0;
+    const lastSet = active && active.sets.length ? active.sets[active.sets.length - 1] : null;
+    const h = new Date(now).getHours();
+    const greeting = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    const aSt = active ? this.stats([active]) : null;
+    const menuSet = active && S.editIdx != null ? active.sets[S.editIdx] : null;
+    const f = S.form;
+    const setForm = o => this.setState({ form: { ...this.state.form, ...o } });
+    const num = v => { const x = parseFloat(v); return isNaN(x) ? '' : x; };
+    return {
+      t, st, form: f, ...this.tracker(S, w, st, set, setForm),
+      isWelcome: scr === 'welcome', inApp: scr !== 'welcome',
+      isHome: home, isNotif: scr === 'notif', isProfile: scr === 'profile', isSummary: scr === 'summary', statusBg: stuck ? 'color-mix(in oklch, var(--bg) 70%, transparent)' : 'transparent', statusBlur: stuck ? 'blur(20px) saturate(160%)' : 'none', hdrBg: stuck ? 'color-mix(in oklch, var(--bg) 70%, transparent)' : 'transparent', hdrBlur: stuck ? 'blur(20px) saturate(160%)' : 'none', listRef: this.listRef, onScroll: e => { const el = this.listRef.current; if (!el) { if (this.state.stuck) this.setState({ stuck:false }); return; } const v = el.getBoundingClientRect().top - e.currentTarget.getBoundingClientRect().top <= 54; if (v !== !!this.state.stuck) this.setState({ stuck:v }); }, isDetail: scr === 'detail', isMDetail: scr === 'mdetail', isTracker: scr === 'tracker',
+      showTabBar: scr !== 'welcome' && scr !== 'summary', showActions: home,
+      greeting, greetingCaps: greeting.toUpperCase(), todayLong: this.dateLong(now),
+      hasWorkout: !!w, noWorkout: !w, workoutTimer: this.hms(elapsed), timerColor: w ? 'var(--fg)' : 'var(--muted)',
+      ringDeg: Math.round((elapsed % 60) / 60 * 360),
+      summaryLine: `${st.ex} exercises · ${st.sets} sets · ${st.vol} kg`,
+      isCurrent: S.tab === 'current', isPrevious: S.tab === 'previous',
+      segLeft: S.tab === 'current' ? 4 : 174, segCur: on(S.tab === 'current'), segPrev: on(S.tab === 'previous'),
+      showIdle: S.tab === 'current' && !w, showEmptyEx: !!w && ex.length === 0,
+      hasActive: !!active, activeName: active ? active.name : '', activeTimer: active ? this.ms((now - active.start) / 1000) : '',
+      hasRest: !!lastSet, restTimer: lastSet ? this.ms((now - lastSet.at) / 1000) : '',
+      hasSets: !!(active && active.sets.length), noSets: !!active && !active.sets.length,
+      activeSetCount: aSt ? aSt.sets : 0, activeReps: aSt ? aSt.reps : 0, activeVol: aSt ? aSt.vol : '0',
+      activeSets: active ? active.sets.map((s, i) => ({ label:'S' + (i + 1), num:i + 1, kg:this.kg(s.kg), reps:s.reps, vol:this.n(s.kg * s.reps), onMenu: e => { if (e && e.stopPropagation) e.stopPropagation(); set({ sheet:'menu', editIdx:i }); } })) : [],
+      hasDone: done.length > 0,
+      doneList: done.map(e => { const mode = this.props.exDetail ?? 'expand', open = mode === 'expand' && S.openEx === e.start, maxKg = Math.max(0, ...e.sets.map(x => x.kg)), top = e.sets.reduce((m, x) => (!m || x.kg > m.kg || (x.kg === m.kg && x.reps > m.reps)) ? x : m, null), tr = e.sets.reduce((a,x)=>a+x.reps,0);
+        return { name:e.name, dur:this.human((e.end - e.start) / 1000), sets:e.sets.length, reps:tr, vol:this.n(this.vol(e.sets)), open, rot: open ? 90 : 0, border: open ? 'color-mix(in oklch, var(--accent) 45%, transparent)' : 'var(--line)',
+          top: top ? `${this.kg(top.kg)} KG × ${top.reps}` : '—', avg: tr ? this.kg(Math.round(this.vol(e.sets) / tr * 10) / 10) : '0',
+          rows: e.sets.map((x, i) => ({ num:i + 1, kg:this.kg(x.kg), reps:x.reps, vol:this.n(x.kg * x.reps) })),
+          onTap: () => mode === 'expand' ? set({ openEx: S.openEx === e.start ? null : e.start }) : set({ sheet:'exInfo', exInfoId:e.start }) }; }),
+      sheetEx: S.sheet === 'exInfo',
+      xv: (() => { const e = ex.find(x => x.start === S.exInfoId); if (!e) return { rows:[] }; const maxV = Math.max(1, ...e.sets.map(x => x.kg * x.reps)); return { name:e.name, dur:this.human(((e.end || now) - e.start) / 1000), sets:e.sets.length, reps:e.sets.reduce((a,x)=>a+x.reps,0), topKg:this.kg(Math.max(0, ...e.sets.map(x => x.kg))), vol:this.n(this.vol(e.sets)), rows:e.sets.map((x, i) => ({ num:i + 1, kg:this.kg(x.kg), reps:x.reps, vol:this.n(x.kg * x.reps), pct:Math.max(4, Math.round(x.kg * x.reps / maxV * 100)) })) }; })(),
+      prev: S.prev.map(p => this.view(p)), prevYears: (() => { const ys = []; S.prev.slice().sort((x, y) => y.start - x.start).forEach(p => { const d = new Date(p.start), yr = d.getFullYear(), mo = d.getMonth(); let Y = ys[ys.length - 1]; if (!Y || Y.year !== yr) ys.push(Y = { year:yr, months:[] }); let Mo = Y.months[Y.months.length - 1]; if (!Mo || Mo.mo !== mo) Y.months.push(Mo = { mo, label:d.toLocaleDateString('en-GB', { month:'long' }).toUpperCase(), items:[] }); Mo.items.push(this.view(p)); }); ys.forEach(Y => Y.months.forEach(Mo => Mo.count = Mo.items.length + (Mo.items.length === 1 ? ' WORKOUT' : ' WORKOUTS'))); return ys; })(), prevCount: S.prev.length,
+      dv: this.view(S.prev.find(p => p.id === S.detailId)), mv: (() => { const m = S.manual.find(x => x.id === S.mdetailId); if (!m) return {}; const d = this.fromKey(m.key); return { title:m.title, loc:m.loc, locIcon:this.ICONS[m.loc] || this.ICONS.Other, locText:m.place ? m.place.name : m.loc, date:this.date(d.getTime()), dateFull:d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' }), placeName:m.place ? m.place.name : 'Not set', placeAddr:m.place ? m.place.addr : '', hasAddr:!!(m.place && m.place.addr) }; })(),
+      titleOk: !!(f.title || '').trim(), titleOp: (f.title || '').trim() ? 1 : 0.4, titleCursor: (f.title || '').trim() ? 'pointer' : 'not-allowed', titleReqColor: (f.title || '').trim() ? 'var(--muted)' : 'var(--danger)',
+      onTitle: e => setForm({ title:e.target.value }),
+      sheetEditW: S.sheet === 'editW', sheetDelW: S.sheet === 'delW', editIsReal: S.editKind !== 'm',
+      delName: S.screen === 'mdetail' ? ((S.manual.find(x => x.id === S.mdetailId) || {}).title || '') : ((S.prev.find(p => p.id === S.detailId) || {}).title || ''),
+      openEditW: () => { if (S.screen === 'mdetail') { const m = S.manual.find(x => x.id === S.mdetailId); if (m) set({ sheet:'editW', editKind:'m', form:{ ...f, title:m.title, loc:m.loc || 'Gym', place:m.place || null, placeQ:'', placeOpen:false } }); } else { const p = S.prev.find(x => x.id === S.detailId); if (p) set({ sheet:'editW', editKind:'w', form:{ ...f, title:p.title || '', loc:p.loc || 'Gym', place:p.place || null, placeQ:'', placeOpen:false } }); } },
+      saveEditW: () => { const fm = this.state.form, title = (fm.title || '').trim(); if (!title) return; if (this.state.editKind === 'm') set({ manual:this.state.manual.map(x => x.id === S.mdetailId ? { ...x, title, loc:fm.loc, place:fm.place || null } : x), sheet:null }); else set({ prev:this.state.prev.map(x => x.id === S.detailId ? { ...x, title, loc:fm.loc, place:fm.place || null } : x), sheet:null }); },
+      openDelW: () => set({ sheet:'delW' }),
+      confirmDelW: () => { const nav = S.backTo === 'tracker' ? { screen:'tracker' } : { screen:'home', tab:'previous' }; if (S.screen === 'mdetail') set({ manual:this.state.manual.filter(x => x.id !== S.mdetailId), sheet:null, ...nav }); else set({ prev:this.state.prev.filter(x => x.id !== S.detailId), sheet:null, ...nav }); }, sv: this.view(S.prev.find(p => p.id === S.summaryId)),
+      notifs: [
+        { title:'Time to train', body:"You haven't logged a workout in 3 days.", time:'09:00', dot: S.read ? 'transparent' : 'var(--accent)' },
+        { title:'Workout saved', body:'03/10/26 · 1 exercise · 2 sets · 20 reps', time:'Fri', dot:'transparent' },
+        { title:'Welcome aboard', body:'Start your first workout from the Home tab.', time:'24 Aug', dot:'transparent' }
+      ],
+      hasUnread: !S.read,
+      tabLeft: 6 + tabIdx * 82, c0: on(tabIdx === 0), c1: on(tabIdx === 1), c2: on(tabIdx === 2), c3: on(tabIdx === 3),
+      actStart: !w, actWorkout: !!w && !active, actExercise: !!active,
+      anySheet: !!S.sheet, sheetAddEx: S.sheet === 'addEx', sheetSet: S.sheet === 'set', sheetMenu: S.sheet === 'menu', sheetEnd: S.sheet === 'end', sheetDelete: S.sheet === 'delete',
+      setTitle: S.editIdx != null ? `Edit set ${S.editIdx + 1}` : `Set ${active ? active.sets.length + 1 : 1}`,
+      setCta: S.editIdx != null ? 'Save changes' : 'Add set',
+      menuTitle: S.editIdx != null ? `Set ${S.editIdx + 1}` : '', menuSub: menuSet ? `${this.kg(menuSet.kg)} kg × ${menuSet.reps} reps` : '',
+      endLine: `${st.ex} exercises · ${st.sets} sets · ${st.vol} kg in ${this.hms(elapsed)}`,
+      apDark: S.dark ? 'var(--card)' : 'transparent', apLight: S.dark ? 'transparent' : 'var(--card)',
+      signIn: () => set({ screen:'home' }), signOut: () => set({ screen:'welcome' }),
+      goHome: () => set({ screen:'home' }), goTracker: () => set({ screen:'tracker' }), goNotif: () => set({ screen:'notif', read:true }), goProfile: () => set({ screen:'profile' }),
+      tabCurrent: () => set({ tab:'current' }), tabPrevious: () => set({ tab:'previous' }),
+      startWorkout: () => set({ workout:{ start:Date.now(), exercises:[] }, tab:'current' }),
+      openAddEx: () => set({ sheet:'addEx', form:{ ...f, name:'' } }),
+      onName: e => setForm({ name:e.target.value }),
+      confirmAddEx: () => { const nm = (this.state.form.name || '').trim() || `Exercise ${ex.length + 1}`; this.mutate(x => x.exercises.push({ name:nm, start:Date.now(), end:null, sets:[] })); set({ sheet:null, tab:'current' }); },
+      openAddSet: () => set({ sheet:'set', editIdx:null, form:{ ...f, kg:lastSet ? lastSet.kg : f.kg, reps:lastSet ? lastSet.reps : f.reps } }),
+      onKg: e => setForm({ kg:num(e.target.value) }), onReps: e => setForm({ reps:num(e.target.value) }),
+      kgDec: () => setForm({ kg:Math.max(0, (+f.kg || 0) - 2.5) }), kgInc: () => setForm({ kg:(+f.kg || 0) + 2.5 }),
+      repsDec: () => setForm({ reps:Math.max(0, (+f.reps || 0) - 1) }), repsInc: () => setForm({ reps:(+f.reps || 0) + 1 }),
+      confirmSet: () => { const fm = this.state.form, idx = this.state.editIdx; this.mutate(x => { const a = x.exercises.find(e => !e.end); if (!a) return; const v = { kg:+fm.kg || 0, reps:+fm.reps || 0 }; if (idx != null) Object.assign(a.sets[idx], v); else a.sets.push({ ...v, at:Date.now() }); }); set({ sheet:null, editIdx:null }); },
+      editSet: () => { if (menuSet) set({ sheet:'set', form:{ ...f, kg:menuSet.kg, reps:menuSet.reps } }); },
+      deleteSet: () => { const idx = S.editIdx; this.mutate(x => { const a = x.exercises.find(e => !e.end); if (a) a.sets.splice(idx, 1); }); set({ sheet:null, editIdx:null }); },
+      endExercise: () => this.mutate(x => { const a = x.exercises.find(e => !e.end); if (a) a.end = Date.now(); }),
+      openEndWorkout: () => set({ sheet:'end', form:{ ...f, title:'', loc:(S.prev[0] && S.prev[0].loc) || 'Gym', place:null, placeQ:'', placeOpen:false } }),
+      holdDown: () => { clearInterval(this.hiv); this.holdT0 = Date.now(); this.holdLong = false; this.hiv = setInterval(() => { if (this.holdT0 == null) return; const el = Date.now() - this.holdT0; if (el > 250) this.holdLong = true; if (el >= 3000) { clearInterval(this.hiv); this.hiv = null; this.holdT0 = null; this.setState({ holdPct:0, workout:null, sheet:null, screen:'home', tab:'current' }); } else this.setState({ holdPct: el > 250 ? Math.min(100, el / 30) : 0 }); }, 40); },
+      holdUp: () => { if (this.holdT0 == null) return; clearInterval(this.hiv); this.hiv = null; this.holdT0 = null; if (this.state.holdPct) this.setState({ holdPct:0 }); },
+      noMenu: e => e.preventDefault(),
+      holdPct: S.holdPct || 0, notHolding: !S.holdPct,
+      endLabel: S.holdPct ? `Keep holding to discard · ${Math.max(1, Math.ceil(3 - S.holdPct * 3 / 100))}s` : 'End workout',
+      endOp: S.holdPct || (f.title || '').trim() ? 1 : 0.4, endCursor: (f.title || '').trim() ? 'pointer' : 'not-allowed',
+      confirmEndWorkout: () => { if (this.holdLong) { this.holdLong = false; return; } const title = (this.state.form.title || '').trim(); if (!title) return; const n2 = Date.now(), id = 'w' + n2; const rec = { id, title, loc:this.state.form.loc, place:this.state.form.place || null, start:w.start, dur:(n2 - w.start) / 1000, exercises:w.exercises.map(e => ({ name:e.name, dur:((e.end || n2) - e.start) / 1000, sets:e.sets })) }; set({ prev:[rec, ...S.prev], workout:null, sheet:null, screen:'summary', summaryId:id }); },
+      closeSheet: () => set({ sheet:null, editIdx:null }),
+      openDelete: () => set({ sheet:'delete' }), confirmDelete: () => set({ sheet:null, screen:'welcome', workout:null }),
+      setDark: () => set({ dark:true }), setLight: () => set({ dark:false }),
+      closeSummary: () => set({ screen:'home', tab:'current' }), back: () => set(S.backTo === 'tracker' ? { screen:'tracker' } : { screen:'home', tab:'previous' })
+    };
+  }
+}
+</script>
+</body>
+</html>
