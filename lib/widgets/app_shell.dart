@@ -38,10 +38,13 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    // The design draws to the bottom edge of an iPhone. Where the system
-    // inset is taller than that (Android button navigation), move up.
+    // The design is drawn on an iPhone, where the bar sits 26 above the bottom
+    // edge and clears the home indicator. Android's navigation bar can be
+    // taller than that gap, so there the bar moves up to stay clear of it.
     final inset = MediaQuery.viewPaddingOf(context).bottom;
-    final lift = max(0.0, inset + 8 - tabBarBottom);
+    final lift = Theme.of(context).platform == TargetPlatform.iOS
+        ? 0.0
+        : max(0.0, inset + 8 - tabBarBottom);
 
     return Scaffold(
       backgroundColor: t.bg,

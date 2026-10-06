@@ -101,6 +101,13 @@ abstract final class AppTypography {
     fontSize: 13,
   );
 
+  /// Tab bar labels.
+  static const tabLabel = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 10,
+  );
+
   static const button = TextStyle(
     fontFamily: sans,
     fontWeight: FontWeight.w600,

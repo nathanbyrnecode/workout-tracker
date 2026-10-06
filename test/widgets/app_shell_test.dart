@@ -90,23 +90,43 @@ void main() {
     expect(actions.right, 370);
   });
 
-  testWidgets('the bar moves up when the system inset is taller than its gap',
-      (tester) async {
+  Future<double> barGap(
+    WidgetTester tester, {
+    required TargetPlatform platform,
+    required double inset,
+  }) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(app(MediaQuery(
-      data: const MediaQueryData(
-        size: Size(390, 844),
-        viewPadding: EdgeInsets.only(bottom: 48),
+    await tester.pumpWidget(MaterialApp(
+      theme: buildAppTheme(Brightness.dark).copyWith(platform: platform),
+      home: MediaQuery(
+        data: MediaQueryData(
+          size: const Size(390, 844),
+          viewPadding: EdgeInsets.only(bottom: inset),
+        ),
+        child: AppShell(
+          selected: AppTab.home,
+          onSelected: (_) {},
+          child: const SizedBox(),
+        ),
       ),
-      child: AppShell(
-        selected: AppTab.home,
-        onSelected: (_) {},
-        child: const SizedBox(),
-      ),
-    )));
+    ));
+    return 844 - tester.getRect(find.byType(AppTabBar)).bottom;
+  }
 
-    expect(844 - tester.getRect(find.byType(AppTabBar)).bottom, 56);
+  testWidgets('on an iPhone the bar stays 26 above the bottom edge',
+      (tester) async {
+    // 34 is the home indicator inset.
+    expect(await barGap(tester, platform: TargetPlatform.iOS, inset: 34), 26);
+  });
+
+  testWidgets('on Android the bar clears a tall navigation bar',
+      (tester) async {
+    // Gesture navigation fits inside the design gap; buttons do not.
+    expect(
+        await barGap(tester, platform: TargetPlatform.android, inset: 16), 26);
+    expect(
+        await barGap(tester, platform: TargetPlatform.android, inset: 48), 56);
   });
 
   testWidgets('tapping a tab reports it', (tester) async {
