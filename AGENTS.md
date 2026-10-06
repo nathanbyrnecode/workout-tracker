@@ -54,7 +54,10 @@ tool/check_colours.sh                          # no hard-coded colours outside l
 ```
 
 Golden files are generated and compared on Linux only (CI and cloud sessions).
-On macOS, run everything except the golden tag and let CI check the goldens.
+On macOS the golden tests skip themselves. Every CI run uploads a
+`linux-goldens` artifact rendered from the PR's code: to add or update goldens
+from a Mac, push, download it with `gh run download <run-id> -n linux-goldens -D test`,
+look at the images, and commit them. Never commit goldens rendered on macOS.
 
 ## Test patterns to copy
 

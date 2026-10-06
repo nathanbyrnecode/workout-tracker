@@ -38,4 +38,5 @@ Everything above applies. These notes cover the Claude-specific setup in
 ## Environment
 
 - Cloud sessions run Linux, so goldens can be generated and checked there.
-- Local macOS sessions cannot update goldens; leave that to a cloud session or CI.
+- Local macOS sessions cannot render goldens. Push and take them from the CI
+  run's `linux-goldens` artifact (see `AGENTS.md`), or use a cloud session.

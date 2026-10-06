@@ -1,0 +1,4 @@
+# Golden tests are generated and compared on Linux only (dev/decisions.md 11).
+# test/helpers/golden.dart skips them on other platforms.
+tags:
+  golden:
