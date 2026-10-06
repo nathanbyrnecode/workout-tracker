@@ -72,9 +72,10 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
   rows written before the redesign (or by an older build). The UI falls back
   to `Workout.displayTitle` ("Workout") and `displayLocationType` (Gym).
 - The redesign columns and `manual_workouts` come from
-  `20261007090000_add_workout_details_and_manual_workouts.sql`. Until that
-  migration is applied to a project, builds from `redesign` cannot load
-  history or recover a workout from it, because they select the new columns.
+  `20261006232241_add_workout_details_and_manual_workouts.sql`, applied to the
+  hosted project on 2026-10-06. The file's version matches the one recorded in
+  the project's migration history. Builds from `redesign` select the new
+  columns, so any other project they point at needs this migration too.
 
 ### When rows are written
 
