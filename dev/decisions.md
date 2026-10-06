@@ -90,3 +90,33 @@ Agent and contributor docs go in `dev/`.
 
 `environment.flutter` holds the exact version. CI and the cloud session hook
 both read it from there, so there is one place to bump.
+
+## 15. Liquid glass: `liquid_glass_widgets` on iOS and Android
+
+Supersedes 4. Glass comes from the `liquid_glass_widgets` package on both
+platforms, pinned to an exact version. The package vendors its renderer and
+falls back to a lighter shader where Impeller is unavailable, so there is no
+hand-written `BackdropFilter` fallback. Still used on the tab bar and the
+Current/Previous toggle only; the package's other glass components (cards,
+sheets, buttons, app bars) are not used. The design's geometry and tokens take
+priority over the package's default look. Golden tests run on Linux without
+Impeller, so the golden harness selects a render setting that is deterministic
+there and the real glass is checked on devices.
+
+## 16. Place search: OpenStreetMap behind `PlaceSearchService`
+
+Supersedes 7. The design has no map view, only a text search, a nearby list and
+"Use current location", so no maps SDK is needed. Place search sits behind a
+`PlaceSearchService` interface supplied by a Riverpod provider, so the backend
+can be replaced without touching UI. The first implementation uses
+OpenStreetMap data: Photon for typed search and Overpass for the nearby list.
+Nominatim is not used because its usage policy forbids search-as-you-type.
+"© OpenStreetMap contributors" must be shown in the search panel. Tests use a
+fake implementation.
+
+## 17. Notifications ship as an empty state
+
+There is no notifications backend. The Notifications screen and the unread dot
+are built against a provider that returns no items, so users see an empty
+state rather than placeholder content. A real source is separate work outside
+the redesign epic.

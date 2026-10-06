@@ -13,6 +13,13 @@ Everything above applies. These notes cover the Claude-specific setup in
   with widget and golden tests in both themes.
 - `/capture-design`: re-render `design/workout-tracker/screens/` after the
   design package changes.
+- `liquid-glass-widgets`: API guide for the `liquid_glass_widgets` package,
+  copied unmodified from the package's `skills/` directory. Use it for setup
+  and correct widget names. Where it disagrees with the design rules in
+  `AGENTS.md`, `AGENTS.md` wins: its table of glass replacements for standard
+  widgets does not apply here, because glass is allowed on the tab bar and the
+  Current/Previous toggle only. To update it, re-run the `curl` command from
+  the package's `skills/README.md`.
 
 ## Agents
 
