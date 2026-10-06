@@ -72,7 +72,8 @@
 # - github.token    → use GITHUB_TOKEN env var instead
 
 sync:
-    # remote: "git+https://github.com/nathanbyrnecode/workout-tracker.git"
+    remote: "git+https://github.com/nathanbyrnecode/workout-tracker"
+# remote: "git+https://github.com/nathanbyrnecode/workout-tracker.git"
 backup:
     git-push: false
 export:
