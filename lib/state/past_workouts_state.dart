@@ -1,8 +1,11 @@
 import 'dart:developer';
 
+import 'package:gym_tracker_app/data/location_mapper.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
+import 'package:gym_tracker_app/models/location_type.dart';
+import 'package:gym_tracker_app/models/workout.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'past_workouts_state.g.dart';
@@ -42,7 +45,7 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
     try {
       final workoutRows = await client
           .from('workouts')
-          .select('id, start_time, end_time')
+          .select('id, start_time, end_time, title, $locationColumns')
           .eq('user_id', user.id)
           .not('end_time', 'is', null)
           .order('start_time', ascending: false);
@@ -64,7 +67,7 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
           ? <Map<String, dynamic>>[]
           : await client
               .from('exercise_sets')
-              .select('id, exercise_id, weight, reps')
+              .select('id, exercise_id, weight, reps, created_at')
               .inFilter(
                   'exercise_id', exerciseRows.map((row) => row['id']).toList())
               .order('id');
@@ -137,6 +140,9 @@ List<Workout> mapWorkoutRows({
       _parseDateTime(row['start_time']),
       _parseDateTime(row['end_time']),
       {},
+      title: row['title'] as String?,
+      locationType: LocationType.fromLabel(row['location_type']),
+      place: mapPlaceColumns(row),
     );
   }
 
@@ -170,16 +176,17 @@ List<Workout> mapWorkoutRows({
     final exercise = exercises[exerciseId];
     final weight = row['weight'];
     final reps = row['reps'];
-    if (exercise == null || weight == null || reps == null) {
+    if (exercise == null || weight is! num || reps is! num) {
       continue;
     }
 
     final setId = (row['id'] as num).toInt();
     exercise.addSet(
       ExerciseSet(
-        _formatNumber(weight),
-        _formatNumber(reps),
+        weight.toDouble(),
+        reps.toInt(),
         setId,
+        savedAt: _parseDateTime(row['created_at']),
       ),
     );
   }
@@ -193,40 +200,4 @@ DateTime? _parseDateTime(Object? value) {
   }
 
   return DateTime.parse(value).toLocal();
-}
-
-String _formatNumber(Object value) {
-  if (value is num && value == value.roundToDouble()) {
-    return value.toInt().toString();
-  }
-
-  return value.toString();
-}
-
-class Workout {
-  final int _id;
-  final DateTime? _startTime;
-  final DateTime? _endTime;
-  final Map<int, Exercise> _exercises;
-
-  Workout(this._id, this._startTime, this._endTime, this._exercises);
-
-  int get id => _id;
-  DateTime? get startTime => _startTime;
-  DateTime? get endTime => _endTime;
-  Map<int, Exercise> get exercises => _exercises;
-
-  void addExercise(Exercise exercise) {
-    if (!_exercises.containsKey(exercise.id)) {
-      _exercises[exercise.id] = exercise;
-    }
-  }
-
-  void addSet(ExerciseSet set, int exerciseId) {
-    if (!_exercises.containsKey(exerciseId) ||
-        !_exercises[exerciseId]!.sets.containsKey(set.id)) {
-      return;
-    }
-    _exercises[exerciseId]!.addSet(set);
-  }
 }

@@ -104,7 +104,7 @@ void main() {
     final startTime = DateTime(2026, 8, 23, 9);
     final completedExercise = Exercise(
       'Squat',
-      {1: ExerciseSet('80', '10', 1)},
+      {1: ExerciseSet(80, 10, 1)},
       1,
       startTime,
     )..setEndTime(startTime.add(const Duration(minutes: 10)));

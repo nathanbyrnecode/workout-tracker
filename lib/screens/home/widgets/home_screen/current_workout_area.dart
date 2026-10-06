@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/screens/home/widgets/stat_pair.dart';
 import 'package:gym_tracker_app/screens/home/widgets/timer_count.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
+import 'package:gym_tracker_app/util/number_format.dart';
 
 class CurrentWorkoutArea extends ConsumerStatefulWidget {
   const CurrentWorkoutArea({super.key});
@@ -145,8 +146,8 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
                             ),
                           )
                         : CurrentExerciseSetCard(
-                            weight: exerciseSet!.weight,
-                            reps: exerciseSet.reps,
+                            weight: formatWeight(exerciseSet!.weight),
+                            reps: exerciseSet.reps.toString(),
                             onRemove: () {
                               ref
                                   .read(currentWorkoutProvider.notifier)
@@ -173,7 +174,7 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
                 int exerciseReps = 0;
                 int exerciseSets = exercises[index].sets.length;
                 for (var set in exercises[index].sets.values) {
-                  exerciseReps += int.tryParse(set.reps) ?? 0;
+                  exerciseReps += set.reps;
                 }
                 final exerciseDuration = exercises[index]
                     .endTime

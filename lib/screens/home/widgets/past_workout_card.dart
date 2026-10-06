@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gym_tracker_app/screens/home/widgets/metric_card.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
+import 'package:gym_tracker_app/models/workout.dart';
 
 class PastWorkoutCard extends StatelessWidget {
   const PastWorkoutCard({

@@ -31,7 +31,7 @@ class _PreviousWorkoutsAreaState extends ConsumerState<PreviousWorkoutsArea> {
           for (var exercise in workout.exercises.values) {
             numOfSets += exercise.sets.length;
             for (var set in exercise.sets.values) {
-              numOfReps += (num.tryParse(set.reps) ?? 0);
+              numOfReps += set.reps;
             }
           }
 
