@@ -78,7 +78,9 @@ On macOS, run everything except the golden tag and let CI check the goldens.
 - Colours, radii and spacing come only from `AppTokens` (`context.tokens`).
   No `Color(0x…)` and no `Colors.*` outside `lib/theme/`.
 - Liquid glass goes on exactly two things: the bottom tab bar and the
-  Current/Previous toggle. Nowhere else.
+  Current/Previous toggle. Nowhere else. It comes from `liquid_glass_widgets`
+  on both iOS and Android (`dev/decisions.md` 15). The package also offers
+  glass cards, sheets, buttons and app bars; do not use them.
 - Text uses Geist and Geist Mono through `AppTypography`. The fonts are bundled
   assets; do not fetch fonts at runtime.
 - Icons are Lucide.
