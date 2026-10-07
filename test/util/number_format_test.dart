@@ -24,4 +24,14 @@ void main() {
     expect(formatVolume(999.96), '1,000');
     expect(formatVolume(12.34), '12.3');
   });
+
+  test('elapsed time reads as seconds, then minutes and seconds', () {
+    expect(formatElapsed(Duration.zero), '0s');
+    expect(formatElapsed(const Duration(seconds: 45)), '45s');
+    expect(formatElapsed(const Duration(seconds: 60)), '1m 0s');
+    expect(formatElapsed(const Duration(minutes: 1, seconds: 18)), '1m 18s');
+    expect(formatElapsed(const Duration(hours: 1, minutes: 2, seconds: 5)),
+        '62m 5s');
+    expect(formatElapsed(const Duration(seconds: -5)), '0s');
+  });
 }

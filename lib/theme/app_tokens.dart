@@ -166,6 +166,9 @@ class AppTokens extends ThemeExtension<AppTokens> {
   AppRadii get radii => const AppRadii();
   AppSpacing get spacing => const AppSpacing();
 
+  /// Border of the completed exercise row that is open: accent at 45%.
+  Color get accentBorder => accent.withValues(alpha: 0.45);
+
   /// Tracker square colour for a heat level from 0 (nothing logged) to 3.
   Color heat(int level) => switch (level) {
         <= 0 => card2,
@@ -315,6 +318,14 @@ class AppRadii {
   double get input => 16;
   double get iconButton => 14;
   double get chip => 7;
+
+  /// Set rows inside a completed exercise or a detail card.
+  double get rowSmall => 14;
+
+  /// The square tiles that hold an icon or a set number, largest first.
+  double get tile => 12;
+  double get tileMedium => 11;
+  double get tileSmall => 10;
   double get pill => 6;
   double get trackerSquare => 4;
 

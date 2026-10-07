@@ -24,6 +24,7 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   int retries = 0;
   int endedWorkouts = 0;
   int endedExercises = 0;
+  final removedSetIds = <int>[];
 
   @override
   CurrentWorkoutStateData build() => (
@@ -48,6 +49,10 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
 
   @override
   Future<void> endExercise() async => endedExercises++;
+
+  @override
+  Future<void> removeSetFromCurrentExercise(int setId) async =>
+      removedSetIds.add(setId);
 }
 
 /// A signed-in user with an optional first name.

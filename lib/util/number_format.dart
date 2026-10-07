@@ -19,3 +19,10 @@ String formatVolume(num value) {
   final tenths = ((rounded - whole).abs() * 10).round();
   return tenths == 0 ? grouped.toString() : '$grouped.$tenths';
 }
+
+/// Formats a length of time the way the design writes durations in prose:
+/// `45s`, `1m 18s`, `62m 5s`.
+String formatElapsed(Duration duration) {
+  final seconds = duration.isNegative ? 0 : duration.inSeconds;
+  return seconds < 60 ? '${seconds}s' : '${seconds ~/ 60}m ${seconds % 60}s';
+}
