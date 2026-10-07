@@ -110,8 +110,8 @@ class _BellButton extends StatelessWidget {
                 Icon(LucideIcons.bell, size: 20, color: t.fg),
                 if (hasUnread)
                   Positioned(
-                    top: 7,
-                    right: 8,
+                    top: 8,
+                    right: 9,
                     child: Container(
                       width: 11,
                       height: 11,

@@ -10,6 +10,10 @@ abstract final class AppTypography {
   static const sans = 'Geist';
   static const mono = 'GeistMono';
 
+  /// The line height Geist and Geist Mono are designed with (ascent 1005,
+  /// descent 295 per 1000 units), which is what the design's CSS uses.
+  static const lineHeight = 1.3;
+
   /// Screen titles: 30px, -0.035em.
   static const screenTitle = TextStyle(
     fontFamily: sans,

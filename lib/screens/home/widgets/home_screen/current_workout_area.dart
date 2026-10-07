@@ -358,7 +358,8 @@ class _Message extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 64),
+      // The design's 18 above the tab's content plus 64 around the message.
+      padding: const EdgeInsets.fromLTRB(60, 82, 60, 64),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         spacing: t.spacing.gap18,

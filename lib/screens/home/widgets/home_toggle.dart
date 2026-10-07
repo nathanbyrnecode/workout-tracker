@@ -3,11 +3,17 @@ import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/widgets/app_glass.dart';
+import 'package:gym_tracker_app/widgets/glass_rim.dart';
 import 'package:gym_tracker_app/widgets/outer_shadow.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 /// The glass Current / Previous toggle. With the tab bar, one of the two
 /// places liquid glass is allowed.
+///
+/// The package makes only the sliding bubble from glass; its track is a plain
+/// fill. So the track takes the `glass` token as its colour and [GlassRim]
+/// draws the design's border and highlights over it. There is no blur behind
+/// the track: nothing scrolls under it, only the background glows.
 class HomeToggle extends StatelessWidget {
   const HomeToggle({
     super.key,
@@ -23,24 +29,30 @@ class HomeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
+    final radius = BorderRadius.circular(t.radii.toggle);
     return OuterShadow(
-      borderRadius: BorderRadius.circular(t.radii.toggle),
+      borderRadius: radius,
       shadows: t.toggleShadow,
-      child: GlassSegmentedControl(
-        segments: const [
-          GlassSegment(label: 'Current'),
-          GlassSegment(label: 'Previous'),
-        ],
-        selectedIndex: selected.index,
-        onSegmentSelected: (index) => onSelected(TabItem.values[index]),
-        height: height,
-        borderRadius: t.radii.toggle,
-        indicatorBorderRadius: t.radii.toggleBubble,
-        padding: const EdgeInsets.all(4),
-        selectedTextStyle: AppTypography.toggle.copyWith(color: t.fg),
-        unselectedTextStyle: AppTypography.toggle.copyWith(color: t.muted),
-        indicatorColor: t.glassBubble,
-        settings: appGlassSettings(t),
+      child: GlassRim(
+        borderRadius: radius,
+        child: GlassSegmentedControl(
+          segments: const [
+            GlassSegment(label: 'Current'),
+            GlassSegment(label: 'Previous'),
+          ],
+          selectedIndex: selected.index,
+          onSegmentSelected: (index) => onSelected(TabItem.values[index]),
+          height: height,
+          borderRadius: t.radii.toggle,
+          indicatorBorderRadius: t.radii.toggleBubble,
+          // The 1px border plus the design's 4, which leaves a 170×36 bubble.
+          padding: const EdgeInsets.all(5),
+          backgroundColor: t.glass,
+          selectedTextStyle: AppTypography.toggle.copyWith(color: t.fg),
+          unselectedTextStyle: AppTypography.toggle.copyWith(color: t.muted),
+          indicatorColor: t.glassBubble,
+          indicatorSettings: appGlassSettings(t),
+        ),
       ),
     );
   }

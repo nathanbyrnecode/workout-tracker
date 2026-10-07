@@ -31,6 +31,8 @@ void homeGolden(
       ],
       child: child,
     ),
+    // Far enough into the loading spinner's animation for it to be visible.
+    setUp: (tester) => tester.pump(const Duration(milliseconds: 600)),
     builder: (context) => AppShell(
       selected: AppTab.home,
       onSelected: (_) {},
