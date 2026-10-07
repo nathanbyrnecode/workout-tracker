@@ -1,4 +1,3 @@
-lib/main_bottom_navigation.dart
 lib/screens/home/home_screen_v2.dart
 lib/screens/home/widgets/completed_exercise_card.dart
 lib/screens/home/widgets/home_screen/current_workout_area.dart

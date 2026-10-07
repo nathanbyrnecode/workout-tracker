@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/theme/app_theme.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 /// The design's device frame.
 const goldenSurfaceSize = Size(390, 844);
@@ -23,12 +25,34 @@ const _fontFiles = {
 };
 
 bool _fontsLoaded = false;
+bool _glassReady = false;
+
+/// Loads the glass shader `flutter test` can run. Without this the first golden in
+/// a file is drawn before they are ready and shows the package's plain
+/// fallback instead of the surface every later test gets.
+Future<void> loadGlass(WidgetTester tester) async {
+  if (_glassReady) {
+    return;
+  }
+  // Only the standard shader: the premium ones need Impeller and are not
+  // available to `flutter test`.
+  await tester.runAsync(LightweightLiquidGlass.preWarm);
+  _glassReady = true;
+}
 
 /// Loads the bundled Geist fonts so test text is not drawn as boxes.
 Future<void> loadAppFonts() async {
   if (_fontsLoaded) {
     return;
   }
+  // Icon fonts ship inside their package, so the test has to find the file.
+  final lucide = File(
+    '${_packageRoot('lucide_icons_flutter')}/assets/lucide.ttf',
+  ).readAsBytesSync();
+  await (FontLoader('packages/lucide_icons_flutter/Lucide')
+        ..addFont(Future.value(ByteData.sublistView(lucide))))
+      .load();
+
   for (final MapEntry(key: family, value: files) in _fontFiles.entries) {
     final loader = FontLoader(family);
     for (final file in files) {
@@ -38,6 +62,20 @@ Future<void> loadAppFonts() async {
     await loader.load();
   }
   _fontsLoaded = true;
+}
+
+/// Where pub put [package], read from `.dart_tool/package_config.json`.
+String _packageRoot(String package) {
+  final config = jsonDecode(
+    File('.dart_tool/package_config.json').readAsStringSync(),
+  ) as Map<String, dynamic>;
+  final entry = (config['packages'] as List)
+      .cast<Map<String, dynamic>>()
+      .firstWhere((entry) => entry['name'] == package);
+  return Directory('.dart_tool')
+      .uri
+      .resolve(entry['rootUri'] as String)
+      .toFilePath();
 }
 
 /// Wraps [child] in the app theme for [brightness], as the real app does.
@@ -76,6 +114,9 @@ void goldenTest(
       skip: !_goldensEnabled,
       (tester) async {
         await loadAppFonts();
+        await loadGlass(tester);
+        // Tests draw shadows as solid blocks unless this is switched off.
+        debugDisableShadows = false;
         await tester.binding.setSurfaceSize(goldenSurfaceSize);
         tester.view.devicePixelRatio = 1;
         addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -91,10 +132,15 @@ void goldenTest(
           await setUp(tester);
         }
 
-        await expectLater(
-          find.byType(MaterialApp),
-          matchesGoldenFile('goldens/${name}_${brightness.name}.png'),
-        );
+        try {
+          await expectLater(
+            find.byType(MaterialApp),
+            matchesGoldenFile('goldens/${name}_${brightness.name}.png'),
+          );
+        } finally {
+          // The test binding checks this is back to its default.
+          debugDisableShadows = true;
+        }
       },
     );
   }
