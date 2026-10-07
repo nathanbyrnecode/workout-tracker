@@ -34,6 +34,8 @@ Supabase (Postgres + RLS, auth, edge functions)
 | `pastWorkoutsProvider` | `lib/state/past_workouts_state.dart` | Finished workouts with exercises and sets. Also defines the `Workout` class and `mapWorkoutRows` |
 | `userAuthenticationProvider` | `lib/state/user_authentication_state.dart` | Session, Google and Apple sign-in, account deletion |
 | `currentTabProvider` | `lib/state/current_tab_state.dart` | Home's Current/Previous tab |
+| `themeModeProvider` | `lib/state/theme_mode_state.dart` | Light, dark or system; saved on the device |
+| `clockProvider` | `lib/state/clock_provider.dart` | The current time. Timers and the greeting read it so tests can pin it |
 
 ### Navigation
 
@@ -56,13 +58,19 @@ Screens pushed with `Navigator` (Summary, the detail screens) cover the shell,
 which is how they hide the tab bar. Screens inside the shell should not paint
 their own background, or they hide the glows.
 
+Home's floating actions (`WorkoutActionArea`) are passed into that slot by
+`MainBottomNavigation`; `HomeScreen` does not draw them. They show on both the
+Current and the Previous tab.
+
 Bottom sheets open with `showAppSheet` (`lib/widgets/app_bottom_sheet.dart`),
 which supplies the surface, grab handle, scrim and scrolling.
 
 ### Liquid glass
 
-`AppTabBar` is `GlassTabBar.bottom` from `liquid_glass_widgets`, sized and
-coloured from tokens. The package is initialised in `lib/main.dart`
+`AppTabBar` is `GlassTabBar.bottom` and `HomeToggle` is `GlassSegmentedControl`,
+both from `liquid_glass_widgets`, sized and coloured from tokens and sharing
+`appGlassSettings` (`lib/widgets/app_glass.dart`). Their drop shadows are drawn
+with `OuterShadow` so they do not show through the glass. The package is initialised in `lib/main.dart`
 (`LiquidGlassWidgets.initialize()` and `.wrap(...)`). It works without that
 setup in tests, where it detects the test environment and draws a simplified
 surface with no shaders, so goldens show the layout and colours but not the

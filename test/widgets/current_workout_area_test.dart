@@ -6,6 +6,7 @@ import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/screens/home/widgets/home_screen/current_workout_area.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_action_area.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
+import 'package:gym_tracker_app/theme/app_theme.dart';
 
 void main() {
   testWidgets('shows recovery progress and prevents a new workout',
@@ -15,7 +16,8 @@ void main() {
         overrides: [
           currentWorkoutProvider.overrideWith(() => _RecoveryNotifier())
         ],
-        child: const MaterialApp(
+        child: MaterialApp(
+          theme: buildAppTheme(Brightness.dark),
           home: Scaffold(
               body: Column(children: [
             Expanded(child: CurrentWorkoutArea()),
@@ -35,7 +37,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [currentWorkoutProvider.overrideWith(() => notifier)],
-        child: const MaterialApp(
+        child: MaterialApp(
+          theme: buildAppTheme(Brightness.dark),
           home: Scaffold(
               body: Column(children: [
             Expanded(child: CurrentWorkoutArea()),
@@ -60,6 +63,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: buildAppTheme(Brightness.dark),
         home: Scaffold(
           body: Center(
             child: CurrentExerciseSetCard(
@@ -125,7 +129,8 @@ void main() {
         overrides: [
           currentWorkoutProvider.overrideWithValue(completedExerciseState),
         ],
-        child: const MaterialApp(
+        child: MaterialApp(
+          theme: buildAppTheme(Brightness.dark),
           home: Scaffold(body: CurrentWorkoutArea()),
         ),
       ),

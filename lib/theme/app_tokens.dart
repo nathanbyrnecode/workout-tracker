@@ -183,6 +183,15 @@ class AppTokens extends ThemeExtension<AppTokens> {
         ),
       ];
 
+  /// Under the Current/Previous toggle: 0 6 18.
+  List<BoxShadow> get toggleShadow => [
+        BoxShadow(
+          color: glassShadow,
+          offset: const Offset(0, 6),
+          blurRadius: 18,
+        ),
+      ];
+
   /// Under the tab bar: 0 14 36.
   List<BoxShadow> get tabBarShadow => [
         BoxShadow(
@@ -306,6 +315,7 @@ class AppRadii {
   double get input => 16;
   double get iconButton => 14;
   double get chip => 7;
+  double get pill => 6;
   double get trackerSquare => 4;
 
   /// Top corners of bottom sheets.
@@ -333,6 +343,9 @@ class AppSpacing {
   double get gap22 => 22;
 
   double get buttonHeight => 56;
+
+  /// The floating action buttons above the tab bar.
+  double get floatingButtonHeight => 58;
   double get iconButton => 44;
 
   /// Bottom padding that clears the floating actions and the tab bar.

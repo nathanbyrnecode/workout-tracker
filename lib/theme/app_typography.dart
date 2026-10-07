@@ -10,6 +10,10 @@ abstract final class AppTypography {
   static const sans = 'Geist';
   static const mono = 'GeistMono';
 
+  /// The line height Geist and Geist Mono are designed with (ascent 1005,
+  /// descent 295 per 1000 units), which is what the design's CSS uses.
+  static const lineHeight = 1.3;
+
   /// Screen titles: 30px, -0.035em.
   static const screenTitle = TextStyle(
     fontFamily: sans,
@@ -76,12 +80,50 @@ abstract final class AppTypography {
     letterSpacing: 1.54,
   );
 
+  /// 11px at 0.16em, as on the WORKOUT label.
+  static const labelWide = TextStyle(
+    fontFamily: mono,
+    fontWeight: FontWeight.w500,
+    fontSize: 11,
+    letterSpacing: 1.76,
+  );
+
   /// 10px at 0.16em.
   static const labelSmall = TextStyle(
     fontFamily: mono,
     fontWeight: FontWeight.w500,
     fontSize: 10,
     letterSpacing: 1.6,
+  );
+
+  /// The ACTIVE / INACTIVE pill: 11px at 0.1em.
+  static const pill = TextStyle(
+    fontFamily: mono,
+    fontWeight: FontWeight.w600,
+    fontSize: 11,
+    letterSpacing: 1.1,
+  );
+
+  /// The "N EX  N SETS  N KG VOL" row: 12px at 0.06em.
+  static const statLine = TextStyle(
+    fontFamily: mono,
+    fontWeight: FontWeight.w500,
+    fontSize: 12,
+    letterSpacing: 0.72,
+  );
+
+  /// The avatar initial.
+  static const avatar = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w700,
+    fontSize: 17,
+  );
+
+  /// Segmented toggle labels.
+  static const toggle = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 14,
   );
 
   /// Body and secondary text run from 13px to 15px.

@@ -33,8 +33,8 @@ ThemeData buildAppTheme(Brightness brightness) {
 
 /// Material 3's text theme carries its own letter spacing and line heights,
 /// which every `Text` inherits unless its style overrides them. That made
-/// text wider than the design. This keeps the sizes and weights and drops the
-/// rest, so [AppTypography] styles render exactly as written.
+/// text wider and taller than the design. This keeps the sizes and weights
+/// and replaces the rest, so [AppTypography] styles render as written.
 TextTheme _textTheme(TextTheme base, Color color) {
   TextStyle? plain(TextStyle? style) => style == null
       ? null
@@ -43,6 +43,9 @@ TextTheme _textTheme(TextTheme base, Color color) {
           fontSize: style.fontSize,
           fontWeight: style.fontWeight,
           letterSpacing: 0,
+          // Geist's own line height. Left unset, Material fills in its own
+          // taller one, which pushed layouts down by a few pixels.
+          height: AppTypography.lineHeight,
           color: color,
         );
   return TextTheme(
