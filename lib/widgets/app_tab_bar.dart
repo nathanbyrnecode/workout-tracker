@@ -54,34 +54,47 @@ class AppTabBar extends StatelessWidget {
       child: OuterShadow(
         borderRadius: radius,
         shadows: t.tabBarShadow,
-        child: GlassTabBar.bottom(
-          selectedIndex: selected.index,
-          onTabSelected: (index) => onSelected(AppTab.values[index]),
-          tabs: [
-            for (final tab in AppTab.values)
-              GlassTab(
-                label: tab.label,
-                icon: tab == AppTab.notifications && hasUnread
-                    ? _UnreadBell(icon: tab.icon)
-                    : Icon(tab.icon),
-              ),
-          ],
-          horizontalPadding: 0,
-          verticalPadding: 0,
-          barHeight: height,
-          barBorderRadius: t.radii.tabBar,
-          tabPadding: const EdgeInsets.symmetric(horizontal: _padding),
-          indicatorBorderRadius: _bubbleRadius,
-          iconSize: _iconSize,
-          iconLabelSpacing: 3,
-          magnification: 1,
-          textStyle: AppTypography.tabLabel,
-          selectedIconColor: t.fg,
-          selectedLabelColor: t.fg,
-          unselectedIconColor: t.muted,
-          unselectedLabelColor: t.muted,
-          indicatorColor: t.glassBubble,
-          settings: appGlassSettings(t),
+        // Dragging past the first or last tab would pull the bubble out of
+        // the end of the bar; the clip keeps it inside.
+        child: ClipRRect(
+          borderRadius: radius,
+          child: GlassTabBar.bottom(
+            selectedIndex: selected.index,
+            onTabSelected: (index) => onSelected(AppTab.values[index]),
+            tabs: [
+              for (final tab in AppTab.values)
+                GlassTab(
+                  label: tab.label,
+                  icon: tab == AppTab.notifications && hasUnread
+                      ? _UnreadBell(icon: tab.icon)
+                      : Icon(tab.icon),
+                ),
+            ],
+            horizontalPadding: 0,
+            verticalPadding: 0,
+            barHeight: height,
+            barBorderRadius: t.radii.tabBar,
+            tabPadding: const EdgeInsets.symmetric(horizontal: _padding),
+            indicatorBorderRadius: _bubbleRadius,
+            iconSize: _iconSize,
+            iconLabelSpacing: 3,
+            magnification: 1,
+            textStyle: AppTypography.tabLabel,
+            selectedIconColor: t.fg,
+            selectedLabelColor: t.fg,
+            unselectedIconColor: t.muted,
+            unselectedLabelColor: t.muted,
+            indicatorColor: t.glassBubble,
+            // The design's bubble slides inside the bar. The package's defaults
+            // turn it into a lens that grows past the bar, warps the labels
+            // beside it and inflates the bar while pressed, so those are off.
+            indicatorExpansion: EdgeInsets.zero,
+            indicatorSettings: appBubbleSettings(t),
+            indicatorPinchStrength: 0,
+            interactionBehavior: GlassInteractionBehavior.none,
+            pressScale: 1,
+            settings: appGlassSettings(t),
+          ),
         ),
       ),
     );

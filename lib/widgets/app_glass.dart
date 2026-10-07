@@ -9,3 +9,11 @@ LiquidGlassSettings appGlassSettings(AppTokens tokens) => LiquidGlassSettings(
       blur: 24,
       saturation: 1.9,
     );
+
+/// Glass settings for the sliding bubble on both surfaces while it is pressed
+/// or dragged. It keeps the bubble's tint and does not bend what is under it,
+/// so icons and labels stay readable as it passes over them.
+LiquidGlassSettings appBubbleSettings(AppTokens tokens) => LiquidGlassSettings(
+      glassColor: tokens.glassBubble,
+      refractiveIndex: 1,
+    );

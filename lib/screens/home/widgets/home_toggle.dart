@@ -35,23 +35,30 @@ class HomeToggle extends StatelessWidget {
       shadows: t.toggleShadow,
       child: GlassRim(
         borderRadius: radius,
-        child: GlassSegmentedControl(
-          segments: const [
-            GlassSegment(label: 'Current'),
-            GlassSegment(label: 'Previous'),
-          ],
-          selectedIndex: selected.index,
-          onSegmentSelected: (index) => onSelected(TabItem.values[index]),
-          height: height,
-          borderRadius: t.radii.toggle,
-          indicatorBorderRadius: t.radii.toggleBubble,
-          // The 1px border plus the design's 4, which leaves a 170×36 bubble.
-          padding: const EdgeInsets.all(5),
-          backgroundColor: t.glass,
-          selectedTextStyle: AppTypography.toggle.copyWith(color: t.fg),
-          unselectedTextStyle: AppTypography.toggle.copyWith(color: t.muted),
-          indicatorColor: t.glassBubble,
-          indicatorSettings: appGlassSettings(t),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: GlassSegmentedControl(
+            segments: const [
+              GlassSegment(label: 'Current'),
+              GlassSegment(label: 'Previous'),
+            ],
+            selectedIndex: selected.index,
+            onSegmentSelected: (index) => onSelected(TabItem.values[index]),
+            height: height,
+            borderRadius: t.radii.toggle,
+            indicatorBorderRadius: t.radii.toggleBubble,
+            // The 1px border plus the design's 4, which leaves a 170×36 bubble.
+            padding: const EdgeInsets.all(5),
+            backgroundColor: t.glass,
+            selectedTextStyle: AppTypography.toggle.copyWith(color: t.fg),
+            unselectedTextStyle: AppTypography.toggle.copyWith(color: t.muted),
+            indicatorColor: t.glassBubble,
+            indicatorSettings: appBubbleSettings(t),
+            // As on the tab bar: the bubble stays inside the track when pressed.
+            indicatorExpansion: EdgeInsets.zero,
+            indicatorPinchStrength: 0,
+            interactionBehavior: GlassInteractionBehavior.none,
+          ),
         ),
       ),
     );
