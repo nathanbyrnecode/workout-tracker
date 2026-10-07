@@ -153,10 +153,12 @@ void screenGolden(
   );
 }
 
-/// A detail screen as pushed over the shell, with the demo data behind it.
+/// A detail screen inside the shell, as it is shown over the tab that
+/// opened it, with the demo data behind it.
 void detailGolden(
   String description, {
   required String name,
+  required AppTab tab,
   required Widget Function() screen,
   Future<void> Function(WidgetTester tester)? setUp,
 }) {
@@ -179,7 +181,12 @@ void detailGolden(
       await setUp?.call(tester);
       await tester.pumpAndSettle();
     },
-    builder: (context) => screen(),
+    builder: (context) => AppShell(
+      selected: tab,
+      onSelected: (_) {},
+      hasUnread: true,
+      child: screen(),
+    ),
   );
 }
 
@@ -317,26 +324,30 @@ void main() {
   detailGolden(
     'recorded workout detail',
     name: 'detail',
-    screen: () => const WorkoutDetailScreen(workoutId: 1),
+    tab: AppTab.home,
+    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
   );
 
   detailGolden(
     'manual workout detail',
     name: 'manual_detail',
-    screen: () => const ManualWorkoutDetailScreen(workoutId: 1),
+    tab: AppTab.tracker,
+    screen: () => ManualWorkoutDetailScreen(workoutId: 1, onClose: () {}),
   );
 
   detailGolden(
     'edit workout sheet',
     name: 'sheet_edit_workout',
-    screen: () => const WorkoutDetailScreen(workoutId: 1),
+    tab: AppTab.home,
+    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
     setUp: (tester) => tester.tap(find.text('Edit')),
   );
 
   detailGolden(
     'delete workout sheet',
     name: 'sheet_delete_workout',
-    screen: () => const WorkoutDetailScreen(workoutId: 1),
+    tab: AppTab.home,
+    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
     setUp: (tester) async {
       await tester.scrollUntilVisible(find.text('Delete workout'), 200);
       await tester.tap(find.text('Delete workout'));

@@ -18,9 +18,16 @@ import 'package:gym_tracker_app/widgets/workout_form_sheet.dart';
 /// totals and every set. Edit changes its name and location; Delete removes
 /// it and returns to wherever this was opened from.
 class WorkoutDetailScreen extends ConsumerWidget {
-  const WorkoutDetailScreen({super.key, required this.workoutId});
+  const WorkoutDetailScreen({
+    super.key,
+    required this.workoutId,
+    required this.onClose,
+  });
 
   final int workoutId;
+
+  /// Leaves the screen: Back, or after the workout is deleted.
+  final VoidCallback onClose;
 
   Future<void> _edit(BuildContext context, WidgetRef ref, Workout workout) {
     return showEditWorkoutSheet(
@@ -52,11 +59,10 @@ class WorkoutDetailScreen extends ConsumerWidget {
     if (confirmed != true || !context.mounted) {
       return;
     }
-    final navigator = Navigator.of(context);
     final deleted =
         await ref.read(pastWorkoutsProvider.notifier).deleteWorkout(workout.id);
     if (deleted) {
-      navigator.pop();
+      onClose();
     } else if (context.mounted) {
       showDetailError(
         context,
@@ -75,7 +81,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
         .firstOrNull;
     // Deleted from under the screen: there is nothing to show while it pops.
     if (workout == null) {
-      return Scaffold(backgroundColor: t.bg);
+      return const SizedBox.shrink();
     }
 
     final start = workout.startTime;
@@ -85,6 +91,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final totals = workoutTotals(workout.exercises.values);
 
     return DetailScaffold(
+      onBack: onClose,
       onEdit: () => _edit(context, ref, workout),
       onDelete: () => _delete(context, ref, workout),
       children: [
@@ -247,6 +254,7 @@ class _ExerciseCard extends StatelessWidget {
               number: index + 1,
               weight: set.weight,
               reps: set.reps,
+              mutedUnits: false,
             ),
         ],
       ),

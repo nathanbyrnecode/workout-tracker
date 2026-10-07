@@ -229,7 +229,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No places match “zzz”'), findsOneWidget);
-      expect(find.text('RESULTS'), findsNothing);
+      // Still labelled as results, as in the design, not as nearby places.
+      expect(find.text('RESULTS'), findsOneWidget);
+      expect(find.text('NEARBY'), findsNothing);
     });
 
     testWidgets('picking a place keeps the type and is saved with the workout',

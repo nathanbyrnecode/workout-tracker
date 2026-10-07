@@ -13,9 +13,16 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A manually logged workout: its date, type and place. It has no exercises.
 class ManualWorkoutDetailScreen extends ConsumerWidget {
-  const ManualWorkoutDetailScreen({super.key, required this.workoutId});
+  const ManualWorkoutDetailScreen({
+    super.key,
+    required this.workoutId,
+    required this.onClose,
+  });
 
   final int workoutId;
+
+  /// Leaves the screen: Back, or after the workout is deleted.
+  final VoidCallback onClose;
 
   Future<void> _edit(
     BuildContext context,
@@ -51,12 +58,11 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
     if (confirmed != true || !context.mounted) {
       return;
     }
-    final navigator = Navigator.of(context);
     final deleted = await ref
         .read(manualWorkoutsProvider.notifier)
         .deleteManualWorkout(workout.id);
     if (deleted) {
-      navigator.pop();
+      onClose();
     } else if (context.mounted) {
       showDetailError(
         context,
@@ -74,12 +80,13 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
         .where((workout) => workout.id == workoutId)
         .firstOrNull;
     if (workout == null) {
-      return Scaffold(backgroundColor: t.bg);
+      return const SizedBox.shrink();
     }
     final place = workout.place;
     final address = place?.address;
 
     return DetailScaffold(
+      onBack: onClose,
       onEdit: () => _edit(context, ref, workout),
       onDelete: () => _delete(context, ref, workout),
       children: [
@@ -91,8 +98,9 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
               color: t.line,
               borderRadius: t.radii.chip,
               child: Container(
-                height: 24,
-                padding: const EdgeInsets.symmetric(horizontal: 9),
+                // 24 inside the 1.5 border, as the design's CSS box is.
+                height: 27,
+                padding: const EdgeInsets.symmetric(horizontal: 10.5),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: t.spacing.gap6,
@@ -149,7 +157,7 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
                   children: [
                     Icon(
                       locationIcon(workout.locationType),
-                      size: 15,
+                      size: 16,
                       color: t.fg,
                     ),
                     Text(workout.locationType.label, style: _infoValue),

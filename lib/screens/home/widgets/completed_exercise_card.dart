@@ -173,18 +173,23 @@ class CompactSetRow extends StatelessWidget {
     required this.number,
     required this.weight,
     required this.reps,
+    this.mutedUnits = true,
   });
 
   final int number;
   final double weight;
   final int reps;
 
+  /// Small grey "kg" and "reps", as in the open completed exercise. The
+  /// detail screen writes them in the same style as the numbers.
+  final bool mutedUnits;
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final unitStyle = AppTypography.caption.copyWith(
-      fontWeight: FontWeight.w500,
-    );
+    final unitStyle = mutedUnits
+        ? AppTypography.caption.copyWith(fontWeight: FontWeight.w500)
+        : AppTypography.setValueSmall;
     return Container(
       height: 44,
       padding: const EdgeInsets.only(left: 6, right: 12),
@@ -207,6 +212,7 @@ class CompactSetRow extends StatelessWidget {
               unit: 'kg',
               valueStyle: AppTypography.setValueSmall,
               unitStyle: unitStyle,
+              mutedUnit: mutedUnits,
             ),
           ),
           Expanded(
@@ -215,6 +221,7 @@ class CompactSetRow extends StatelessWidget {
               unit: 'reps',
               valueStyle: AppTypography.setValueSmall,
               unitStyle: unitStyle,
+              mutedUnit: mutedUnits,
             ),
           ),
           Text(

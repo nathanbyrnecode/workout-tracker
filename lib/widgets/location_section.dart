@@ -331,42 +331,37 @@ class _SelectedPlace extends StatelessWidget {
               ],
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Material(
-                color: t.card,
-                borderRadius: BorderRadius.circular(t.radii.tileMedium),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: onChange,
-                  child: Container(
-                    height: 36,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      'Change',
-                      style: AppTypography.bodySmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+          Material(
+            color: t.card,
+            borderRadius: BorderRadius.circular(t.radii.tileMedium),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onChange,
+              child: Container(
+                height: 36,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(
+                  'Change',
+                  style: AppTypography.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              Semantics(
-                button: true,
-                label: 'Remove place',
-                child: InkResponse(
-                  onTap: onClear,
-                  radius: 18,
-                  child: SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: Icon(LucideIcons.x, size: 16, color: t.muted),
-                  ),
-                ),
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: 'Remove place',
+            child: InkResponse(
+              onTap: onClear,
+              radius: 18,
+              child: SizedBox(
+                width: 36,
+                height: 36,
+                child: Icon(LucideIcons.x, size: 16, color: t.muted),
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -487,7 +482,7 @@ class _SearchPanel extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (results.isNotEmpty)
+                    if (results.isNotEmpty || (query.isNotEmpty && !loading))
                       DecoratedBox(
                         decoration: BoxDecoration(border: Border(top: line)),
                         child: Padding(
@@ -504,16 +499,13 @@ class _SearchPanel extends StatelessWidget {
                           result: result, onTap: () => onPick(result.place)),
                     // Nothing typed and nothing nearby is not worth a message.
                     if (results.isEmpty && query.isNotEmpty && !loading)
-                      DecoratedBox(
-                        decoration: BoxDecoration(border: Border(top: line)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Text(
-                            'No places match “$query”',
-                            textAlign: TextAlign.center,
-                            style: AppTypography.bodySmall
-                                .copyWith(color: t.muted),
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Text(
+                          'No places match “$query”',
+                          textAlign: TextAlign.center,
+                          style:
+                              AppTypography.bodySmall.copyWith(color: t.muted),
                         ),
                       ),
                   ],

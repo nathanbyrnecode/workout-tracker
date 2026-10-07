@@ -56,8 +56,8 @@ screens. From back to front it stacks:
    not position these themselves; `MainBottomNavigation` passes them in.
 4. `AppTabBar`, 26 above the bottom edge.
 
-Screens pushed with `Navigator` (Summary, the detail screens) cover the shell,
-which is how they hide the tab bar. Screens inside the shell should not paint
+Screens pushed with `Navigator` (Summary) cover the shell, which is how they
+hide the tab bar. The detail screens are not pushed; see below. Screens inside the shell should not paint
 their own background, or they hide the glows.
 
 Home's floating actions (`WorkoutActionArea`) are passed into that slot by
@@ -184,8 +184,11 @@ confirm and cancel.
 
 `WorkoutDetailScreen` and `ManualWorkoutDetailScreen` take an id and watch
 their provider, so an edit shows at once there and on every list behind them.
-They are pushed over the shell; deleting pops back to whichever tab opened
-them.
+They are shown inside the shell, in place of the tab's screen, so the tab bar
+stays visible as the design shows. `MainBottomNavigation` keeps the tab's
+screen in the tree (offstage) while a detail screen is open, so closing it
+(Back, the system back gesture, or after a delete) returns to the same scroll
+position or selected day. Choosing a tab also closes it.
 
 Other sheets are functions that return what the user chose (`showNewExerciseSheet`,
 `showSetSheet`, `showSetMenuSheet`, `showDeleteAccountSheet`). The caller

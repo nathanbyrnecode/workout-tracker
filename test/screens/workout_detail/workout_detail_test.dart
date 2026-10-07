@@ -81,8 +81,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(WorkoutDetailScreen), findsOneWidget);
-    // The tab bar is covered.
-    expect(find.byType(AppTabBar).hitTestable(), findsNothing);
+    // The tab bar stays, as the design shows; Home's actions do not.
+    expect(find.byType(AppTabBar).hitTestable(), findsOneWidget);
+    expect(find.text('Start workout').hitTestable(), findsNothing);
     expect(find.text('Push day'), findsOneWidget);
     expect(find.text('06/10/26 · 07:30'), findsOneWidget);
     expect(find.text('PureGym Manchester Piccadilly'), findsOneWidget);
@@ -107,6 +108,28 @@ void main() {
 
     expect(find.byType(WorkoutDetailScreen), findsNothing);
     expect(find.text('OCTOBER'), findsOneWidget);
+  });
+
+  testWidgets('choosing a tab leaves the detail screen', (tester) async {
+    await pumpWholeApp(tester);
+    await tester.tap(find.text('06/10/26'));
+    await tester.pumpAndSettle();
+    await goToTracker(tester);
+
+    expect(find.byType(WorkoutDetailScreen), findsNothing);
+    expect(find.byType(TrackerScreen), findsOneWidget);
+  });
+
+  testWidgets('the system back gesture closes the detail screen',
+      (tester) async {
+    await pumpWholeApp(tester);
+    await tester.tap(find.text('06/10/26'));
+    await tester.pumpAndSettle();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(WorkoutDetailScreen), findsNothing);
+    expect(find.text('OCTOBER').hitTestable(), findsOneWidget);
   });
 
   testWidgets('an edit shows on the detail screen and on the Previous card',
