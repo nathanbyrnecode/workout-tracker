@@ -23,3 +23,32 @@ WorkoutTotals workoutTotals(Iterable<Exercise> exercises) {
   }
   return (exercises: count, sets: sets, reps: reps, volume: volume);
 }
+
+/// The heaviest set; between sets of the same weight, the one with more reps.
+/// Null when there are no sets.
+ExerciseSet? topSet(Iterable<ExerciseSet> sets) {
+  ExerciseSet? top;
+  for (final set in sets) {
+    if (top == null ||
+        set.weight > top.weight ||
+        (set.weight == top.weight && set.reps > top.reps)) {
+      top = set;
+    }
+  }
+  return top;
+}
+
+/// Average weight per rep: volume ÷ total reps, rounded to one decimal place.
+/// Zero when there are no reps.
+double averageWeight(Iterable<ExerciseSet> sets) {
+  final reps = sets.fold(0, (total, set) => total + set.reps);
+  if (reps == 0) {
+    return 0;
+  }
+  return (setsVolume(sets) / reps * 10).round() / 10;
+}
+
+/// When the most recent set was saved, which is where the rest timer counts
+/// from. Null when there are no sets or the last one has no timestamp.
+DateTime? lastSetSavedAt(Iterable<ExerciseSet> sets) =>
+    sets.isEmpty ? null : sets.last.savedAt;

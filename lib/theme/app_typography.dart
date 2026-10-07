@@ -60,6 +60,51 @@ abstract final class AppTypography {
     fontSize: 22,
   );
 
+  /// The active exercise's name: 21px, -0.02em.
+  static const exerciseName = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 21,
+    letterSpacing: -0.42,
+  );
+
+  /// A set's weight or reps in the active exercise card.
+  static const setValue = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 20,
+  );
+
+  /// A set's weight or reps in a compact row.
+  static const setValueSmall = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 15,
+  );
+
+  /// Small emphasised text, such as "In progress · 00:55".
+  static const caption = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 12,
+  );
+
+  /// Numbers in Geist Mono at body sizes: set numbers, row volumes, the rest
+  /// timer. Set the size with `copyWith`.
+  static const monoSmall = TextStyle(
+    fontFamily: mono,
+    fontWeight: FontWeight.w500,
+    fontSize: 13,
+  );
+
+  /// The TOP SET / AVG footer: 11px at 0.08em.
+  static const footnote = TextStyle(
+    fontFamily: mono,
+    fontWeight: FontWeight.w500,
+    fontSize: 11,
+    letterSpacing: 0.88,
+  );
+
   /// Stat numbers run from 20px to 26px.
   static const stat = TextStyle(
     fontFamily: mono,
