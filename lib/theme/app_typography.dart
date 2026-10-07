@@ -105,6 +105,15 @@ abstract final class AppTypography {
     letterSpacing: 0.88,
   );
 
+  /// A detail screen's workout title: 26px, -0.025em, line height 1.15.
+  static const detailTitle = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 26,
+    letterSpacing: -0.65,
+    height: 1.15,
+  );
+
   /// Bottom sheet titles: 22px, -0.02em.
   static const sheetTitle = TextStyle(
     fontFamily: sans,

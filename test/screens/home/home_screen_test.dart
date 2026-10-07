@@ -97,8 +97,11 @@ void main() {
     expect(find.text('Add exercise'), findsOneWidget);
     expect(find.text('Start workout'), findsNothing);
 
+    // Ending asks for a name first; nothing is ended by the tap alone.
     await tester.tap(find.text('End workout'));
-    expect(workout.endedWorkouts, 1);
+    await tester.pumpAndSettle();
+    expect(find.text('End workout?'), findsOneWidget);
+    expect(workout.endedWorkouts, 0);
   });
 
   testWidgets('totals include the active exercise as well as finished ones',

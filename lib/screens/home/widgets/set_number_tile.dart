@@ -47,12 +47,14 @@ class ValueWithUnit extends StatelessWidget {
     required this.unit,
     required this.valueStyle,
     required this.unitStyle,
+    this.mutedUnit = true,
   });
 
   final String value;
   final String unit;
   final TextStyle valueStyle;
   final TextStyle unitStyle;
+  final bool mutedUnit;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +65,9 @@ class ValueWithUnit extends StatelessWidget {
         children: [
           TextSpan(
             text: ' $unit',
-            style: unitStyle.copyWith(color: context.tokens.muted),
+            style: mutedUnit
+                ? unitStyle.copyWith(color: context.tokens.muted)
+                : unitStyle,
           ),
         ],
       ),

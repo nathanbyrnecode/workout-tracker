@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/data/workout_history.dart';
+import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 
 import '../helpers/fakes.dart';
@@ -57,5 +58,29 @@ void main() {
   test('no workouts, or workouts with no start, give nothing', () {
     expect(groupWorkoutsByMonth([]), isEmpty);
     expect(groupWorkoutsByMonth([Workout(1, null, null, {})]), isEmpty);
+  });
+
+  group('default location type', () {
+    test('is the most recent workout\'s type', () {
+      expect(
+        defaultLocationType([
+          testWorkout(1, DateTime(2026, 10, 1), type: LocationType.gym),
+          testWorkout(2, DateTime(2026, 10, 6), type: LocationType.park),
+          testWorkout(3, DateTime(2026, 10, 3), type: LocationType.home),
+        ]),
+        LocationType.park,
+      );
+    });
+
+    test('is Gym with no history or when the latest has no type', () {
+      expect(defaultLocationType([]), LocationType.gym);
+      expect(
+        defaultLocationType([
+          testWorkout(1, DateTime(2026, 10, 1), type: LocationType.park),
+          testWorkout(2, DateTime(2026, 10, 6)),
+        ]),
+        LocationType.gym,
+      );
+    });
   });
 }
