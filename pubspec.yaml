@@ -50,9 +50,10 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   liquid_glass_widgets: 1.10.0
   lucide_icons_flutter: ^3.1.22
+  geolocator: ^14.1.1
+  http: ^1.6.0
 
 dev_dependencies:
-  http: 1.6.0
   flutter_test:
     sdk: flutter
 

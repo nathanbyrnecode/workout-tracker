@@ -52,3 +52,8 @@ String relativeDayLabel(DateTime day, {required DateTime today}) {
 String formatLongDate(DateTime date) =>
     '${_weekdaysShort[date.weekday - 1]} ${date.day} '
     '${_monthsLong[date.month - 1]} ${date.year}';
+
+/// `06 OCT 2026`
+String formatStampDate(DateTime date) =>
+    '${_two(date.day)} ${_monthsShort[date.month - 1].toUpperCase()} '
+    '${date.year}';

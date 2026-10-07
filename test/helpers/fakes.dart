@@ -56,6 +56,17 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   @override
   Future<void> restoreActiveWorkout() async => retries++;
 
+  int discards = 0;
+
+  /// Set to make the next discard fail.
+  bool failDiscard = false;
+
+  @override
+  Future<bool> discardWorkout() async {
+    discards++;
+    return !failDiscard;
+  }
+
   /// What the next [endWorkout] reports.
   EndWorkoutOutcome endOutcome = EndWorkoutOutcome.saved;
   final endedWith = <({String title, LocationType type, Place? place})>[];
@@ -156,9 +167,35 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
 
   final List<ManualWorkout> workouts;
   final deletedIds = <int>[];
+  final added = <ManualWorkout>[];
+
+  /// Set to make adds fail.
+  bool failAdds = false;
 
   @override
   ManualWorkoutsStateData build() => (workouts: workouts);
+
+  @override
+  Future<ManualWorkout?> addManualWorkout({
+    required DateTime date,
+    required String title,
+    required LocationType locationType,
+    Place? place,
+  }) async {
+    if (failAdds) {
+      return null;
+    }
+    final workout = ManualWorkout(
+      id: 1000 + added.length,
+      date: date,
+      title: title.trim(),
+      locationType: locationType,
+      place: place,
+    );
+    added.add(workout);
+    state = (workouts: [...state.workouts, workout]);
+    return workout;
+  }
 
   @override
   Future<void> getManualWorkoutsFromRemote() async {}
@@ -200,7 +237,7 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
 /// query it returns everything nearest first, otherwise matches on name or
 /// address.
 class FakePlaceSearchService implements PlaceSearchService {
-  FakePlaceSearchService({this.places = demoPlaces});
+  FakePlaceSearchService({this.places = demoPlaces, this.attribution});
 
   final List<PlaceResult> places;
   final searches = <String>[];
@@ -208,6 +245,9 @@ class FakePlaceSearchService implements PlaceSearchService {
 
   @override
   bool get isAvailable => true;
+
+  @override
+  final String? attribution;
 
   @override
   Future<List<PlaceResult>> nearby() async => [...places]

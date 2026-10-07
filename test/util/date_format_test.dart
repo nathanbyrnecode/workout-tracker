@@ -42,4 +42,9 @@ void main() {
     expect(formatLongDate(DateTime(2026, 9, 21)), 'Mon 21 September 2026');
     expect(formatLongDate(DateTime(2026, 10, 4)), 'Sun 4 October 2026');
   });
+
+  test('stamp dates are two-digit day, short month, year, in capitals', () {
+    expect(formatStampDate(DateTime(2026, 10, 6)), '06 OCT 2026');
+    expect(formatStampDate(DateTime(2026, 9, 21)), '21 SEPT 2026');
+  });
 }

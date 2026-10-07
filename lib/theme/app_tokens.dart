@@ -169,6 +169,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
   /// Text on a solid [danger] button. White in both themes.
   Color get onDanger => const Color(0xFFFFFFFF);
 
+  /// The dark band that fills the End workout button while it is held:
+  /// black at 32%.
+  Color get holdBand => const Color(0x52000000);
+
   /// Border of the completed exercise row that is open: accent at 45%.
   Color get accentBorder => accent.withValues(alpha: 0.45);
 

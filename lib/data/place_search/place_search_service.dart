@@ -1,4 +1,7 @@
+import 'package:gym_tracker_app/data/place_search/device_location.dart';
+import 'package:gym_tracker_app/data/place_search/osm_place_search_service.dart';
 import 'package:gym_tracker_app/models/place.dart';
+import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'place_search_service.g.dart';
@@ -20,6 +23,9 @@ abstract interface class PlaceSearchService {
   /// never find anything.
   bool get isAvailable;
 
+  /// Credit the source requires to be shown next to its results, or null.
+  String? get attribution;
+
   /// Places matching what the user typed, best first.
   Future<List<PlaceResult>> search(String query);
 
@@ -32,12 +38,16 @@ abstract interface class PlaceSearchService {
   Future<PlaceResult?> currentLocation();
 }
 
-/// Used until a real source is added: no search, and no Place in the UI.
+/// No search, and no Place in the UI. For builds or tests that should not
+/// reach any place service.
 class UnavailablePlaceSearchService implements PlaceSearchService {
   const UnavailablePlaceSearchService();
 
   @override
   bool get isAvailable => false;
+
+  @override
+  String? get attribution => null;
 
   @override
   Future<List<PlaceResult>> search(String query) async => const [];
@@ -49,6 +59,13 @@ class UnavailablePlaceSearchService implements PlaceSearchService {
   Future<PlaceResult?> currentLocation() async => null;
 }
 
+/// The place search the app uses. Change the source here.
 @Riverpod(keepAlive: true)
-PlaceSearchService placeSearchService(Ref ref) =>
-    const UnavailablePlaceSearchService();
+PlaceSearchService placeSearchService(Ref ref) {
+  final client = http.Client();
+  ref.onDispose(client.close);
+  return OsmPlaceSearchService(
+    client: client,
+    location: const GeolocatorDeviceLocation(),
+  );
+}

@@ -97,6 +97,9 @@ class WorkoutForm extends StatefulWidget {
     required this.onConfirm,
     this.confirmStyle = AppButtonStyle.accent,
     this.confirmHeight,
+    this.leading,
+    this.confirmBuilder,
+    this.showCancel = true,
   });
 
   final Widget header;
@@ -113,6 +116,20 @@ class WorkoutForm extends StatefulWidget {
   final Future<bool> Function(WorkoutDetails details) onConfirm;
   final AppButtonStyle confirmStyle;
   final double? confirmHeight;
+
+  /// Shown between the header and the name field, such as a date picker.
+  final Widget? leading;
+
+  /// Replaces the standard confirm button. [canConfirm] is false while the
+  /// name is empty or a save is running; [confirm] runs [onConfirm].
+  final Widget Function(
+    BuildContext context, {
+    required bool canConfirm,
+    required VoidCallback confirm,
+  })? confirmBuilder;
+
+  /// The Log sheet has no cancel button; it closes by its scrim.
+  final bool showCancel;
 
   @override
   State<WorkoutForm> createState() => _WorkoutFormState();
@@ -163,6 +180,7 @@ class _WorkoutFormState extends State<WorkoutForm> {
       spacing: t.spacing.gap18,
       children: [
         widget.header,
+        if (widget.leading != null) widget.leading!,
         WorkoutNameField(
           controller: _title,
           placeholder: widget.namePlaceholder,
@@ -186,19 +204,31 @@ class _WorkoutFormState extends State<WorkoutForm> {
             // Rebuilds as the name changes, to enable and disable itself.
             ListenableBuilder(
               listenable: _title,
-              builder: (context, child) => AppButton(
-                label: _busy ? widget.busyLabel : widget.confirmLabel,
-                style: widget.confirmStyle,
-                height: widget.confirmHeight,
+              builder: (context, child) {
+                final canConfirm = _title.text.trim().isNotEmpty && !_busy;
+                final builder = widget.confirmBuilder;
+                if (builder != null) {
+                  return builder(
+                    context,
+                    canConfirm: canConfirm,
+                    confirm: _confirm,
+                  );
+                }
+                return AppButton(
+                  label: _busy ? widget.busyLabel : widget.confirmLabel,
+                  style: widget.confirmStyle,
+                  height: widget.confirmHeight,
+                  onPressed: canConfirm ? _confirm : null,
+                );
+              },
+            ),
+            if (widget.showCancel)
+              AppButton(
+                label: widget.cancelLabel,
+                style: AppButtonStyle.neutral,
                 onPressed:
-                    _title.text.trim().isEmpty || _busy ? null : _confirm,
+                    _busy ? null : () => Navigator.of(context).pop(false),
               ),
-            ),
-            AppButton(
-              label: widget.cancelLabel,
-              style: AppButtonStyle.neutral,
-              onPressed: _busy ? null : () => Navigator.of(context).pop(false),
-            ),
           ],
         ),
       ],

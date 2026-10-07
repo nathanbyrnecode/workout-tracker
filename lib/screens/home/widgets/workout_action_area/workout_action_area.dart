@@ -67,6 +67,7 @@ class WorkoutActionArea extends ConsumerWidget {
       startedAt: startedAt,
       // Most people train in the same kind of place as last time.
       initialType: defaultLocationType(ref.read(pastWorkoutsProvider).workouts),
+      onDiscard: ref.read(currentWorkoutProvider.notifier).discardWorkout,
       onEnd: (details) async {
         final result =
             await ref.read(currentWorkoutProvider.notifier).endWorkout(

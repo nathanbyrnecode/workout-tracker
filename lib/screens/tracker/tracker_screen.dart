@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/data/tracker_stats.dart';
+import 'package:gym_tracker_app/data/workout_history.dart';
 import 'package:gym_tracker_app/data/workout_stats.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
 import 'package:gym_tracker_app/models/workout.dart';
+import 'package:gym_tracker_app/screens/tracker/widgets/log_workout_sheet.dart';
 import 'package:gym_tracker_app/screens/tracker/widgets/tracker_entry_card.dart';
 import 'package:gym_tracker_app/screens/tracker/widgets/tracker_grid.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
@@ -25,14 +27,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 class TrackerScreen extends ConsumerStatefulWidget {
   const TrackerScreen({
     super.key,
-    required this.onLogWorkout,
     required this.onOpenWorkout,
     required this.onOpenManualWorkout,
     required this.onOpenLiveWorkout,
   });
 
-  /// Asked to log a manual workout for the given day.
-  final ValueChanged<DateTime> onLogWorkout;
   final ValueChanged<Workout> onOpenWorkout;
   final ValueChanged<ManualWorkout> onOpenManualWorkout;
 
@@ -46,6 +45,31 @@ class TrackerScreen extends ConsumerStatefulWidget {
 class _TrackerScreenState extends ConsumerState<TrackerScreen> {
   /// Null means today, so the selection follows the date past midnight.
   DateTime? _selected;
+
+  /// Opens the Log workout sheet on [day]. After a workout is added, the
+  /// tracker selects the day it was logged for.
+  Future<void> _logWorkout(DateTime day) async {
+    final today = dayOf(ref.read(clockProvider)());
+    await showLogWorkoutSheet(
+      context: context,
+      initialDay: day,
+      today: today,
+      initialType: defaultLocationType(ref.read(pastWorkoutsProvider).workouts),
+      onAdd: (loggedDay, details) async {
+        final added =
+            await ref.read(manualWorkoutsProvider.notifier).addManualWorkout(
+                  date: loggedDay,
+                  title: details.title,
+                  locationType: details.type,
+                  place: details.place,
+                );
+        if (added != null && mounted) {
+          setState(() => _selected = loggedDay);
+        }
+        return added != null;
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +102,7 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
           ScreenTitle(
             'Tracker',
             label: 'ACTIVITY',
-            trailing:
-                _LogButton(onPressed: () => widget.onLogWorkout(selected)),
+            trailing: _LogButton(onPressed: () => _logWorkout(selected)),
           ),
           SizedBox(height: t.spacing.gap14),
           Row(
@@ -158,7 +181,7 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
             ),
           ),
           if (entries.isEmpty)
-            _EmptyDay(onLog: () => widget.onLogWorkout(selected))
+            _EmptyDay(onLog: () => _logWorkout(selected))
           else
             for (final (index, entry) in entries.indexed)
               Padding(

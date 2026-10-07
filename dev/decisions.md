@@ -120,3 +120,10 @@ There is no notifications backend. The Notifications screen and the unread dot
 are built against a provider that returns no items, so users see an empty
 state rather than placeholder content. A real source is separate work outside
 the redesign epic.
+
+## 18. Detail screens keep the tab bar; Summary hides it
+
+The design shows the tab bar on the workout detail screens and hides it only
+on Welcome and Summary. So the detail screens are shown inside the app shell,
+in place of the tab's screen, and Summary is pushed over the shell with
+`Navigator`.

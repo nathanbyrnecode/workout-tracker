@@ -166,6 +166,7 @@ class _LocationSectionState extends ConsumerState<LocationSection> {
                   results: _results,
                   query: _resultsQuery,
                   loading: _loading,
+                  attribution: placeSearch.attribution,
                 )
               else if (place != null)
                 _SelectedPlace(
@@ -379,6 +380,7 @@ class _SearchPanel extends StatelessWidget {
     required this.results,
     required this.query,
     required this.loading,
+    required this.attribution,
   });
 
   final TextEditingController controller;
@@ -390,10 +392,14 @@ class _SearchPanel extends StatelessWidget {
   final String query;
   final bool loading;
 
+  /// Credit for the data, shown beside the results label.
+  final String? attribution;
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final line = BorderSide(color: t.line);
+    final attribution = this.attribution;
     return Container(
       decoration: BoxDecoration(
         color: t.card2,
@@ -487,10 +493,25 @@ class _SearchPanel extends StatelessWidget {
                         decoration: BoxDecoration(border: Border(top: line)),
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-                          child: Text(
-                            query.isEmpty ? 'NEARBY' : 'RESULTS',
-                            style: AppTypography.labelSmall
-                                .copyWith(color: t.muted),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                query.isEmpty ? 'NEARBY' : 'RESULTS',
+                                style: AppTypography.labelSmall
+                                    .copyWith(color: t.muted),
+                              ),
+                              // Beside the label so it is always in view
+                              // with the results it credits.
+                              if (attribution != null && results.isNotEmpty)
+                                Text(
+                                  attribution,
+                                  style: AppTypography.labelSmall.copyWith(
+                                    letterSpacing: 0,
+                                    color: t.muted,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),

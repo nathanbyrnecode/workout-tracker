@@ -297,6 +297,36 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     }
   }
 
+  /// Throws the workout away: its row and everything recorded in it are
+  /// deleted and nothing reaches history or the tracker. Returns whether it
+  /// was discarded; on failure the workout stays in progress.
+  Future<bool> discardWorkout() async {
+    final user = _client.auth.currentUser;
+    final workoutId = state.workoutId;
+    if (user == null || workoutId == null) {
+      return false;
+    }
+
+    try {
+      // Exercises and sets go with the workout (cascade).
+      await _client
+          .from('workouts')
+          .delete()
+          .eq('id', workoutId)
+          .eq('user_id', user.id);
+      resetState();
+      _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
+      return true;
+    } catch (error, stackTrace) {
+      log(
+        'Failed to discard the workout.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
   Future<void> addExerciseToExerciseList(Exercise exercise) async {
     _setState(exercises: [...state.exercises, exercise]);
   }
