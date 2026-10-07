@@ -25,13 +25,13 @@ class _PreviousTab extends CurrentTabNotifier {
   CurrentTabStateData build() => (currentTab: TabItem.previousWorkouts);
 }
 
-typedef _App = ({
+typedef WholeApp = ({
   FakePastWorkoutsNotifier history,
   FakeManualWorkoutsNotifier manual,
 });
 
 /// The whole signed-in app on Home's Previous tab, with the demo history.
-Future<_App> pumpWholeApp(WidgetTester tester) async {
+Future<WholeApp> pumpWholeApp(WidgetTester tester) async {
   final history = FakePastWorkoutsNotifier(demoHistory());
   final manual = FakeManualWorkoutsNotifier(demoManualWorkouts());
   await pumpApp(
