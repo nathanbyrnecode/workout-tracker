@@ -93,8 +93,8 @@ class ActiveExerciseCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${totals.sets} ${totals.sets == 1 ? 'set' : 'sets'} · '
-                  '${totals.reps} reps',
+                  '${formatCount(totals.sets, 'set')} · '
+                  '${formatCount(totals.reps, 'rep')}',
                   style: AppTypography.bodySmall.copyWith(color: t.muted),
                 ),
                 Text(

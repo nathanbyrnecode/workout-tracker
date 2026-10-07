@@ -113,6 +113,21 @@ void main() {
     },
   );
 
+  // With nothing above it, the whole open row clears the floating actions:
+  // all three sets and the TOP SET / AVG footer.
+  homeGolden(
+    'home with only a finished exercise, opened',
+    name: 'home_completed_expanded_footer',
+    workout: () => FakeWorkoutNotifier(
+      startedAt: _workoutStart,
+      exercises: [_benchPress()],
+    ),
+    setUp: (tester) async {
+      await tester.tap(find.text('Bench press'));
+      await tester.pumpAndSettle();
+    },
+  );
+
   homeGolden(
     'home between exercises',
     name: 'home_active_workout',

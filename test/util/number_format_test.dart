@@ -16,13 +16,19 @@ void main() {
     expect(formatVolume(1234567), '1,234,567');
   });
 
-  test('volumes keep at most one decimal place', () {
-    expect(formatVolume(67.5), '67.5');
-    expect(formatVolume(1067.5), '1,067.5');
+  test('volumes round to a whole number, halves up', () {
+    expect(formatVolume(67.5), '68');
+    expect(formatVolume(67.4), '67');
+    expect(formatVolume(1067.5), '1,068');
+    expect(formatVolume(999.5), '1,000');
     expect(formatVolume(412.0), '412');
-    expect(formatVolume(99.96), '100');
-    expect(formatVolume(999.96), '1,000');
-    expect(formatVolume(12.34), '12.3');
+  });
+
+  test('counts take a singular noun only for one', () {
+    expect(formatCount(1, 'set'), '1 set');
+    expect(formatCount(3, 'set'), '3 sets');
+    expect(formatCount(1, 'rep'), '1 rep');
+    expect(formatCount(0, 'rep'), '0 reps');
   });
 
   test('elapsed time reads as seconds, then minutes and seconds', () {

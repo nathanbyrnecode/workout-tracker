@@ -81,9 +81,8 @@ class CompletedExerciseCard extends StatelessWidget {
                               style: AppTypography.cardTitle,
                             ),
                             Text(
-                              '${totals.sets} '
-                              '${totals.sets == 1 ? 'set' : 'sets'} · '
-                              '${totals.reps} reps · '
+                              '${formatCount(totals.sets, 'set')} · '
+                              '${formatCount(totals.reps, 'rep')} · '
                               '${formatElapsed(duration)}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -97,7 +96,7 @@ class CompletedExerciseCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            formatVolume(totals.volume.round()),
+                            formatVolume(totals.volume),
                             style: AppTypography.stat.copyWith(fontSize: 17),
                           ),
                           Text(
@@ -219,7 +218,7 @@ class CompactSetRow extends StatelessWidget {
             ),
           ),
           Text(
-            formatVolume((weight * reps).round()),
+            formatVolume(weight * reps),
             style: AppTypography.monoSmall.copyWith(color: t.muted),
           ),
         ],
