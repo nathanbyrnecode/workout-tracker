@@ -56,6 +56,29 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
+  testWidgets('a pressed tab opens only when the finger lifts', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentWorkoutProvider.overrideWith(() => _ReadyWorkoutNotifier()),
+          userAuthenticationProvider.overrideWith(() => _SignedInNotifier()),
+        ],
+        child: app(const MainBottomNavigation()),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(tabLabel('Tracker')),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(TrackerScreen), findsNothing);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byType(TrackerScreen), findsOneWidget);
+  });
+
   testWidgets('the tab bar keeps its state when the floating actions go',
       (tester) async {
     // If the bar were rebuilt from scratch its bubble would jump to the new

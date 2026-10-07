@@ -25,6 +25,7 @@ void main() {
     expect(t.glassLine, const Color(0x24FFFFFF));
     expect(t.glassHi, const Color(0x52FFFFFF));
     expect(t.glassBubble, const Color(0x21FFFFFF));
+    expect(t.glassBubbleMoving, const Color(0x00FFFFFF));
     expect(t.glassShadow, const Color(0x73000000));
     expect(t.orb1, t.accent.withValues(alpha: 0x24 / 255));
     expect(t.orb2, const Color(0x2400B4BC));
@@ -49,6 +50,7 @@ void main() {
     expect(t.glassLine, const Color(0xD9FFFFFF));
     expect(t.glassHi, const Color(0xFFFFFFFF));
     expect(t.glassBubble, const Color(0x120F110D));
+    expect(t.glassBubbleMoving, const Color(0x2E0F110D));
     expect(t.glassShadow, const Color(0x24141810));
     expect(t.orb1, t.accent.withValues(alpha: 0x66 / 255));
     expect(t.orb2, const Color(0x4D6BD8DE));

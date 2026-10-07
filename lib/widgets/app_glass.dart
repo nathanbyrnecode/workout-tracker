@@ -9,3 +9,17 @@ LiquidGlassSettings appGlassSettings(AppTokens tokens) => LiquidGlassSettings(
       blur: 24,
       saturation: 1.9,
     );
+
+/// Glass settings for the tab bar's bubble while it is pressed or dragged:
+/// the package's lens with the theme's moving tint.
+LiquidGlassSettings appTabBubbleSettings(AppTokens tokens) =>
+    LiquidGlassSettings(glassColor: tokens.glassBubbleMoving);
+
+/// The same for the toggle's bubble, which keeps the track's glass where the
+/// theme has no moving tint.
+LiquidGlassSettings appToggleBubbleSettings(AppTokens tokens) {
+  final tint = tokens.glassBubbleMoving;
+  return appGlassSettings(tokens).copyWith(
+    glassColor: tint.a == 0 ? tokens.glass : tint,
+  );
+}

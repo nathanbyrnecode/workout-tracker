@@ -27,6 +27,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.glassHi,
     required this.glassLo,
     required this.glassBubble,
+    required this.glassBubbleMoving,
     required this.glassShadow,
     required this.sheetShadow,
     required this.orb1,
@@ -89,6 +90,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
   /// Selected glass pill.
   final Color glassBubble;
 
+  /// Tint of the glass pill while it is pressed or dragged. Clear in the dark
+  /// theme, where the bare lens already stands out.
+  final Color glassBubbleMoving;
+
   /// Drop shadows under floating buttons and the tab bar.
   final Color glassShadow;
 
@@ -124,6 +129,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     glassHi: Color(0x52FFFFFF),
     glassLo: Color(0x0DFFFFFF),
     glassBubble: Color(0x21FFFFFF),
+    glassBubbleMoving: Color(0x00FFFFFF),
     glassShadow: Color(0x73000000),
     sheetShadow: Color(0x4D000000),
     orb1: Color(0x24C0F447),
@@ -151,6 +157,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     glassHi: Color(0xFFFFFFFF),
     glassLo: Color(0x0A000000),
     glassBubble: Color(0x120F110D),
+    glassBubbleMoving: Color(0x2E0F110D),
     glassShadow: Color(0x24141810),
     sheetShadow: Color(0x4D000000),
     orb1: Color(0x66C0F447),
@@ -240,6 +247,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     Color? glassHi,
     Color? glassLo,
     Color? glassBubble,
+    Color? glassBubbleMoving,
     Color? glassShadow,
     Color? sheetShadow,
     Color? orb1,
@@ -266,6 +274,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
       glassHi: glassHi ?? this.glassHi,
       glassLo: glassLo ?? this.glassLo,
       glassBubble: glassBubble ?? this.glassBubble,
+      glassBubbleMoving: glassBubbleMoving ?? this.glassBubbleMoving,
       glassShadow: glassShadow ?? this.glassShadow,
       sheetShadow: sheetShadow ?? this.sheetShadow,
       orb1: orb1 ?? this.orb1,
@@ -300,6 +309,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
       glassHi: mix(glassHi, other.glassHi),
       glassLo: mix(glassLo, other.glassLo),
       glassBubble: mix(glassBubble, other.glassBubble),
+      glassBubbleMoving: mix(glassBubbleMoving, other.glassBubbleMoving),
       glassShadow: mix(glassShadow, other.glassShadow),
       sheetShadow: mix(sheetShadow, other.sheetShadow),
       orb1: mix(orb1, other.orb1),
