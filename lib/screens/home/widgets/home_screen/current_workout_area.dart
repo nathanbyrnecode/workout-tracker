@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/screens/home/widgets/active_exercise_card.dart';
 import 'package:gym_tracker_app/screens/home/widgets/completed_exercise_card.dart';
-import 'package:gym_tracker_app/screens/home/widgets/set_menu_sheet.dart';
+import 'package:gym_tracker_app/screens/home/widgets/sheets/set_menu_sheet.dart';
+import 'package:gym_tracker_app/screens/home/widgets/sheets/set_sheet.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
@@ -28,10 +29,29 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
       set: set,
       number: number,
     );
-    if (action == SetMenuAction.delete) {
-      await ref
-          .read(currentWorkoutProvider.notifier)
-          .removeSetFromCurrentExercise(set.id);
+    if (!mounted) {
+      return;
+    }
+    final notifier = ref.read(currentWorkoutProvider.notifier);
+    switch (action) {
+      case SetMenuAction.delete:
+        await notifier.removeSetFromCurrentExercise(set.id);
+      case SetMenuAction.edit:
+        final values = await showSetSheet(
+          context: context,
+          number: number,
+          initial: (weight: set.weight, reps: set.reps),
+          editing: true,
+        );
+        if (values != null) {
+          await notifier.updateSet(
+            set.id,
+            weight: values.weight,
+            reps: values.reps,
+          );
+        }
+      case null:
+        break;
     }
   }
 
@@ -69,34 +89,38 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
       return const _Message('No exercises have been added to this workout yet');
     }
 
-    return ListView(
+    // Home scrolls as one page, so this is a plain column, not a list.
+    return Padding(
       padding: EdgeInsets.fromLTRB(
         t.spacing.screen,
         t.spacing.gap18,
         t.spacing.screen,
-        t.spacing.contentBottom,
+        0,
       ),
-      children: [
-        if (active != null)
-          ActiveExerciseCard(exercise: active, onSetMenu: _openSetMenu),
-        for (final exercise in finished)
-          Padding(
-            padding: EdgeInsets.only(
-              top: active != null || exercise != finished.first
-                  ? t.spacing.gap10
-                  : 0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (active != null)
+            ActiveExerciseCard(exercise: active, onSetMenu: _openSetMenu),
+          for (final exercise in finished)
+            Padding(
+              padding: EdgeInsets.only(
+                top: active != null || exercise != finished.first
+                    ? t.spacing.gap10
+                    : 0,
+              ),
+              child: CompletedExerciseCard(
+                key: ValueKey(exercise.id),
+                exercise: exercise,
+                open: _openExerciseId == exercise.id,
+                onTap: () => setState(() {
+                  _openExerciseId =
+                      _openExerciseId == exercise.id ? null : exercise.id;
+                }),
+              ),
             ),
-            child: CompletedExerciseCard(
-              key: ValueKey(exercise.id),
-              exercise: exercise,
-              open: _openExerciseId == exercise.id,
-              onTap: () => setState(() {
-                _openExerciseId =
-                    _openExerciseId == exercise.id ? null : exercise.id;
-              }),
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

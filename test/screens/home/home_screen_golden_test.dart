@@ -45,7 +45,8 @@ void homeGolden(
       onSelected: (_) {},
       hasUnread: true,
       floatingActions: const WorkoutActionArea(),
-      child: HomeScreen(onOpenNotifications: () {}, hasUnread: true),
+      child: HomeScreen(
+          onOpenWorkout: (_) {}, onOpenNotifications: () {}, hasUnread: true),
     ),
   );
 }

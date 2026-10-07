@@ -5,6 +5,9 @@ import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout
 import 'package:gym_tracker_app/screens/notifications/notifications_screen.dart';
 import 'package:gym_tracker_app/screens/profile/profile_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/tracker_screen.dart';
+import 'package:gym_tracker_app/screens/workout_detail/workout_detail_screen.dart';
+import 'package:gym_tracker_app/state/current_tab_state.dart';
+import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/widgets/app_shell.dart';
 import 'package:gym_tracker_app/widgets/app_tab_bar.dart';
 
@@ -19,18 +22,43 @@ class MainBottomNavigation extends ConsumerStatefulWidget {
 class _MainBottomNavigationState extends ConsumerState<MainBottomNavigation> {
   AppTab _tab = AppTab.home;
 
+  /// Detail screens cover the shell, so the tab bar is hidden on them and
+  /// Back returns to whichever tab opened them.
+  void _openDetail(String title) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => WorkoutDetailScreen(title: title),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final unread = hasUnread(ref.watch(notificationsProvider));
     return AppShell(
       selected: _tab,
+      hasUnread: unread,
       onSelected: (tab) => setState(() => _tab = tab),
       floatingActions: _tab == AppTab.home ? const WorkoutActionArea() : null,
       child: switch (_tab) {
         AppTab.home => HomeScreen(
+            hasUnread: unread,
             onOpenNotifications: () =>
                 setState(() => _tab = AppTab.notifications),
+            onOpenWorkout: (workout) => _openDetail(workout.displayTitle),
           ),
-        AppTab.tracker => const TrackerScreen(),
+        AppTab.tracker => TrackerScreen(
+            // The Log workout sheet arrives with its own task.
+            onLogWorkout: (day) {},
+            onOpenWorkout: (workout) => _openDetail(workout.displayTitle),
+            onOpenManualWorkout: (workout) => _openDetail(workout.title),
+            onOpenLiveWorkout: () {
+              ref
+                  .read(currentTabProvider.notifier)
+                  .setCurrentTab(TabItem.currentWorkout);
+              setState(() => _tab = AppTab.home);
+            },
+          ),
         AppTab.notifications => const NotificationsScreen(),
         AppTab.profile => const ProfileScreen(),
       },

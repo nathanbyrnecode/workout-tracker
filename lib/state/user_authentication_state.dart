@@ -5,6 +5,8 @@ import 'package:crypto/crypto.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
+import 'package:gym_tracker_app/state/manual_workouts_state.dart';
+import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -64,13 +66,16 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
     await Future.wait([
       recovery,
       ref.read(pastWorkoutsProvider.notifier).getWorkoutsFromRemote(),
+      ref.read(manualWorkoutsProvider.notifier).getManualWorkoutsFromRemote(),
     ]);
   }
 
   void _resetSignedOutState() {
     ref.read(currentWorkoutProvider.notifier).resetState();
     ref.read(pastWorkoutsProvider.notifier).resetState();
+    ref.read(manualWorkoutsProvider.notifier).resetState();
     ref.read(currentTabProvider.notifier).resetState();
+    ref.read(notificationsProvider.notifier).resetState();
     state = (
       isSignedIn: AuthStatus.signedOut,
       firstName: initialUserAuthenticationStateData.firstName,

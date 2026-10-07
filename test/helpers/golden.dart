@@ -87,6 +87,21 @@ Widget themedApp({required Brightness brightness, required Widget child}) {
   );
 }
 
+/// Waits for every image on screen to decode. Image decoding is real async
+/// work, so without this a golden can be captured before a picture appears.
+Future<void> _loadImages(WidgetTester tester) async {
+  final images = find.byType(Image).evaluate().toList();
+  if (images.isEmpty) {
+    return;
+  }
+  await tester.runAsync(() async {
+    for (final element in images) {
+      await precacheImage((element.widget as Image).image, element);
+    }
+  });
+  await tester.pump();
+}
+
 /// Golden files are compared on Linux only, because text renders differently
 /// on macOS. Set `ALLOW_LOCAL_GOLDENS=1` to render them elsewhere for a look;
 /// never commit goldens made that way.
@@ -131,6 +146,7 @@ void goldenTest(
         if (setUp != null) {
           await setUp(tester);
         }
+        await _loadImages(tester);
 
         try {
           await expectLater(
