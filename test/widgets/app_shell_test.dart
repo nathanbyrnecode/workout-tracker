@@ -56,6 +56,26 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
+  testWidgets('the tab bar keeps its state when the floating actions go',
+      (tester) async {
+    // If the bar were rebuilt from scratch its bubble would jump to the new
+    // tab instead of sliding there.
+    Widget shell({required bool actions}) => app(
+          AppShell(
+            selected: actions ? AppTab.home : AppTab.tracker,
+            onSelected: (_) {},
+            floatingActions: actions ? const Text('Start workout') : null,
+            child: const SizedBox.expand(),
+          ),
+        );
+
+    await tester.pumpWidget(shell(actions: true));
+    final before = tester.element(find.byType(AppTabBar));
+    await tester.pumpWidget(shell(actions: false));
+    await tester.pumpAndSettle();
+    expect(tester.element(find.byType(AppTabBar)), same(before));
+  });
+
   testWidgets('the tab bar is 340 by 66 and sits 26 above the bottom',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
