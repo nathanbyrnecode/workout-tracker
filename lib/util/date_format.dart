@@ -47,3 +47,8 @@ String relativeDayLabel(DateTime day, {required DateTime today}) {
   return '${_weekdaysLong[day.weekday - 1]} ${day.day} '
       '${_monthsLong[day.month - 1]}';
 }
+
+/// `Tue 21 September 2026`
+String formatLongDate(DateTime date) =>
+    '${_weekdaysShort[date.weekday - 1]} ${date.day} '
+    '${_monthsLong[date.month - 1]} ${date.year}';

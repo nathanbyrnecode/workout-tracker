@@ -1,3 +1,4 @@
+import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 
 typedef WorkoutMonth = ({int month, List<Workout> workouts});
@@ -28,4 +29,20 @@ List<WorkoutYear> groupWorkoutsByMonth(Iterable<Workout> workouts) {
     months.last.workouts.add(workout);
   }
   return years;
+}
+
+/// The location type a new workout starts with: the most recent workout's,
+/// or Gym when there is none or it has no type.
+LocationType defaultLocationType(Iterable<Workout> workouts) {
+  Workout? latest;
+  for (final workout in workouts) {
+    final start = workout.startTime;
+    if (start == null) {
+      continue;
+    }
+    if (latest == null || start.isAfter(latest.startTime!)) {
+      latest = workout;
+    }
+  }
+  return latest?.locationType ?? LocationType.fallback;
 }

@@ -42,4 +42,11 @@ void main() {
         '1h 2m');
     expect(formatElapsed(const Duration(seconds: -5)), '0s');
   });
+
+  test('distances are in miles', () {
+    expect(formatDistance(644), '0.4 mi');
+    expect(formatDistance(805), '0.5 mi');
+    expect(formatDistance(1609.344), '1.0 mi');
+    expect(formatDistance(40000), '25 mi');
+  });
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/screens/home/home_screen.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_action_area.dart';
 import 'package:gym_tracker_app/screens/notifications/notifications_screen.dart';
 import 'package:gym_tracker_app/screens/profile/profile_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/tracker_screen.dart';
+import 'package:gym_tracker_app/screens/workout_detail/manual_workout_detail_screen.dart';
 import 'package:gym_tracker_app/screens/workout_detail/workout_detail_screen.dart';
 import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/notifications_state.dart';
@@ -22,15 +24,16 @@ class MainBottomNavigation extends ConsumerStatefulWidget {
 class _MainBottomNavigationState extends ConsumerState<MainBottomNavigation> {
   AppTab _tab = AppTab.home;
 
-  /// Detail screens cover the shell, so the tab bar is hidden on them and
-  /// Back returns to whichever tab opened them.
-  void _openDetail(String title) {
+  /// Detail screens cover the shell, so the tab bar is hidden on them, and
+  /// Back or Delete returns to whichever tab opened them.
+  void _open(Widget screen) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => WorkoutDetailScreen(title: title),
-      ),
+      MaterialPageRoute<void>(builder: (context) => screen),
     );
   }
+
+  void _openWorkout(Workout workout) =>
+      _open(WorkoutDetailScreen(workoutId: workout.id));
 
   @override
   Widget build(BuildContext context) {
@@ -45,13 +48,14 @@ class _MainBottomNavigationState extends ConsumerState<MainBottomNavigation> {
             hasUnread: unread,
             onOpenNotifications: () =>
                 setState(() => _tab = AppTab.notifications),
-            onOpenWorkout: (workout) => _openDetail(workout.displayTitle),
+            onOpenWorkout: _openWorkout,
           ),
         AppTab.tracker => TrackerScreen(
             // The Log workout sheet arrives with its own task.
             onLogWorkout: (day) {},
-            onOpenWorkout: (workout) => _openDetail(workout.displayTitle),
-            onOpenManualWorkout: (workout) => _openDetail(workout.title),
+            onOpenWorkout: _openWorkout,
+            onOpenManualWorkout: (workout) =>
+                _open(ManualWorkoutDetailScreen(workoutId: workout.id)),
             onOpenLiveWorkout: () {
               ref
                   .read(currentTabProvider.notifier)

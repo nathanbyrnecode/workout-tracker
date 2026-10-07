@@ -71,8 +71,7 @@ pinned headers). Once they are stuck, they and the status bar get a blurred
 fill (`StickyHeaderFill`). So `CurrentWorkoutArea` is a plain column and
 `PreviousWorkoutsArea` is a sliver; neither scrolls by itself.
 
-Screens that are not built yet open `WorkoutDetailScreen`, a placeholder that
-the detail task replaces.
+`WorkoutSummaryScreen` is still a placeholder; the summary task replaces it.
 
 Bottom sheets open with `showAppSheet` (`lib/widgets/app_bottom_sheet.dart`),
 which supplies the surface, grab handle, scrim and scrolling.
@@ -132,7 +131,7 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
 | Event | Write |
 |---|---|
 | Workout started | insert `workouts` (user_id, start_time, created_at) |
-| Workout ended | update `workouts.end_time` |
+| Workout ended | update `workouts.end_time`, `title`, `location_type`, `place_*` |
 | Workout ended with no exercises | delete the `workouts` row |
 | Exercise started | insert `exercises` (workout_id, name, start_time, exercise_number) |
 | Exercise ended | update `exercises.end_time` |
@@ -140,6 +139,9 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
 | Set added | insert `exercise_sets` (exercise_id, set_number, reps, weight) |
 | Set removed | delete `exercise_sets` row, then renumber the remaining `set_number`s |
 | Past workout deleted | delete `workouts` row (children cascade) |
+| Past workout edited | update `workouts.title`, `location_type`, `place_*` |
+| Set edited | update `exercise_sets.reps`, `weight` |
+| Manual workout edited or deleted | update or delete the `manual_workouts` row |
 
 ### Edge functions
 
@@ -167,7 +169,25 @@ by the user's local day, so it is parsed with `parseCalendarDate` and never
 shifted by time zone. The shared `location_type` and `place_*` columns are read
 and written through `lib/data/location_mapper.dart`.
 
-Sheets are functions that return what the user chose (`showNewExerciseSheet`,
+Place search goes through `PlaceSearchService`
+(`lib/data/place_search/place_search_service.dart`), supplied by
+`placeSearchServiceProvider`. Until a real source is added the provider
+returns `UnavailablePlaceSearchService`, and `LocationSection` hides its Place
+part, so nothing offers a search that cannot work. Tests override the provider
+with `FakePlaceSearchService`.
+
+Sheets that save something (End workout, Edit workout) take a callback that
+does the save and reports success. They close on success and stay open with a
+message on failure, so a failed save never loses what was typed. Both use
+`WorkoutForm` (`lib/widgets/workout_form_sheet.dart`): name, location section,
+confirm and cancel.
+
+`WorkoutDetailScreen` and `ManualWorkoutDetailScreen` take an id and watch
+their provider, so an edit shows at once there and on every list behind them.
+They are pushed over the shell; deleting pops back to whichever tab opened
+them.
+
+Other sheets are functions that return what the user chose (`showNewExerciseSheet`,
 `showSetSheet`, `showSetMenuSheet`, `showDeleteAccountSheet`). The caller
 passes the result to a notifier; sheets do not touch state themselves.
 

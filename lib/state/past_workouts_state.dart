@@ -5,6 +5,7 @@ import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
+import 'package:gym_tracker_app/models/place.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -94,11 +95,68 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
     }
   }
 
-  Future<void> deleteWorkout(int workoutId) async {
+  /// Changes a finished workout's title and location. Returns whether the
+  /// change was saved.
+  Future<bool> updateWorkout(
+    int workoutId, {
+    required String title,
+    required LocationType locationType,
+    Place? place,
+  }) async {
+    final client = ref.read(supabaseClientProvider);
+    final user = client.auth.currentUser;
+    if (user == null || title.trim().isEmpty) {
+      return false;
+    }
+
+    try {
+      final updatedRows = await client
+          .from('workouts')
+          .update({
+            'title': title.trim(),
+            ...locationToColumns(locationType, place),
+          })
+          .eq('id', workoutId)
+          .eq('user_id', user.id)
+          .select('id');
+      if (updatedRows.isEmpty) {
+        return false;
+      }
+      _setState(
+        workouts: [
+          for (final workout in state.workouts)
+            if (workout.id == workoutId)
+              Workout(
+                workout.id,
+                workout.startTime,
+                workout.endTime,
+                workout.exercises,
+                title: title.trim(),
+                locationType: locationType,
+                place: place,
+              )
+            else
+              workout,
+        ],
+      );
+      return true;
+    } catch (error, stackTrace) {
+      log(
+        'Failed to update the workout.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  /// Deletes a finished workout with its exercises and sets. Returns whether
+  /// it was deleted.
+  Future<bool> deleteWorkout(int workoutId) async {
     final client = ref.read(supabaseClientProvider);
     final user = client.auth.currentUser;
     if (user == null) {
-      return;
+      return false;
     }
 
     try {
@@ -108,17 +166,21 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
           .eq('id', workoutId)
           .eq('user_id', user.id)
           .select('id');
-      if (deletedRows.isNotEmpty) {
-        final updatedWorkouts =
-            state.workouts.where((workout) => workout.id != workoutId).toList();
-        _setState(workouts: updatedWorkouts);
+      if (deletedRows.isEmpty) {
+        return false;
       }
+      _setState(
+        workouts:
+            state.workouts.where((workout) => workout.id != workoutId).toList(),
+      );
+      return true;
     } catch (error, stackTrace) {
       log(
         'Failed to delete the workout.',
         error: error,
         stackTrace: stackTrace,
       );
+      return false;
     }
   }
 }

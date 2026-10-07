@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gym_tracker_app/data/place_search/place_search_service.dart';
 import 'package:gym_tracker_app/data/tracker_stats.dart';
 import 'package:gym_tracker_app/models/app_notification.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
@@ -12,6 +13,8 @@ import 'package:gym_tracker_app/screens/profile/profile_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/tracker_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/widgets/tracker_grid.dart';
 import 'package:gym_tracker_app/screens/welcome/welcome_screen.dart';
+import 'package:gym_tracker_app/screens/workout_detail/manual_workout_detail_screen.dart';
+import 'package:gym_tracker_app/screens/workout_detail/workout_detail_screen.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
@@ -102,6 +105,7 @@ void screenGolden(
   bool emptyHistory = false,
   bool previousTab = false,
   bool? hasUnread,
+  bool placeSearch = false,
   Future<void> Function(WidgetTester tester)? setUp,
 }) {
   goldenTest(
@@ -123,6 +127,9 @@ void screenGolden(
         notificationsProvider
             .overrideWith(() => FakeNotificationsNotifier(notifications)),
         if (previousTab) currentTabProvider.overrideWith(_PreviousTab.new),
+        if (placeSearch)
+          placeSearchServiceProvider
+              .overrideWithValue(FakePlaceSearchService()),
       ],
       child: child,
     ),
@@ -143,6 +150,36 @@ void screenGolden(
         child: screen(),
       ),
     ),
+  );
+}
+
+/// A detail screen as pushed over the shell, with the demo data behind it.
+void detailGolden(
+  String description, {
+  required String name,
+  required Widget Function() screen,
+  Future<void> Function(WidgetTester tester)? setUp,
+}) {
+  goldenTest(
+    description,
+    name: name,
+    wrap: (child) => ProviderScope(
+      overrides: [
+        clockProvider.overrideWithValue(() => demoNow),
+        pastWorkoutsProvider
+            .overrideWith(() => FakePastWorkoutsNotifier(demoHistory())),
+        manualWorkoutsProvider.overrideWith(
+          () => FakeManualWorkoutsNotifier(demoManualWorkouts()),
+        ),
+        placeSearchServiceProvider.overrideWithValue(FakePlaceSearchService()),
+      ],
+      child: child,
+    ),
+    setUp: (tester) async {
+      await setUp?.call(tester);
+      await tester.pumpAndSettle();
+    },
+    builder: (context) => screen(),
   );
 }
 
@@ -218,6 +255,92 @@ void main() {
     workout: _liveWorkout,
     setUp: (tester) =>
         tester.tap(find.bySemanticsLabel(RegExp('Set 2 options'))),
+  );
+
+  // ── End workout (fit-epic.7) ───────────────────────────────────────────
+  // The Place part needs a place search, which the fake stands in for.
+  screenGolden(
+    'end workout sheet, empty',
+    name: 'sheet_end_workout',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    placeSearch: true,
+    workout: () => _liveWorkout(activeExercise: false),
+    setUp: (tester) => tester.tap(find.text('End workout')),
+  );
+
+  screenGolden(
+    'end workout sheet with the place search open',
+    name: 'sheet_end_workout_search',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    placeSearch: true,
+    workout: () => _liveWorkout(activeExercise: false),
+    setUp: (tester) async {
+      await tester.tap(find.text('End workout'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Search for a location'));
+    },
+  );
+
+  screenGolden(
+    'end workout sheet, filled in',
+    name: 'sheet_end_workout_filled',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    placeSearch: true,
+    workout: () => _liveWorkout(activeExercise: false),
+    setUp: (tester) async {
+      await tester.tap(find.text('End workout'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Push day');
+      await tester.tap(find.text('Search for a location'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('PureGym Manchester Piccadilly'));
+    },
+  );
+
+  screenGolden(
+    'end workout sheet as the app ships, with no place search',
+    name: 'sheet_end_workout_no_places',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    workout: () => _liveWorkout(activeExercise: false),
+    setUp: (tester) => tester.tap(find.text('End workout')),
+  );
+
+  // ── Workout detail (fit-epic.13) ───────────────────────────────────────
+  detailGolden(
+    'recorded workout detail',
+    name: 'detail',
+    screen: () => const WorkoutDetailScreen(workoutId: 1),
+  );
+
+  detailGolden(
+    'manual workout detail',
+    name: 'manual_detail',
+    screen: () => const ManualWorkoutDetailScreen(workoutId: 1),
+  );
+
+  detailGolden(
+    'edit workout sheet',
+    name: 'sheet_edit_workout',
+    screen: () => const WorkoutDetailScreen(workoutId: 1),
+    setUp: (tester) => tester.tap(find.text('Edit')),
+  );
+
+  detailGolden(
+    'delete workout sheet',
+    name: 'sheet_delete_workout',
+    screen: () => const WorkoutDetailScreen(workoutId: 1),
+    setUp: (tester) async {
+      await tester.scrollUntilVisible(find.text('Delete workout'), 200);
+      await tester.tap(find.text('Delete workout'));
+    },
   );
 
   // ── Home, Previous tab (fit-epic.10) ───────────────────────────────────

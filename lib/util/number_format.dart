@@ -34,3 +34,9 @@ String formatElapsed(Duration duration) {
   }
   return '${seconds ~/ 3600}h ${seconds % 3600 ~/ 60}m';
 }
+
+/// Formats a distance in miles, as the design does: `0.4 mi`, `12 mi`.
+String formatDistance(double meters) {
+  final miles = meters / 1609.344;
+  return miles < 10 ? '${miles.toStringAsFixed(1)} mi' : '${miles.round()} mi';
+}

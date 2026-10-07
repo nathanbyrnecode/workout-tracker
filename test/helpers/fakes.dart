@@ -1,3 +1,4 @@
+import 'package:gym_tracker_app/data/place_search/place_search_service.dart';
 import 'package:gym_tracker_app/data/theme_mode_storage.dart';
 import 'package:gym_tracker_app/models/app_notification.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
@@ -55,8 +56,33 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   @override
   Future<void> restoreActiveWorkout() async => retries++;
 
+  /// What the next [endWorkout] reports.
+  EndWorkoutOutcome endOutcome = EndWorkoutOutcome.saved;
+  final endedWith = <({String title, LocationType type, Place? place})>[];
+
   @override
-  Future<void> endWorkout() async => endedWorkouts++;
+  Future<EndWorkoutResult> endWorkout({
+    required String title,
+    required LocationType locationType,
+    Place? place,
+  }) async {
+    endedWorkouts++;
+    endedWith.add((title: title, type: locationType, place: place));
+    return (
+      outcome: endOutcome,
+      workout: endOutcome == EndWorkoutOutcome.saved
+          ? Workout(
+              1,
+              startedAt,
+              startedAt?.add(const Duration(minutes: 5)),
+              {for (final exercise in exercises) exercise.id: exercise},
+              title: title,
+              locationType: locationType,
+              place: place,
+            )
+          : null,
+    );
+  }
 
   @override
   Future<void> endExercise() async => endedExercises++;
@@ -123,18 +149,119 @@ class FakeAuthNotifier extends UserAuthenticationNotifier {
   }
 }
 
-/// Manual workouts that are already loaded.
+/// Manual workouts that are already loaded. Edits and deletes change the
+/// list, as the real notifier does on success.
 class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
   FakeManualWorkoutsNotifier([this.workouts = const []]);
 
   final List<ManualWorkout> workouts;
+  final deletedIds = <int>[];
 
   @override
   ManualWorkoutsStateData build() => (workouts: workouts);
 
   @override
   Future<void> getManualWorkoutsFromRemote() async {}
+
+  @override
+  Future<bool> updateManualWorkout(
+    int id, {
+    required String title,
+    required LocationType locationType,
+    Place? place,
+  }) async {
+    state = (
+      workouts: [
+        for (final workout in state.workouts)
+          if (workout.id == id)
+            ManualWorkout(
+              id: id,
+              date: workout.date,
+              title: title,
+              locationType: locationType,
+              place: place,
+            )
+          else
+            workout,
+      ],
+    );
+    return true;
+  }
+
+  @override
+  Future<bool> deleteManualWorkout(int id) async {
+    deletedIds.add(id);
+    state = (workouts: state.workouts.where((w) => w.id != id).toList());
+    return true;
+  }
 }
+
+/// A place search over a fixed list, like the design's demo data: with no
+/// query it returns everything nearest first, otherwise matches on name or
+/// address.
+class FakePlaceSearchService implements PlaceSearchService {
+  FakePlaceSearchService({this.places = demoPlaces});
+
+  final List<PlaceResult> places;
+  final searches = <String>[];
+  int currentLocationRequests = 0;
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<List<PlaceResult>> nearby() async => [...places]
+    ..sort((a, b) => a.distanceMeters!.compareTo(b.distanceMeters!));
+
+  @override
+  Future<List<PlaceResult>> search(String query) async {
+    searches.add(query);
+    final needle = query.toLowerCase();
+    return [
+      for (final result in places)
+        if ('${result.place.name} ${result.place.address}'
+            .toLowerCase()
+            .contains(needle))
+          result,
+    ];
+  }
+
+  @override
+  Future<PlaceResult?> currentLocation() async {
+    currentLocationRequests++;
+    return const PlaceResult(
+      Place(
+        name: 'Current location',
+        address: 'Near Piccadilly, Manchester M1',
+      ),
+    );
+  }
+}
+
+const demoPlaces = [
+  PlaceResult(
+    Place(name: 'Mayfield Park', address: 'Baring St, Manchester M1 2PY'),
+    distanceMeters: 805,
+  ),
+  PlaceResult(
+    Place(
+      name: 'PureGym Manchester Piccadilly',
+      address: '1 Ducie St, Manchester M1 2JN',
+    ),
+    distanceMeters: 644,
+  ),
+  PlaceResult(
+    Place(
+      name: 'The Gym Group Manchester Central',
+      address: '2 Oxford Rd, Manchester M1 5QA',
+    ),
+    distanceMeters: 1287,
+  ),
+  PlaceResult(
+    Place(name: 'Whitworth Park', address: 'Oxford Rd, Manchester M14 4PW'),
+    distanceMeters: 2900,
+  ),
+];
 
 /// Notifications seeded with a list; the real notifier always starts empty.
 class FakeNotificationsNotifier extends NotificationsNotifier {
@@ -195,15 +322,61 @@ Workout testWorkout(
   );
 }
 
-/// History that is already loaded and never calls Supabase.
+/// History that is already loaded and never calls Supabase. Edits and
+/// deletes change the list, as the real notifier does on success.
 class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
   FakePastWorkoutsNotifier([this.workouts = const []]);
 
   final List<Workout> workouts;
+
+  /// Set to make edits and deletes report failure.
+  bool failWrites = false;
+  final deletedIds = <int>[];
 
   @override
   PastWorkoutsStateData build() => (workouts: workouts);
 
   @override
   Future<void> getWorkoutsFromRemote() async {}
+
+  @override
+  Future<bool> updateWorkout(
+    int workoutId, {
+    required String title,
+    required LocationType locationType,
+    Place? place,
+  }) async {
+    if (failWrites) {
+      return false;
+    }
+    state = (
+      workouts: [
+        for (final workout in state.workouts)
+          if (workout.id == workoutId)
+            Workout(
+              workout.id,
+              workout.startTime,
+              workout.endTime,
+              workout.exercises,
+              title: title,
+              locationType: locationType,
+              place: place,
+            )
+          else
+            workout,
+      ],
+    );
+    return true;
+  }
+
+  @override
+  Future<bool> deleteWorkout(int workoutId) async {
+    if (failWrites) {
+      return false;
+    }
+    deletedIds.add(workoutId);
+    state =
+        (workouts: state.workouts.where((w) => w.id != workoutId).toList(),);
+    return true;
+  }
 }

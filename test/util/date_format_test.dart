@@ -37,4 +37,9 @@ void main() {
   test('dayOf drops the time', () {
     expect(dayOf(DateTime(2026, 10, 7, 23, 59, 59)), DateTime(2026, 10, 7));
   });
+
+  test('long dates spell out the month', () {
+    expect(formatLongDate(DateTime(2026, 9, 21)), 'Mon 21 September 2026');
+    expect(formatLongDate(DateTime(2026, 10, 4)), 'Sun 4 October 2026');
+  });
 }

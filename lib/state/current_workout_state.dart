@@ -1,8 +1,12 @@
 import 'dart:developer';
 
+import 'package:gym_tracker_app/data/location_mapper.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
+import 'package:gym_tracker_app/models/location_type.dart';
+import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +14,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 part 'current_workout_state.g.dart';
 
 enum WorkoutRecoveryStatus { pending, loading, ready, failed }
+
+enum EndWorkoutOutcome { saved, discarded, failed }
+
+/// What ending a workout did. [workout] is set only when it was saved.
+typedef EndWorkoutResult = ({EndWorkoutOutcome outcome, Workout? workout});
 
 const workoutRecoveryWindow = Duration(hours: 12);
 
@@ -222,39 +231,69 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     }
   }
 
-  Future<void> endWorkout() async {
+  /// Ends the workout and saves its title and location.
+  ///
+  /// A workout with no finished exercises has nothing worth keeping, so its
+  /// row is deleted and the outcome is [EndWorkoutOutcome.discarded]. On
+  /// failure the workout stays in progress so the user can try again.
+  Future<EndWorkoutResult> endWorkout({
+    required String title,
+    required LocationType locationType,
+    Place? place,
+  }) async {
     final user = _client.auth.currentUser;
     final workoutId = state.workoutId;
-    if (user == null || workoutId == null) {
-      return;
+    final startTime = state.workoutStartDateTime;
+    if (user == null || workoutId == null || startTime == null) {
+      return (outcome: EndWorkoutOutcome.failed, workout: null);
     }
 
     try {
       final endTime = DateTime.now();
+      final exercises = state.exercises;
 
-      if (state.exercises.isNotEmpty) {
-        await _client
-            .from('workouts')
-            .update({'end_time': endTime.toUtc().toIso8601String()})
-            .eq('id', workoutId)
-            .eq('user_id', user.id);
-      } else {
+      if (exercises.isEmpty) {
         await _client
             .from('workouts')
             .delete()
             .eq('id', workoutId)
             .eq('user_id', user.id);
+        resetState();
+        _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
+        return (outcome: EndWorkoutOutcome.discarded, workout: null);
       }
+
+      await _client
+          .from('workouts')
+          .update({
+            'end_time': endTime.toUtc().toIso8601String(),
+            'title': title.trim(),
+            ...locationToColumns(locationType, place),
+          })
+          .eq('id', workoutId)
+          .eq('user_id', user.id);
+
+      final saved = Workout(
+        workoutId,
+        startTime,
+        endTime,
+        {for (final exercise in exercises) exercise.id: exercise},
+        title: title.trim(),
+        locationType: locationType,
+        place: place,
+      );
 
       resetState();
       _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
       await ref.read(pastWorkoutsProvider.notifier).getWorkoutsFromRemote();
+      return (outcome: EndWorkoutOutcome.saved, workout: saved);
     } catch (error, stackTrace) {
       log(
         'Failed to end the workout.',
         error: error,
         stackTrace: stackTrace,
       );
+      return (outcome: EndWorkoutOutcome.failed, workout: null);
     }
   }
 
