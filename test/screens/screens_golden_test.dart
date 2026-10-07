@@ -7,6 +7,7 @@ import 'package:gym_tracker_app/models/app_notification.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/screens/home/home_screen.dart';
+import 'package:gym_tracker_app/screens/home/widgets/sheets/hold_to_discard_button.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_action_area.dart';
 import 'package:gym_tracker_app/screens/notifications/notifications_screen.dart';
 import 'package:gym_tracker_app/screens/profile/profile_screen.dart';
@@ -15,6 +16,7 @@ import 'package:gym_tracker_app/screens/tracker/widgets/tracker_grid.dart';
 import 'package:gym_tracker_app/screens/welcome/welcome_screen.dart';
 import 'package:gym_tracker_app/screens/workout_detail/manual_workout_detail_screen.dart';
 import 'package:gym_tracker_app/screens/workout_detail/workout_detail_screen.dart';
+import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
@@ -106,6 +108,7 @@ void screenGolden(
   bool previousTab = false,
   bool? hasUnread,
   bool placeSearch = false,
+  bool settle = true,
   Future<void> Function(WidgetTester tester)? setUp,
 }) {
   goldenTest(
@@ -127,15 +130,23 @@ void screenGolden(
         notificationsProvider
             .overrideWith(() => FakeNotificationsNotifier(notifications)),
         if (previousTab) currentTabProvider.overrideWith(_PreviousTab.new),
-        if (placeSearch)
-          placeSearchServiceProvider
-              .overrideWithValue(FakePlaceSearchService()),
+        // Goldens never reach a real place service. With the fake, the
+        // credit line shows as it does in the app.
+        placeSearchServiceProvider.overrideWithValue(
+          placeSearch
+              ? FakePlaceSearchService(
+                  attribution: '© OpenStreetMap contributors',
+                )
+              : const UnavailablePlaceSearchService(),
+        ),
       ],
       child: child,
     ),
     setUp: (tester) async {
       await setUp?.call(tester);
-      await tester.pumpAndSettle();
+      if (settle) {
+        await tester.pumpAndSettle();
+      }
     },
     builder: (context) => Consumer(
       builder: (context, ref, child) => AppShell(
@@ -197,7 +208,6 @@ Widget _home() => HomeScreen(
     );
 
 Widget _tracker() => TrackerScreen(
-      onLogWorkout: (_) {},
       onOpenWorkout: (_) {},
       onOpenManualWorkout: (_) {},
       onOpenLiveWorkout: () {},
@@ -310,14 +320,46 @@ void main() {
     },
   );
 
+  // Half-way through a hold: the band has filled part of the button and the
+  // label is counting down. There is no reference screenshot for this state.
   screenGolden(
-    'end workout sheet as the app ships, with no place search',
-    name: 'sheet_end_workout_no_places',
+    'end workout sheet while holding to discard',
+    name: 'sheet_end_workout_holding',
     hasUnread: true,
     tab: AppTab.home,
     screen: _home,
+    placeSearch: true,
+    settle: false,
     workout: () => _liveWorkout(activeExercise: false),
-    setUp: (tester) => tester.tap(find.text('End workout')),
+    setUp: (tester) async {
+      await tester.tap(find.text('End workout'));
+      await tester.pumpAndSettle();
+      await tester.startGesture(
+        tester.getCenter(find.byType(HoldToDiscardButton)),
+      );
+      await tester.pump();
+      // Let the button fade to full opacity before the frame is taken.
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 1300));
+    },
+  );
+
+  // ── Summary (fit-epic.9) ───────────────────────────────────────────────
+  goldenTest(
+    'workout summary',
+    name: 'summary',
+    builder: (context) => WorkoutSummaryScreen(workout: demoHistory().first),
+  );
+
+  // ── Log workout (fit-epic.12) ──────────────────────────────────────────
+  screenGolden(
+    'log workout sheet',
+    name: 'sheet_log_workout',
+    hasUnread: true,
+    tab: AppTab.tracker,
+    screen: _tracker,
+    placeSearch: true,
+    setUp: (tester) => tester.tap(find.text('Log workout')),
   );
 
   // ── Workout detail (fit-epic.13) ───────────────────────────────────────

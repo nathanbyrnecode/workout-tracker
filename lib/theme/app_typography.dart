@@ -114,6 +114,14 @@ abstract final class AppTypography {
     height: 1.15,
   );
 
+  /// The workout's name on the summary screen: 24px, -0.02em.
+  static const summaryTitle = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 24,
+    letterSpacing: -0.48,
+  );
+
   /// Bottom sheet titles: 22px, -0.02em.
   static const sheetTitle = TextStyle(
     fontFamily: sans,

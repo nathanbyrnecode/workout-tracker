@@ -100,8 +100,6 @@ class _MainBottomNavigationState extends ConsumerState<MainBottomNavigation> {
           onOpenWorkout: _openWorkout,
         ),
       AppTab.tracker => TrackerScreen(
-          // The Log workout sheet arrives with its own task.
-          onLogWorkout: (day) {},
           onOpenWorkout: _openWorkout,
           onOpenManualWorkout: _openManualWorkout,
           onOpenLiveWorkout: () {

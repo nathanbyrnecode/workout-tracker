@@ -71,8 +71,6 @@ pinned headers). Once they are stuck, they and the status bar get a blurred
 fill (`StickyHeaderFill`). So `CurrentWorkoutArea` is a plain column and
 `PreviousWorkoutsArea` is a sliver; neither scrolls by itself.
 
-`WorkoutSummaryScreen` is still a placeholder; the summary task replaces it.
-
 Bottom sheets open with `showAppSheet` (`lib/widgets/app_bottom_sheet.dart`),
 which supplies the surface, grab handle, scrim and scrolling.
 
@@ -133,6 +131,8 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
 | Workout started | insert `workouts` (user_id, start_time, created_at) |
 | Workout ended | update `workouts.end_time`, `title`, `location_type`, `place_*` |
 | Workout ended with no exercises | delete the `workouts` row |
+| Workout discarded (hold to discard) | delete the `workouts` row (children cascade) |
+| Manual workout logged | insert `manual_workouts` (user_id, date, title, location columns) |
 | Exercise started | insert `exercises` (workout_id, name, start_time, exercise_number) |
 | Exercise ended | update `exercises.end_time` |
 | Exercise ended with no sets | delete the `exercises` row |
@@ -171,12 +171,26 @@ and written through `lib/data/location_mapper.dart`.
 
 Place search goes through `PlaceSearchService`
 (`lib/data/place_search/place_search_service.dart`), supplied by
-`placeSearchServiceProvider`. Until a real source is added the provider
-returns `UnavailablePlaceSearchService`, and `LocationSection` hides its Place
-part, so nothing offers a search that cannot work. Tests override the provider
-with `FakePlaceSearchService`.
+`placeSearchServiceProvider`. The app's implementation is
+`OsmPlaceSearchService`: Photon for typed search, Overpass for the nearby
+list, and Photon's reverse lookup for "Use current location". Everything
+specific to those services is in that one file; to change the source, write
+another `PlaceSearchService` and return it from the provider.
 
-Sheets that save something (End workout, Edit workout) take a callback that
+- The device's position comes through `DeviceLocation`
+  (`device_location.dart`, backed by `geolocator`). Permission is asked for
+  only when the user taps "Use current location". The nearby list and
+  distances appear only once a position is known; they never trigger the
+  permission prompt.
+- The service's `attribution` ("© OpenStreetMap contributors") is shown beside
+  the NEARBY / RESULTS label. The data's licence requires it.
+- A service whose `isAvailable` is false hides the Place part of
+  `LocationSection`. `UnavailablePlaceSearchService` does that, for tests and
+  for any build that should not reach a place service.
+- Tests override the provider with `FakePlaceSearchService`, and the OSM
+  service itself is tested with recorded responses through `MockClient`.
+
+Sheets that save something (End, Edit and Log workout) take a callback that
 does the save and reports success. They close on success and stay open with a
 message on failure, so a failed save never loses what was typed. Both use
 `WorkoutForm` (`lib/widgets/workout_form_sheet.dart`): name, location section,

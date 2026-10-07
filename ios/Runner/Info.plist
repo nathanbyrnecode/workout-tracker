@@ -27,6 +27,8 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>FittenUp uses your location to suggest nearby gyms and parks when you add a place to a workout. It is only requested when you tap "Use current location".</string>
 	<key>CFBundleName</key>
 	<string>gym_tracker_app</string>
 	<key>CFBundlePackageType</key>

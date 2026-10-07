@@ -5,12 +5,12 @@ import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/workout.dart';
+import 'package:gym_tracker_app/screens/home/widgets/sheets/hold_to_discard_button.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_action_area.dart';
 import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
-import 'package:gym_tracker_app/widgets/app_button.dart';
 
 import '../../helpers/demo.dart';
 import '../../helpers/fakes.dart';
@@ -36,6 +36,8 @@ Future<({FakeWorkoutNotifier workout, FakePlaceSearchService? places})>
   final workout =
       FakeWorkoutNotifier(startedAt: _start, exercises: [_benchPress()]);
   final places = withPlaceSearch ? FakePlaceSearchService() : null;
+  final PlaceSearchService service =
+      places ?? const UnavailablePlaceSearchService();
   await pumpApp(
     tester,
     const Align(
@@ -47,7 +49,7 @@ Future<({FakeWorkoutNotifier workout, FakePlaceSearchService? places})>
       currentWorkoutProvider.overrideWith(() => workout),
       pastWorkoutsProvider
           .overrideWith(() => FakePastWorkoutsNotifier(history)),
-      if (places != null) placeSearchServiceProvider.overrideWithValue(places),
+      placeSearchServiceProvider.overrideWithValue(service),
     ],
   );
   await tester.tap(find.text('End workout'));
@@ -55,8 +57,11 @@ Future<({FakeWorkoutNotifier workout, FakePlaceSearchService? places})>
   return (workout: workout, places: places);
 }
 
-/// The sheet's confirm button (the Home action behind it has the same label).
-Finder endButton() => find.widgetWithText(AppButton, 'End workout');
+/// The sheet's End workout button.
+Finder endButton() => find.byType(HoldToDiscardButton);
+
+bool endEnabled(WidgetTester tester) =>
+    tester.widget<HoldToDiscardButton>(endButton()).enabled;
 
 /// Whether the tile for [type] is marked as the selected one.
 bool isSelected(WidgetTester tester, LocationType type) => tester
@@ -84,7 +89,7 @@ void main() {
   testWidgets('cannot end without a name', (tester) async {
     final sheet = await openEndSheet(tester);
 
-    expect(tester.widget<AppButton>(endButton()).onPressed, isNull);
+    expect(endEnabled(tester), isFalse);
     await tester.tap(endButton(), warnIfMissed: false);
     await tester.pumpAndSettle();
     expect(sheet.workout.endedWorkouts, 0);
@@ -93,7 +98,10 @@ void main() {
     // Spaces are not a name.
     await tester.enterText(find.byType(TextField).first, '   ');
     await tester.pump();
-    expect(tester.widget<AppButton>(endButton()).onPressed, isNull);
+    expect(endEnabled(tester), isFalse);
+    await tester.tap(endButton(), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(sheet.workout.endedWorkouts, 0);
   });
 
   testWidgets('the name stops at 40 characters', (tester) async {
@@ -176,11 +184,132 @@ void main() {
     expect(sheet.workout.endedWorkouts, 0);
   });
 
-  testWidgets('with no place search, Place is not offered', (tester) async {
+  testWidgets('without a place search, Place is not offered', (tester) async {
     await openEndSheet(tester);
     expect(find.text('LOCATION'), findsOneWidget);
     expect(find.text('PLACE'), findsNothing);
     expect(find.text('Search for a location'), findsNothing);
+  });
+
+  group('hold to discard', () {
+    /// Presses the End workout button and keeps the finger down.
+    Future<TestGesture> press(WidgetTester tester) async {
+      final gesture = await tester.startGesture(tester.getCenter(endButton()));
+      await tester.pump();
+      return gesture;
+    }
+
+    testWidgets('shows a hint, then counts down while held', (tester) async {
+      await openEndSheet(tester);
+      expect(find.text('Hold to discard workout'), findsOneWidget);
+
+      final gesture = await press(tester);
+      // Nothing changes before the press has lasted long enough to be a hold.
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('Hold to discard workout'), findsOneWidget);
+      expect(find.textContaining('Keep holding'), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('Keep holding to discard · 3s'), findsOneWidget);
+      expect(find.text('Hold to discard workout'), findsNothing);
+      expect(
+        find.descendant(of: endButton(), matching: find.text('End workout')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(milliseconds: 800));
+      expect(find.text('Keep holding to discard · 2s'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Keep holding to discard · 1s'), findsOneWidget);
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('holding for three seconds discards, with no name needed',
+        (tester) async {
+      final sheet = await openEndSheet(tester);
+      expect(endEnabled(tester), isFalse);
+
+      final gesture = await press(tester);
+      await tester.pump(const Duration(milliseconds: 2900));
+      expect(sheet.workout.discards, 0);
+      await tester.pump(const Duration(milliseconds: 200));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(sheet.workout.discards, 1);
+      // Nothing was saved, the sheet is closed and no summary opened.
+      expect(sheet.workout.endedWorkouts, 0);
+      expect(find.text('End workout?'), findsNothing);
+      expect(find.byType(WorkoutSummaryScreen), findsNothing);
+    });
+
+    testWidgets('letting go early does nothing and resets', (tester) async {
+      final sheet = await openEndSheet(tester);
+      await tester.enterText(find.byType(TextField).first, 'Push day');
+      await tester.pump();
+
+      final gesture = await press(tester);
+      await tester.pump(const Duration(milliseconds: 2500));
+      expect(find.textContaining('Keep holding'), findsOneWidget);
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      // A hold never also counts as a tap, even with a name filled in.
+      expect(sheet.workout.discards, 0);
+      expect(sheet.workout.endedWorkouts, 0);
+      expect(find.text('End workout?'), findsOneWidget);
+      expect(find.text('Hold to discard workout'), findsOneWidget);
+      expect(
+        find.descendant(of: endButton(), matching: find.text('End workout')),
+        findsOneWidget,
+      );
+
+      // Waiting longer after letting go does not discard either.
+      await tester.pump(const Duration(seconds: 4));
+      expect(sheet.workout.discards, 0);
+    });
+
+    testWidgets('a quick tap still ends the workout', (tester) async {
+      final sheet = await openEndSheet(tester);
+      await tester.enterText(find.byType(TextField).first, 'Push day');
+      await tester.pump();
+
+      final gesture = await press(tester);
+      await tester.pump(const Duration(milliseconds: 100));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(sheet.workout.endedWorkouts, 1);
+      expect(sheet.workout.discards, 0);
+    });
+
+    testWidgets('a failed discard leaves the sheet open', (tester) async {
+      final sheet = await openEndSheet(tester);
+      sheet.workout.failDiscard = true;
+
+      final gesture = await press(tester);
+      await tester.pump(const Duration(milliseconds: 3100));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(sheet.workout.discards, 1);
+      expect(find.text('End workout?'), findsOneWidget);
+    });
+
+    testWidgets('dragging away cancels the hold', (tester) async {
+      final sheet = await openEndSheet(tester);
+      final gesture = await press(tester);
+      await tester.pump(const Duration(milliseconds: 1000));
+      await gesture.moveBy(const Offset(0, -60));
+      await tester.pump(const Duration(milliseconds: 2500));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(sheet.workout.discards, 0);
+      expect(sheet.workout.endedWorkouts, 0);
+    });
   });
 
   group('place search', () {

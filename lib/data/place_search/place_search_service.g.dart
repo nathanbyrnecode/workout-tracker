@@ -8,14 +8,18 @@ part of 'place_search_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The place search the app uses. Change the source here.
 
 @ProviderFor(placeSearchService)
 final placeSearchServiceProvider = PlaceSearchServiceProvider._();
+
+/// The place search the app uses. Change the source here.
 
 final class PlaceSearchServiceProvider extends $FunctionalProvider<
     PlaceSearchService,
     PlaceSearchService,
     PlaceSearchService> with $Provider<PlaceSearchService> {
+  /// The place search the app uses. Change the source here.
   PlaceSearchServiceProvider._()
       : super(
           from: null,
@@ -51,4 +55,4 @@ final class PlaceSearchServiceProvider extends $FunctionalProvider<
 }
 
 String _$placeSearchServiceHash() =>
-    r'4ce63ce65fba39a95c48d8b72ea51fb9d9e98f8a';
+    r'7b94c7e02e60f608ad640d0e451911771ebe4e83';

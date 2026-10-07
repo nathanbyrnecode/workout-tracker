@@ -394,6 +394,130 @@ void main() {
     });
   });
 
+  group('discarding a workout', () {
+    test('deletes the row and resets, saving nothing', () async {
+      final notifier = container.read(currentWorkoutProvider.notifier);
+      await notifier.restoreActiveWorkout();
+      expect(container.read(currentWorkoutProvider).isInProgress, isTrue);
+      requests.clear();
+
+      respond = (_) async => jsonResponse([]);
+      expect(await notifier.discardWorkout(), isTrue);
+
+      final request = requests.single;
+      expect(request.method, 'DELETE');
+      expect(request.url.path, endsWith('/workouts'));
+      expect(request.url.queryParameters['id'], 'eq.42');
+      expect(request.url.queryParameters['user_id'], 'eq.user-a');
+      final state = container.read(currentWorkoutProvider);
+      expect(state.isInProgress, isFalse);
+      expect(state.exercises, isEmpty);
+      expect(state.currentExercise, isNull);
+      expect(state.recoveryStatus, WorkoutRecoveryStatus.ready);
+    });
+
+    test('a failure leaves the workout in progress', () async {
+      final notifier = container.read(currentWorkoutProvider.notifier);
+      await notifier.restoreActiveWorkout();
+      respond = (_) async => jsonResponse({'message': 'unavailable'}, 500);
+
+      expect(await notifier.discardWorkout(), isFalse);
+      expect(container.read(currentWorkoutProvider).isInProgress, isTrue);
+      expect(container.read(currentWorkoutProvider).workoutId, 42);
+    });
+  });
+
+  group('logging a manual workout', () {
+    test('inserts a row for the calendar day and adds it to the list',
+        () async {
+      respond = (request) async => jsonResponse({
+            'id': 9,
+            'date': '2026-10-01',
+            'title': 'Morning run',
+            'location_type': 'Park',
+            'place_name': 'Mayfield Park',
+            'place_address': null,
+            'place_lat': null,
+            'place_lng': null,
+          });
+      final notifier = container.read(manualWorkoutsProvider.notifier);
+      final added = await notifier.addManualWorkout(
+        // A time late in the day must not move it to the next day.
+        date: DateTime(2026, 10, 1, 23, 30),
+        title: ' Morning run ',
+        locationType: LocationType.park,
+        place: const Place(name: 'Mayfield Park'),
+      );
+
+      final request = requests.single;
+      expect(request.method, 'POST');
+      expect(request.url.path, endsWith('/manual_workouts'));
+      expect(jsonDecode(request.body), {
+        'user_id': 'user-a',
+        'date': '2026-10-01',
+        'title': 'Morning run',
+        'location_type': 'Park',
+        'place_name': 'Mayfield Park',
+        'place_address': null,
+        'place_lat': null,
+        'place_lng': null,
+      });
+      expect(added?.id, 9);
+      expect(added?.date, DateTime(2026, 10, 1));
+      expect(container.read(manualWorkoutsProvider).workouts.single.title,
+          'Morning run');
+    });
+
+    test('two adds on one day make two entries', () async {
+      var id = 0;
+      respond = (request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        return jsonResponse({...body, 'id': ++id});
+      };
+      final notifier = container.read(manualWorkoutsProvider.notifier);
+      for (final title in ['Morning run', 'Evening swim']) {
+        await notifier.addManualWorkout(
+          date: DateTime(2026, 10, 1),
+          title: title,
+          locationType: LocationType.other,
+        );
+      }
+
+      expect(requests, hasLength(2));
+      final workouts = container.read(manualWorkoutsProvider).workouts;
+      expect(workouts, hasLength(2));
+      expect(workouts.map((workout) => workout.date).toSet(),
+          {DateTime(2026, 10, 1)});
+      // Newest entry first within a day.
+      expect(workouts.map((workout) => workout.title),
+          ['Evening swim', 'Morning run']);
+    });
+
+    test('an empty name or a failed save adds nothing', () async {
+      final notifier = container.read(manualWorkoutsProvider.notifier);
+      expect(
+        await notifier.addManualWorkout(
+          date: DateTime(2026, 10, 1),
+          title: '  ',
+          locationType: LocationType.gym,
+        ),
+        isNull,
+      );
+      expect(requests, isEmpty);
+
+      respond = (_) async => jsonResponse({'message': 'unavailable'}, 500);
+      expect(
+        await notifier.addManualWorkout(
+          date: DateTime(2026, 10, 1),
+          title: 'Run',
+          locationType: LocationType.gym,
+        ),
+        isNull,
+      );
+      expect(container.read(manualWorkoutsProvider).workouts, isEmpty);
+    });
+  });
+
   group('editing and deleting saved workouts', () {
     Future<void> loadHistory() async {
       respond = (request) async {
