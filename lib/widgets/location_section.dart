@@ -463,7 +463,7 @@ class _SearchPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    DecoratedBox(
+                    Container(
                       decoration: BoxDecoration(border: Border(top: line)),
                       child: InkWell(
                         onTap: onUseCurrentLocation,
@@ -476,7 +476,7 @@ class _SearchPanel extends StatelessWidget {
                             spacing: t.spacing.gap12,
                             children: [
                               _ResultTile(
-                                icon: LucideIcons.locateFixed,
+                                icon: LucideIcons.locate,
                                 color: t.accentText,
                               ),
                               const Text(
@@ -489,7 +489,7 @@ class _SearchPanel extends StatelessWidget {
                       ),
                     ),
                     if (results.isNotEmpty || (query.isNotEmpty && !loading))
-                      DecoratedBox(
+                      Container(
                         decoration: BoxDecoration(border: Border(top: line)),
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),

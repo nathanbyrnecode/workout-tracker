@@ -338,7 +338,9 @@ void main() {
         tester.getCenter(find.byType(HoldToDiscardButton)),
       );
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 1600));
+      // Let the button fade to full opacity before the frame is taken.
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 1300));
     },
   );
 

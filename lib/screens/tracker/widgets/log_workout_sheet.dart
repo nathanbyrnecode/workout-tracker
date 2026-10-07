@@ -189,7 +189,7 @@ class _StepButton extends StatelessWidget {
           child: SizedBox(
             width: t.spacing.iconButton,
             height: t.spacing.iconButton,
-            child: Icon(icon, size: 20, color: t.fg),
+            child: Icon(icon, size: 18, color: t.fg),
           ),
         ),
       ),
