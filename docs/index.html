@@ -6,7 +6,7 @@
     <title>Privacy Policy | FittenUp</title>
     <meta
       name="description"
-      content="How FittenUp handles account information, authentication data, and workout records stored with Supabase."
+      content="How FittenUp handles account information, workout records, and optional location for place search."
     />
     <link
       rel="canonical"
@@ -14,13 +14,24 @@
     />
     <link rel="icon" href="app-icon.png" />
     <link rel="apple-touch-icon" href="app-icon.png" />
+    <meta
+      name="theme-color"
+      content="#0a0b0d"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta
+      name="theme-color"
+      content="#f3f4ef"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta name="color-scheme" content="dark light" />
     <link rel="stylesheet" href="styles.css" />
     <script src="script.js" defer></script>
     <meta property="og:type" content="website" />
     <meta property="og:title" content="FittenUp Privacy Policy" />
     <meta
       property="og:description"
-      content="Your workout records are stored securely with your signed-in account."
+      content="Your workout records are stored with your signed-in account. Location is used only when you ask for it."
     />
     <meta
       property="og:url"
@@ -32,7 +43,7 @@
     />
     <meta
       property="og:image:alt"
-      content="FittenUp Privacy Policy — Your workouts are stored with your signed-in account."
+      content="FittenUp Privacy Policy — Your workouts are yours. Stored with your signed-in account; location only when you ask."
     />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
@@ -62,17 +73,18 @@
           <h1 id="page-title">Your workouts are yours.</h1>
           <p class="hero-copy">
             FittenUp stores your workout records with Supabase and links
-            them to your signed-in account.
+            them to your signed-in account. Location is used only when you
+            ask for it.
           </p>
-          <p class="updated">Last updated 23 August 2026</p>
+          <p class="updated">Last updated 7 October 2026</p>
 
           <div class="summary-grid" aria-label="Privacy at a glance">
             <div class="summary-card">
               <span class="summary-eyebrow">Workout records</span>
               <strong>Stored with Supabase</strong>
               <p>
-                Exercise names, times, sets, reps, and weights are linked to
-                your account.
+                Workout names, times, exercises, sets, reps, weights, and any
+                place you save are linked to your account.
               </p>
             </div>
             <div class="summary-card">
@@ -81,6 +93,14 @@
               <p>
                 Your chosen sign-in identity is used to authenticate and
                 maintain your account.
+              </p>
+            </div>
+            <div class="summary-card">
+              <span class="summary-eyebrow">Location</span>
+              <strong>Only when you ask</strong>
+              <p>
+                Used to suggest nearby places after you tap “Use current
+                location”. Never in the background, and never stored.
               </p>
             </div>
             <div class="summary-card">
@@ -122,14 +142,16 @@
               <p>
                 This Privacy Policy explains how FittenUp (“the app”),
                 provided by Nathan Byrne (“we”, “us”, or “our”), handles
-                information when you use the app.
+                information when you use the app on iOS or Android.
               </p>
               <p>
                 The app stores workout information in Supabase so it is
                 available through your signed-in account. Account information
                 is processed for sign-in, security, and account administration.
-                We do not sell personal information, display advertising, or
-                use personal information for cross-app tracking.
+                If you choose to add a place to a workout, the app can use your
+                device’s location and a place search to suggest places. We do
+                not sell personal information, display advertising, or use
+                personal information for cross-app tracking.
               </p>
             </section>
 
@@ -177,17 +199,69 @@
                   it may process name, email address, phone number, coarse
                   location, user ID, device ID, other usage data, and other data
                   types for app functionality and analytics. The app itself
-                  requests only email and profile access; it does not ask you
-                  to enter a phone number or grant device location permission.
+                  requests only email and profile access from Google and does
+                  not ask you to enter a phone number. Data handled by Google
+                  is also governed by Google’s privacy terms.
+                </p>
+              </div>
+
+              <h3>Location and place search</h3>
+              <p>
+                Adding a place to a workout is optional. A workout can be saved
+                with no place at all.
+              </p>
+              <p>
+                The app asks for permission to use your device’s location only
+                when you tap “Use current location”. It asks for location while
+                the app is in use, never in the background, and at a reduced
+                accuracy that is enough to find places near you. Once you have
+                allowed it, the app also reads your device’s last known
+                location whenever you open the place search, so that it can
+                list nearby places and show distances without asking again.
+              </p>
+              <p>
+                To find places, the app sends requests to two public services
+                that use OpenStreetMap data:
+              </p>
+              <ul>
+                <li>
+                  <strong>Photon</strong>, run by Komoot, receives the text you
+                  type into the place search. If your location is known, it
+                  also receives your coordinates, so that results near you come
+                  first and so that “Use current location” can be turned into
+                  an address.
+                </li>
+                <li>
+                  <strong>The Overpass API</strong>, run by FOSSGIS e.V.,
+                  receives your coordinates when the app lists gyms, sports
+                  centres, and parks near you.
+                </li>
+              </ul>
+              <p>
+                Like any internet service, both also receive your IP address
+                and a label identifying the app. These requests do not include
+                your name, email address, or account ID. We do not control how
+                long these services keep their own request records.
+              </p>
+              <div class="callout">
+                <strong>Your location is not stored</strong>
+                <p>
+                  We do not store your device’s location. We store a place only
+                  when you save one with a workout. You can withdraw location
+                  permission at any time in your device’s settings; place
+                  search by typing keeps working without it.
                 </p>
               </div>
 
               <h3>What we do not add</h3>
               <p>
                 The current version does not include advertising, independent
-                analytics, crash-reporting, or diagnostics SDKs. We do not
-                collect payment details, contacts, photos, microphone data,
-                precise location, or HealthKit data.
+                analytics, crash-reporting, or diagnostics SDKs. It does not
+                send push notifications and does not ask for notification
+                permission. We do not collect payment details, contacts,
+                photos, microphone data, or health data from Apple Health or
+                Health Connect, and we do not track your location in the
+                background.
               </p>
             </section>
 
@@ -195,13 +269,34 @@
               <p class="section-number">03</p>
               <h2>Workout data</h2>
               <p>
-                Workout start and end times, exercise names, set counts, reps,
-                and weights are stored in Supabase and linked to your account.
-                The app retrieves this information after you sign in.
+                The following is stored in Supabase and linked to your account:
+              </p>
+              <ul>
+                <li>
+                  Workout start and end times, exercise names, set counts,
+                  reps, weights, and the time each set was saved.
+                </li>
+                <li>
+                  The name you give a workout and its location type (Gym, Home,
+                  Park, or Other).
+                </li>
+                <li>
+                  If you choose a place for a workout: the place’s name,
+                  address, and coordinates.
+                </li>
+                <li>
+                  Workouts you log by hand for past days: the date, name,
+                  location type, and place if you chose one.
+                </li>
+              </ul>
+              <p>
+                The app retrieves this information after you sign in. It does
+                not keep a local workout database or provide offline workout
+                storage.
               </p>
               <p>
-                The app does not keep a local workout database or provide
-                offline workout storage.
+                Your choice of light or dark appearance is kept in a small file
+                on your device and is not sent to us.
               </p>
             </section>
 
@@ -212,6 +307,13 @@
                 <li>To authenticate you and maintain your signed-in session.</li>
                 <li>To show your first name within the app.</li>
                 <li>To save, retrieve, update, and delete workout records.</li>
+                <li>
+                  To show your activity, streaks, and totals in the Tracker.
+                </li>
+                <li>
+                  To suggest nearby places and attach a place to a workout when
+                  you ask for it.
+                </li>
                 <li>
                   To revoke linked sign-in authorization when you delete your
                   account.
@@ -227,8 +329,8 @@
               <p>
                 Where applicable, we rely on performance of the service you
                 request, our legitimate interests in operating and securing the
-                app, consent where required, and compliance with legal
-                obligations.
+                app, consent where required (including your permission to use
+                device location), and compliance with legal obligations.
               </p>
             </section>
 
@@ -269,13 +371,45 @@
                     >Supabase Privacy Policy <span aria-hidden="true">↗</span></a
                   >
                 </div>
+                <div>
+                  <h3>Komoot (Photon)</h3>
+                  <p>Provides place search and address lookup.</p>
+                  <a
+                    href="https://www.komoot.com/privacy"
+                    rel="noreferrer"
+                    target="_blank"
+                    >Komoot Privacy Policy <span aria-hidden="true">↗</span></a
+                  >
+                </div>
+                <div>
+                  <h3>FOSSGIS e.V. (Overpass API)</h3>
+                  <p>Provides the list of nearby places.</p>
+                  <a
+                    href="https://www.fossgis.de/datenschutzerkl%C3%A4rung/"
+                    rel="noreferrer"
+                    target="_blank"
+                    >FOSSGIS Privacy Policy <span aria-hidden="true">↗</span></a
+                  >
+                </div>
               </div>
               <p>
+                Place data comes from OpenStreetMap and is © OpenStreetMap
+                contributors, available under the
+                <a
+                  href="https://www.openstreetmap.org/copyright"
+                  rel="noreferrer"
+                  target="_blank"
+                  >Open Database Licence</a
+                >.
+              </p>
+              <p>
                 These providers process information on our behalf or as
-                independent controllers under their own terms. Where they
-                process information on our behalf, we require protections that
-                are at least equivalent to those described in this policy and
-                required by applicable law. We may also disclose information
+                independent controllers under their own terms. The place search
+                services are public services that we use without a contract;
+                they act as independent controllers of the request data they
+                receive. Where a provider processes information on our behalf,
+                we require protections that are at least equivalent to those
+                described in this policy and required by applicable law. We may also disclose information
                 where required by law, to protect rights or safety, or as part
                 of a business transfer. We do not sell or rent your personal
                 information.
@@ -286,8 +420,11 @@
               <p class="section-number">06</p>
               <h2>Retention and deletion</h2>
               <p>
-                Workout information is retained in Supabase while your account
-                remains active unless you delete an individual workout.
+                Workout information, including workout names, saved places, and
+                workouts logged by hand, is retained in Supabase while your
+                account remains active unless you delete the individual
+                workout. You can remove a saved place from a workout by editing
+                it.
               </p>
               <p>
                 Supabase account and authentication information is retained
@@ -297,8 +434,9 @@
               </p>
               <p>
                 You can delete your account from the Profile area of the app.
-                Account deletion removes your Supabase account and associated
-                workout data, revokes or disconnects the linked sign-in provider
+                Account deletion removes your Supabase account and all
+                associated workout data, including saved places and workouts
+                logged by hand, revokes or disconnects the linked sign-in provider
                 where supported, and removes associated authentication data
                 subject to necessary security, legal, and operational retention.
               </p>
@@ -317,8 +455,14 @@
               <h2>Your choices and rights</h2>
               <p>
                 You can sign out or delete your account at any time from the
-                Profile area. You can also delete individual saved workouts in
-                the app.
+                Profile area. You can also edit or delete individual saved
+                workouts in the app.
+              </p>
+              <p>
+                You can use the app without sharing your location. You can
+                refuse the location prompt, or withdraw permission later in
+                your device’s settings, and still save workouts and search for
+                places by typing.
               </p>
               <p>
                 Depending on where you live, you may have rights to access,
@@ -356,8 +500,8 @@
               <p class="section-number">10</p>
               <h2>International transfers</h2>
               <p>
-                Apple, Google, and Supabase may process information in countries
-                other than the country where you live. Where required, they and
+                Apple, Google, Supabase, Komoot, and FOSSGIS e.V. may process
+                information in countries other than the country where you live. Where required, they and
                 we use appropriate safeguards for international transfers under
                 applicable data-protection law.
               </p>

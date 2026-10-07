@@ -1,11 +1,89 @@
+/* Colours, type and shapes follow the app (lib/theme/app_tokens.dart). */
+@font-face {
+  font-family: "Geist";
+  src: url("fonts/Geist-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("fonts/Geist-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("fonts/Geist-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("fonts/Geist-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("fonts/GeistMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("fonts/GeistMono-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+
 :root {
-  --ink: #f5f8fb;
-  --muted: #aebdcb;
-  --subtle: #75889b;
-  --background: #202730;
-  --surface: #232f3e;
-  --line: rgba(182, 227, 255, 0.16);
-  --accent: #b6e3ff;
+  color-scheme: dark;
+  --ink: #f3f4ef;
+  --muted: #8b8f88;
+  --subtle: #6d716b;
+  --background: #0a0b0d;
+  --surface: #15171a;
+  --surface-2: #1f2125;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --accent: #c0f447;
+  --accent-ink: #0a0b0d;
+  --accent-text: #c0f447;
+  --accent-wash: rgba(192, 244, 71, 0.07);
+  --accent-line: rgba(192, 244, 71, 0.28);
+  --header: rgba(10, 11, 13, 0.7);
+  --orb-1: rgba(192, 244, 71, 0.14);
+  --orb-2: rgba(0, 180, 188, 0.14);
+  --sans: "Geist", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --mono: "Geist Mono", "SFMono-Regular", Consolas, "Liberation Mono",
+    monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --ink: #0f110d;
+    --muted: #666b63;
+    --subtle: #858a82;
+    --background: #f3f4ef;
+    --surface: #ffffff;
+    --surface-2: #ebede6;
+    --line: rgba(10, 12, 8, 0.08);
+    --line-strong: rgba(10, 12, 8, 0.16);
+    --accent-ink: #0f110d;
+    --accent-text: #457200;
+    --accent-wash: rgba(192, 244, 71, 0.2);
+    --accent-line: rgba(69, 114, 0, 0.28);
+    --header: rgba(243, 244, 239, 0.7);
+    --orb-1: rgba(192, 244, 71, 0.32);
+    --orb-2: rgba(0, 180, 188, 0.12);
+  }
 }
 
 * {
@@ -20,22 +98,17 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(
-      circle at 84% 6%,
-      rgba(182, 227, 255, 0.09),
-      transparent 24rem
-    ),
+    radial-gradient(circle at 88% 4%, var(--orb-1), transparent 26rem),
+    radial-gradient(circle at 0% 60rem, var(--orb-2), transparent 24rem),
     var(--background);
   color: var(--ink);
-  font-family:
-    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--sans);
   font-size: 16px;
   line-height: 1.7;
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
 }
@@ -50,8 +123,9 @@ a {
   min-height: 72px;
   padding: 0 max(24px, calc((100vw - 1180px) / 2));
   border-bottom: 1px solid var(--line);
-  background: rgba(32, 39, 48, 0.88);
-  backdrop-filter: blur(18px);
+  background: var(--header);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 .brand {
@@ -59,9 +133,9 @@ a {
   gap: 12px;
   align-items: center;
   color: var(--ink);
-  font-size: 14px;
-  font-weight: 680;
-  letter-spacing: -0.01em;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   text-decoration: none;
 }
 
@@ -79,38 +153,41 @@ a {
 .print-action {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
-  padding: 7px 14px;
-  border: 1px solid var(--line);
+  min-height: 36px;
+  padding: 8px 16px;
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
   font-family: inherit;
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1;
   text-decoration: none;
 }
 
 .contact-link:hover,
 .print-action:hover {
-  border-color: rgba(182, 227, 255, 0.42);
-  background: rgba(182, 227, 255, 0.07);
+  border-color: var(--accent-line);
+  background: var(--surface-2);
 }
 
 .print-action {
   border-color: transparent;
   background: var(--accent);
-  color: #18232d;
+  color: var(--accent-ink);
   cursor: pointer;
 }
 
 .print-action:hover {
   border-color: transparent;
-  background: #d8f1ff;
+  background: var(--accent);
+  filter: brightness(1.06);
 }
 
 .print-action:focus-visible,
 .contact-link:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-text);
   outline-offset: 3px;
 }
 
@@ -128,11 +205,11 @@ a {
 .section-number,
 .summary-eyebrow,
 .contents > p {
-  color: var(--accent);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  color: var(--accent-text);
+  font-family: var(--mono);
   font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
@@ -140,15 +217,15 @@ a {
   max-width: 820px;
   margin: 12px 0 18px;
   font-size: clamp(48px, 8.5vw, 102px);
-  font-weight: 680;
-  letter-spacing: -0.066em;
-  line-height: 0.97;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
 }
 
 .hero-copy {
   max-width: 760px;
   margin: 0;
-  color: #d3dee8;
+  color: var(--muted);
   font-size: clamp(19px, 2.2vw, 26px);
   letter-spacing: -0.02em;
   line-height: 1.45;
@@ -157,32 +234,33 @@ a {
 .updated {
   margin: 22px 0 0;
   color: var(--subtle);
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: var(--mono);
   font-size: 12px;
+  letter-spacing: 0.04em;
 }
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
   margin-top: 68px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--line);
 }
 
 .summary-card {
   min-height: 212px;
-  padding: clamp(24px, 3vw, 34px);
-  background: rgba(35, 47, 62, 0.94);
+  padding: clamp(22px, 2.4vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface);
 }
 
 .summary-card strong {
   display: block;
   margin: 28px 0 10px;
-  font-size: 22px;
-  letter-spacing: -0.028em;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 
 .summary-card p {
@@ -229,12 +307,12 @@ a {
 }
 
 .contents nav a:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .contents nav span {
-  color: #65798c;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  color: var(--subtle);
+  font-family: var(--mono);
   font-size: 10px;
 }
 
@@ -255,16 +333,16 @@ a {
 .policy h2 {
   margin: 0 0 24px;
   font-size: clamp(30px, 4vw, 45px);
-  font-weight: 630;
-  letter-spacing: -0.045em;
+  font-weight: 600;
+  letter-spacing: -0.04em;
   line-height: 1.1;
 }
 
 .policy h3 {
   margin: 32px 0 8px;
   font-size: 18px;
-  font-weight: 650;
-  letter-spacing: -0.018em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .policy p,
@@ -290,21 +368,21 @@ a {
 }
 
 .policy li::marker {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .callout {
   margin: 34px 0;
   padding: 24px 26px 23px;
-  border: 1px solid rgba(182, 227, 255, 0.28);
-  border-radius: 14px;
-  background: rgba(182, 227, 255, 0.055);
+  border: 1px solid var(--accent-line);
+  border-radius: 20px;
+  background: var(--accent-wash);
 }
 
 .callout > strong {
   display: block;
   margin-bottom: 8px;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 13px;
 }
 
@@ -315,16 +393,18 @@ a {
 
 .provider-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
   margin: 32px 0;
 }
 
 .provider-list > div {
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  padding: 22px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: rgba(35, 47, 62, 0.75);
+  border-radius: 20px;
+  background: var(--surface);
 }
 
 .provider-list h3 {
@@ -332,14 +412,14 @@ a {
 }
 
 .provider-list p {
-  min-height: 78px;
+  flex: 1;
   margin: 0 0 18px;
   font-size: 14px;
 }
 
 .provider-list a {
   font-size: 13px;
-  font-weight: 630;
+  font-weight: 600;
 }
 
 footer {
@@ -349,7 +429,7 @@ footer {
   min-height: 96px;
   padding: 0 max(24px, calc((100vw - 1180px) / 2));
   border-top: 1px solid var(--line);
-  background: #1b222b;
+  background: var(--surface);
   color: var(--subtle);
   font-size: 12px;
 }
@@ -358,13 +438,9 @@ footer a {
   text-decoration: none;
 }
 
-@media (max-width: 940px) {
-  .provider-list {
-    grid-template-columns: 1fr;
-  }
-
-  .provider-list p {
-    min-height: 0;
+@media (max-width: 1080px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -470,6 +546,20 @@ footer a {
   body {
     background: white;
     color: black;
+  }
+
+  a,
+  .kicker,
+  .section-number,
+  .summary-eyebrow,
+  .callout > strong {
+    color: black;
+  }
+
+  .summary-card,
+  .callout,
+  .provider-list > div {
+    border-color: #bbb;
   }
 
   .page-shell {
