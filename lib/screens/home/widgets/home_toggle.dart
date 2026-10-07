@@ -5,6 +5,7 @@ import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/widgets/app_glass.dart';
 import 'package:gym_tracker_app/widgets/glass_rim.dart';
 import 'package:gym_tracker_app/widgets/outer_shadow.dart';
+import 'package:gym_tracker_app/widgets/release_to_select.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 /// The glass Current / Previous toggle. With the tab bar, one of the two
@@ -35,26 +36,30 @@ class HomeToggle extends StatelessWidget {
       shadows: t.toggleShadow,
       child: GlassRim(
         borderRadius: radius,
-        child: GlassSegmentedControl(
-          segments: const [
-            GlassSegment(label: 'Current'),
-            GlassSegment(label: 'Previous'),
-          ],
+        child: ReleaseToSelect(
           selectedIndex: selected.index,
-          onSegmentSelected: (index) => onSelected(TabItem.values[index]),
-          height: height,
-          borderRadius: t.radii.toggle,
-          // As on the tab bar: a capsule at any size, growing by half the
-          // package's default while pressed.
-          indicatorExpansion:
-              const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          // The 1px border plus the design's 4, which leaves a 170×36 bubble.
-          padding: const EdgeInsets.all(5),
-          backgroundColor: t.glass,
-          selectedTextStyle: AppTypography.toggle.copyWith(color: t.fg),
-          unselectedTextStyle: AppTypography.toggle.copyWith(color: t.muted),
-          indicatorColor: t.glassBubble,
-          indicatorSettings: appToggleBubbleSettings(t),
+          onSelected: (index) => onSelected(TabItem.values[index]),
+          builder: (context, index, onSegmentSelected) => GlassSegmentedControl(
+            segments: const [
+              GlassSegment(label: 'Current'),
+              GlassSegment(label: 'Previous'),
+            ],
+            selectedIndex: index,
+            onSegmentSelected: onSegmentSelected,
+            height: height,
+            borderRadius: t.radii.toggle,
+            // As on the tab bar: a capsule at any size, growing by half the
+            // package's default while pressed.
+            indicatorExpansion:
+                const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            // The 1px border plus the design's 4, which leaves a 170×36 bubble.
+            padding: const EdgeInsets.all(5),
+            backgroundColor: t.glass,
+            selectedTextStyle: AppTypography.toggle.copyWith(color: t.fg),
+            unselectedTextStyle: AppTypography.toggle.copyWith(color: t.muted),
+            indicatorColor: t.glassBubble,
+            indicatorSettings: appToggleBubbleSettings(t),
+          ),
         ),
       ),
     );

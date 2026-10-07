@@ -3,6 +3,7 @@ import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/widgets/app_glass.dart';
 import 'package:gym_tracker_app/widgets/outer_shadow.dart';
+import 'package:gym_tracker_app/widgets/release_to_select.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -54,38 +55,42 @@ class AppTabBar extends StatelessWidget {
       child: OuterShadow(
         borderRadius: radius,
         shadows: t.tabBarShadow,
-        child: GlassTabBar.bottom(
+        child: ReleaseToSelect(
           selectedIndex: selected.index,
-          onTabSelected: (index) => onSelected(AppTab.values[index]),
-          tabs: [
-            for (final tab in AppTab.values)
-              GlassTab(
-                label: tab.label,
-                icon: tab == AppTab.notifications && hasUnread
-                    ? _UnreadBell(icon: tab.icon)
-                    : Icon(tab.icon),
-              ),
-          ],
-          horizontalPadding: 0,
-          verticalPadding: 0,
-          barHeight: height,
-          barBorderRadius: t.radii.tabBar,
-          tabPadding: const EdgeInsets.symmetric(horizontal: _padding),
-          // No bubble radius is given, so the bubble is a full capsule at any
-          // size; a fixed one looks square once the bubble grows under a
-          // finger. It grows by half the package's default.
-          indicatorExpansion: _bubbleGrowth,
-          iconSize: _iconSize,
-          iconLabelSpacing: 3,
-          magnification: 1,
-          textStyle: AppTypography.tabLabel,
-          selectedIconColor: t.fg,
-          selectedLabelColor: t.fg,
-          unselectedIconColor: t.muted,
-          unselectedLabelColor: t.muted,
-          indicatorColor: t.glassBubble,
-          indicatorSettings: appTabBubbleSettings(t),
-          settings: appGlassSettings(t),
+          onSelected: (index) => onSelected(AppTab.values[index]),
+          builder: (context, index, onTabSelected) => GlassTabBar.bottom(
+            selectedIndex: index,
+            onTabSelected: onTabSelected,
+            tabs: [
+              for (final tab in AppTab.values)
+                GlassTab(
+                  label: tab.label,
+                  icon: tab == AppTab.notifications && hasUnread
+                      ? _UnreadBell(icon: tab.icon)
+                      : Icon(tab.icon),
+                ),
+            ],
+            horizontalPadding: 0,
+            verticalPadding: 0,
+            barHeight: height,
+            barBorderRadius: t.radii.tabBar,
+            tabPadding: const EdgeInsets.symmetric(horizontal: _padding),
+            // No bubble radius is given, so the bubble is a full capsule at any
+            // size; a fixed one looks square once the bubble grows under a
+            // finger. It grows by half the package's default.
+            indicatorExpansion: _bubbleGrowth,
+            iconSize: _iconSize,
+            iconLabelSpacing: 3,
+            magnification: 1,
+            textStyle: AppTypography.tabLabel,
+            selectedIconColor: t.fg,
+            selectedLabelColor: t.fg,
+            unselectedIconColor: t.muted,
+            unselectedLabelColor: t.muted,
+            indicatorColor: t.glassBubble,
+            indicatorSettings: appTabBubbleSettings(t),
+            settings: appGlassSettings(t),
+          ),
         ),
       ),
     );
