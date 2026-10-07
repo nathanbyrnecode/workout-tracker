@@ -61,7 +61,10 @@ class AppShell extends StatelessWidget {
               bottom: floatingActionsBottom + lift,
               child: floatingActions!,
             ),
+          // Keyed so the bar keeps its state when the floating actions above
+          // come and go; without it the bubble jumps instead of sliding.
           Positioned(
+            key: const ValueKey('tab-bar'),
             left: 0,
             right: 0,
             bottom: tabBarBottom + lift,

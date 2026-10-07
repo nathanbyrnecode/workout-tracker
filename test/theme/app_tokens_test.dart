@@ -74,7 +74,6 @@ void main() {
     final radii = AppTokens.dark.radii;
     expect(radii.tabBar, 33);
     expect(radii.toggle, 23);
-    expect(radii.toggleBubble, 18);
     expect(radii.cardLarge, 24);
     expect(radii.card, 20);
     expect(radii.button, 18);

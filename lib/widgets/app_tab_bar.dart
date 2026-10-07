@@ -41,8 +41,8 @@ class AppTabBar extends StatelessWidget {
   static const width = 340.0;
   static const height = 66.0;
   static const _padding = 6.0;
-  static const _bubbleRadius = 26.0;
   static const _iconSize = 22.0;
+  static const _bubbleGrowth = EdgeInsets.symmetric(horizontal: 6, vertical: 4);
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +71,10 @@ class AppTabBar extends StatelessWidget {
           barHeight: height,
           barBorderRadius: t.radii.tabBar,
           tabPadding: const EdgeInsets.symmetric(horizontal: _padding),
-          indicatorBorderRadius: _bubbleRadius,
+          // No bubble radius is given, so the bubble is a full capsule at any
+          // size; a fixed one looks square once the bubble grows under a
+          // finger. It grows by half the package's default.
+          indicatorExpansion: _bubbleGrowth,
           iconSize: _iconSize,
           iconLabelSpacing: 3,
           magnification: 1,

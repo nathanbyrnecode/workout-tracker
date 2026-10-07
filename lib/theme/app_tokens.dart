@@ -317,7 +317,6 @@ class AppRadii {
 
   double get tabBar => 33;
   double get toggle => 23;
-  double get toggleBubble => 18;
   double get cardLarge => 24;
   double get card => 20;
   double get button => 18;

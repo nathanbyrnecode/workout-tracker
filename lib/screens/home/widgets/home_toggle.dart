@@ -44,7 +44,10 @@ class HomeToggle extends StatelessWidget {
           onSegmentSelected: (index) => onSelected(TabItem.values[index]),
           height: height,
           borderRadius: t.radii.toggle,
-          indicatorBorderRadius: t.radii.toggleBubble,
+          // As on the tab bar: a capsule at any size, growing by half the
+          // package's default while pressed.
+          indicatorExpansion:
+              const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           // The 1px border plus the design's 4, which leaves a 170×36 bubble.
           padding: const EdgeInsets.all(5),
           backgroundColor: t.glass,
