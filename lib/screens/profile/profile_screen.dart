@@ -142,6 +142,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               border: Border.all(color: t.line),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
@@ -169,6 +170,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 _SettingsRow(
                   label: 'Sign out',
                   icon: LucideIcons.logOut,
+                  iconSize: 18,
                   onTap: _isDeletingAccount
                       ? null
                       : ref.read(userAuthenticationProvider.notifier).signOut,
@@ -289,10 +291,12 @@ class _SettingsRow extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
+    this.iconSize = 16,
   });
 
   final String label;
   final IconData icon;
+  final double iconSize;
   final VoidCallback? onTap;
 
   @override
@@ -307,7 +311,7 @@ class _SettingsRow extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label, style: AppTypography.body),
-            Icon(icon, size: 16, color: t.muted),
+            Icon(icon, size: iconSize, color: t.muted),
           ],
         ),
       ),

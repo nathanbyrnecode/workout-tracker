@@ -6,6 +6,7 @@ import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/date_format.dart';
 import 'package:gym_tracker_app/util/number_format.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
+import 'package:gym_tracker_app/widgets/tappable_card.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A finished workout on the Previous tab: its date, where it was, and four
@@ -26,55 +27,47 @@ class WorkoutHistoryCard extends StatelessWidget {
     final totals = workoutTotals(workout.exercises.values);
     final start = workout.startTime;
 
-    return Material(
-      color: t.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(t.radii.card),
-        side: BorderSide(color: t.line),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          child: Column(
-            spacing: t.spacing.gap14,
-            children: [
-              Row(
-                children: [
-                  // The date keeps its width; only the chip gives way.
-                  Text(
-                    start == null ? '' : formatShortDate(start),
-                    style: AppTypography.cardTitle,
-                  ),
-                  SizedBox(width: t.spacing.gap8),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: LocationChip(
-                        type: workout.displayLocationType,
-                        place: workout.place,
-                      ),
+    return TappableCard(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Column(
+          spacing: t.spacing.gap14,
+          children: [
+            Row(
+              children: [
+                // The date keeps its width; only the chip gives way.
+                Text(
+                  start == null ? '' : formatShortDate(start),
+                  style: AppTypography.cardTitle,
+                ),
+                SizedBox(width: t.spacing.gap8),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: LocationChip(
+                      type: workout.displayLocationType,
+                      place: workout.place,
                     ),
                   ),
-                  SizedBox(width: t.spacing.gap10),
-                  Icon(LucideIcons.chevronRight, size: 16, color: t.muted),
-                ],
-              ),
-              Row(
-                children: [
-                  _Stat(value: '${totals.exercises}', label: 'EX'),
-                  _Stat(value: '${totals.sets}', label: 'SETS'),
-                  _Stat(value: '${totals.reps}', label: 'REPS'),
-                  _Stat(
-                    value: formatVolume(totals.volume),
-                    label: 'KG',
-                    accent: true,
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
+                SizedBox(width: t.spacing.gap10),
+                Icon(LucideIcons.chevronRight, size: 16, color: t.muted),
+              ],
+            ),
+            Row(
+              children: [
+                _Stat(value: '${totals.exercises}', label: 'EX'),
+                _Stat(value: '${totals.sets}', label: 'SETS'),
+                _Stat(value: '${totals.reps}', label: 'REPS'),
+                _Stat(
+                  value: formatVolume(totals.volume),
+                  label: 'KG',
+                  accent: true,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

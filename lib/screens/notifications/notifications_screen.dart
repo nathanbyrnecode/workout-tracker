@@ -142,6 +142,7 @@ class _NotificationCard extends StatelessWidget {
               spacing: 3,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: t.spacing.gap8,
                   children: [
                     Expanded(

@@ -88,50 +88,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: CustomScrollView(
             controller: _scroll,
             slivers: [
+              // The Current tab shares a sliver with the header. A scroll view
+              // paints earlier slivers over later ones, which would put the
+              // toggle's shadow on top of the first card.
               SliverToBoxAdapter(
                 child: Column(
-                  key: _topKey,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    HomeHeader(
-                      firstName: user.firstName,
-                      now: ref.watch(clockProvider)(),
-                      onOpenNotifications: widget.onOpenNotifications,
-                      hasUnread: widget.hasUnread,
+                    Column(
+                      key: _topKey,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        HomeHeader(
+                          firstName: user.firstName,
+                          now: ref.watch(clockProvider)(),
+                          onOpenNotifications: widget.onOpenNotifications,
+                          hasUnread: widget.hasUnread,
+                        ),
+                        WorkoutBlock(
+                          startTime: workout.isInProgress
+                              ? workout.workoutStartDateTime
+                              : null,
+                          totals: workoutTotals([
+                            ...workout.exercises,
+                            if (activeExercise != null) activeExercise,
+                          ]),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            t.spacing.screen,
+                            t.spacing.gap22,
+                            t.spacing.screen,
+                            0,
+                          ),
+                          child: HomeToggle(
+                            selected: tab,
+                            onSelected: ref
+                                .read(currentTabProvider.notifier)
+                                .setCurrentTab,
+                          ),
+                        ),
+                      ],
                     ),
-                    WorkoutBlock(
-                      startTime: workout.isInProgress
-                          ? workout.workoutStartDateTime
-                          : null,
-                      totals: workoutTotals([
-                        ...workout.exercises,
-                        if (activeExercise != null) activeExercise,
-                      ]),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        t.spacing.screen,
-                        t.spacing.gap22,
-                        t.spacing.screen,
-                        0,
-                      ),
-                      child: HomeToggle(
-                        selected: tab,
-                        onSelected:
-                            ref.read(currentTabProvider.notifier).setCurrentTab,
-                      ),
-                    ),
+                    if (tab == TabItem.currentWorkout)
+                      const CurrentWorkoutArea(),
                   ],
                 ),
               ),
-              switch (tab) {
-                TabItem.currentWorkout =>
-                  const SliverToBoxAdapter(child: CurrentWorkoutArea()),
-                TabItem.previousWorkouts => PreviousWorkoutsArea(
-                    onOpenWorkout: widget.onOpenWorkout,
-                    headersFilled: filled,
-                  ),
-              },
+              if (tab == TabItem.previousWorkouts)
+                PreviousWorkoutsArea(
+                  onOpenWorkout: widget.onOpenWorkout,
+                  headersFilled: filled,
+                ),
               // Room to scroll the last item clear of the floating actions
               // and the tab bar.
               SliverToBoxAdapter(

@@ -17,6 +17,7 @@ import 'package:gym_tracker_app/util/number_format.dart';
 import 'package:gym_tracker_app/widgets/dashed_border.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/screen_title.dart';
+import 'package:gym_tracker_app/widgets/tappable_card.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// The Tracker: streak and day counts, the 17-week grid, and what was logged
@@ -215,26 +216,20 @@ class _LogButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    return Material(
-      color: t.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(t.radii.iconButton),
-        side: BorderSide(color: t.line),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: Container(
-          height: t.spacing.iconButton,
-          padding: const EdgeInsets.only(left: 10, right: 14),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: t.spacing.gap6,
-            children: [
-              Icon(LucideIcons.plus, size: 18, color: t.fg),
-              Text('Log workout', style: AppTypography.toggle),
-            ],
-          ),
+    return TappableCard(
+      onTap: onPressed,
+      radius: t.radii.iconButton,
+      child: Container(
+        // 44 tall including the border.
+        height: t.spacing.iconButton - 2,
+        padding: const EdgeInsets.only(left: 10, right: 14),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: t.spacing.gap6,
+          children: [
+            Icon(LucideIcons.plus, size: 18, color: t.fg),
+            Text('Log workout', style: AppTypography.toggle),
+          ],
         ),
       ),
     );
@@ -260,7 +255,9 @@ class _StatTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: accent ? t.accent : t.card,
         borderRadius: BorderRadius.circular(t.radii.button),
-        border: accent ? null : Border.all(color: t.line),
+        // The accent tile's border is its own colour, so all three tiles are
+        // the same height.
+        border: Border.all(color: accent ? t.accent : t.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,13 +353,16 @@ class _EmptyDay extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: onLog,
+                // As wide as its label, not the card.
                 child: Container(
                   height: t.spacing.iconButton,
-                  alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Text(
-                    'Log a workout',
-                    style: AppTypography.toggle.copyWith(color: t.accentInk),
+                  child: Center(
+                    widthFactor: 1,
+                    child: Text(
+                      'Log a workout',
+                      style: AppTypography.toggle.copyWith(color: t.accentInk),
+                    ),
                   ),
                 ),
               ),

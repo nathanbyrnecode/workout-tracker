@@ -16,7 +16,6 @@ class ScreenTitle extends StatelessWidget {
     final t = context.tokens;
     final label = this.label;
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
           child: Column(

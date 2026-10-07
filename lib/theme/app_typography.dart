@@ -126,7 +126,7 @@ abstract final class AppTypography {
     fontWeight: FontWeight.w500,
     fontSize: 40,
     letterSpacing: -1.6,
-    height: 1.1,
+    height: 1.2,
   );
 
   /// The 12px mono label at 0.16em, as on WELCOME.

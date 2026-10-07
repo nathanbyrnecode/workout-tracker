@@ -86,7 +86,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               // The design places the buttons 44 above the bottom edge.
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 42, 24, 44),
+                // 44 below the link, less the 2 of padding inside it.
+                padding: const EdgeInsets.fromLTRB(24, 42, 24, 42),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -133,7 +134,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       style: AppButtonStyle.card,
                       onPressed: () => _signIn(auth.signInWithGoogle),
                     ),
-                    SizedBox(height: t.spacing.gap22),
+                    // The design's 22, less the 2 of padding inside the link.
+                    const SizedBox(height: 20),
                     Center(
                       child: InkWell(
                         onTap: _openPrivacyPolicy,

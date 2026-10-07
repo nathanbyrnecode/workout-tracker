@@ -167,7 +167,7 @@ class _TrackerGridPainter extends CustomPainter {
     }
 
     // Drawn last so its ring sits over the neighbouring squares: a 2px gap in
-    // the card colour, then a 1.5px ring in the text colour.
+    // the page colour, then a 1.5px ring in the text colour.
     if (selectedRect != null) {
       final shape = RRect.fromRectAndRadius(selectedRect, radius);
       canvas
@@ -183,7 +183,7 @@ class _TrackerGridPainter extends CustomPainter {
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2
-            ..color = tokens.card,
+            ..color = tokens.bg,
         );
     }
   }

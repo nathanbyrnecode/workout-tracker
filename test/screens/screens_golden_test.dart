@@ -16,7 +16,10 @@ import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
-import 'package:gym_tracker_app/state/notifications_state.dart';
+import 'package:gym_tracker_app/state/notifications_state.dart'
+    show notificationsProvider;
+import 'package:gym_tracker_app/state/notifications_state.dart'
+    as notifications_state;
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
 import 'package:gym_tracker_app/widgets/app_shell.dart';
@@ -98,6 +101,7 @@ void screenGolden(
   List<AppNotification> notifications = const [],
   bool emptyHistory = false,
   bool previousTab = false,
+  bool? hasUnread,
   Future<void> Function(WidgetTester tester)? setUp,
 }) {
   goldenTest(
@@ -126,13 +130,18 @@ void screenGolden(
       await setUp?.call(tester);
       await tester.pumpAndSettle();
     },
-    builder: (context) => AppShell(
-      selected: tab,
-      onSelected: (_) {},
-      // As the design's screenshots show the bell.
-      hasUnread: true,
-      floatingActions: tab == AppTab.home ? const WorkoutActionArea() : null,
-      child: screen(),
+    builder: (context) => Consumer(
+      builder: (context, ref, child) => AppShell(
+        selected: tab,
+        onSelected: (_) {},
+        // The design's screenshots show the bell's dot, so most goldens do
+        // too. The Notifications goldens take it from the provider, as the
+        // app does, to show that opening the tab clears it.
+        hasUnread: hasUnread ??
+            notifications_state.hasUnread(ref.watch(notificationsProvider)),
+        floatingActions: tab == AppTab.home ? const WorkoutActionArea() : null,
+        child: screen(),
+      ),
     ),
   );
 }
@@ -169,6 +178,7 @@ void main() {
   screenGolden(
     'new exercise sheet',
     name: 'sheet_new_exercise',
+    hasUnread: true,
     tab: AppTab.home,
     screen: _home,
     workout: () => _liveWorkout(activeExercise: false),
@@ -178,6 +188,7 @@ void main() {
   screenGolden(
     'set sheet when adding',
     name: 'sheet_set_add',
+    hasUnread: true,
     tab: AppTab.home,
     screen: _home,
     workout: _liveWorkout,
@@ -187,6 +198,7 @@ void main() {
   screenGolden(
     'set sheet when editing',
     name: 'sheet_set_edit',
+    hasUnread: true,
     tab: AppTab.home,
     screen: _home,
     workout: _liveWorkout,
@@ -200,6 +212,7 @@ void main() {
   screenGolden(
     'set menu sheet',
     name: 'sheet_set_menu',
+    hasUnread: true,
     tab: AppTab.home,
     screen: _home,
     workout: _liveWorkout,
@@ -211,6 +224,7 @@ void main() {
   screenGolden(
     'previous tab at rest',
     name: 'home_previous',
+    hasUnread: true,
     tab: AppTab.home,
     screen: _home,
     previousTab: true,
@@ -220,6 +234,7 @@ void main() {
   screenGolden(
     'previous tab scrolled, with the headers stuck and filled',
     name: 'home_previous_scrolled',
+    hasUnread: true,
     tab: AppTab.home,
     screen: _home,
     previousTab: true,
@@ -231,6 +246,7 @@ void main() {
   screenGolden(
     'previous tab with no history',
     name: 'home_previous_empty',
+    hasUnread: true,
     tab: AppTab.home,
     screen: _home,
     previousTab: true,
@@ -241,6 +257,7 @@ void main() {
   screenGolden(
     'tracker on today, with a recorded workout',
     name: 'tracker',
+    hasUnread: true,
     tab: AppTab.tracker,
     screen: _tracker,
   );
@@ -248,6 +265,7 @@ void main() {
   screenGolden(
     'tracker on a day with manual entries',
     name: 'tracker_manual_day',
+    hasUnread: true,
     tab: AppTab.tracker,
     screen: _tracker,
     setUp: (tester) => _tapDay(tester, DateTime(2026, 10, 4)),
@@ -256,9 +274,19 @@ void main() {
   screenGolden(
     'tracker on a day with nothing logged',
     name: 'tracker_empty_day',
+    hasUnread: true,
     tab: AppTab.tracker,
     screen: _tracker,
     setUp: (tester) => _tapDay(tester, DateTime(2026, 10, 1)),
+  );
+
+  screenGolden(
+    'tracker with a workout in progress today',
+    name: 'tracker_live',
+    hasUnread: true,
+    tab: AppTab.tracker,
+    screen: _tracker,
+    workout: _liveWorkout,
   );
 
   // ── Notifications (fit-epic.14) ────────────────────────────────────────
@@ -289,6 +317,7 @@ void main() {
   screenGolden(
     'profile',
     name: 'profile',
+    hasUnread: true,
     tab: AppTab.profile,
     screen: () => const ProfileScreen(),
   );
@@ -296,6 +325,7 @@ void main() {
   screenGolden(
     'delete account sheet',
     name: 'sheet_delete_account',
+    hasUnread: true,
     tab: AppTab.profile,
     screen: () => const ProfileScreen(),
     setUp: (tester) => tester.tap(find.text('Delete account')),
