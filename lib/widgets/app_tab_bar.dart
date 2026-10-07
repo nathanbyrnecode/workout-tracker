@@ -84,6 +84,7 @@ class AppTabBar extends StatelessWidget {
           unselectedIconColor: t.muted,
           unselectedLabelColor: t.muted,
           indicatorColor: t.glassBubble,
+          indicatorSettings: appTabBubbleSettings(t),
           settings: appGlassSettings(t),
         ),
       ),

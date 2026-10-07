@@ -54,7 +54,7 @@ class HomeToggle extends StatelessWidget {
           selectedTextStyle: AppTypography.toggle.copyWith(color: t.fg),
           unselectedTextStyle: AppTypography.toggle.copyWith(color: t.muted),
           indicatorColor: t.glassBubble,
-          indicatorSettings: appGlassSettings(t),
+          indicatorSettings: appToggleBubbleSettings(t),
         ),
       ),
     );
