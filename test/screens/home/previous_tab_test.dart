@@ -124,6 +124,28 @@ void main() {
     expect(top(tester, '2026'), lessThan(20));
   });
 
+  testWidgets('only headers stuck at the top have the blurred fill',
+      (tester) async {
+    await pumpPrevious(tester, history: demoHistory());
+    bool filled(String header) => find
+        .ancestor(of: find.text(header), matching: find.byType(BackdropFilter))
+        .evaluate()
+        .isNotEmpty;
+
+    // At rest nothing is stuck.
+    expect(filled('2026'), isFalse);
+    expect(filled('OCTOBER'), isFalse);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -420));
+    await tester.pump();
+
+    // October and its year are stuck; September is still on its way up.
+    expect(filled('2026'), isTrue);
+    expect(filled('OCTOBER'), isTrue);
+    expect(find.text('SEPTEMBER').hitTestable(), findsOneWidget);
+    expect(filled('SEPTEMBER'), isFalse);
+  });
+
   testWidgets('with no history it says so', (tester) async {
     await pumpPrevious(tester, history: const []);
     expect(find.text('Workouts you finish will show up here.'), findsOneWidget);

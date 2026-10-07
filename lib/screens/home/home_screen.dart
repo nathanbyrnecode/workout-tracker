@@ -37,7 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _topKey = GlobalKey();
 
   /// True once the history list has scrolled up to the status bar, which is
-  /// when the sticky headers and the status bar get their blurred fill.
+  /// when the status bar gets the same blurred fill as the headers under it.
   bool _headersStuck = false;
 
   @override
@@ -138,7 +138,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               if (tab == TabItem.previousWorkouts)
                 PreviousWorkoutsArea(
                   onOpenWorkout: widget.onOpenWorkout,
-                  headersFilled: filled,
                 ),
               // Room to scroll the last item clear of the floating actions
               // and the tab bar.
