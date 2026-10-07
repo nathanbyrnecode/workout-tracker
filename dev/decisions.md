@@ -27,6 +27,8 @@ are added.
 
 ## 4. Liquid glass: `liquid_glass_renderer`, with a `BackdropFilter` fallback
 
+**Superseded by 15.** Kept for history.
+
 Used on the tab bar and the Current/Previous toggle only. Where the package is
 not supported (Android, older iOS), fall back to `BackdropFilter` (blur 24,
 saturation about 1.9) with a translucent fill, a 1px light border and a top
@@ -37,15 +39,17 @@ widget so screens don't branch on platform.
 
 Geist and Geist Mono ship as assets and are used through `AppTypography`.
 `google_fonts` fetches at runtime, which makes golden tests non-deterministic
-and the first launch dependent on the network. `google_fonts` is removed once
-nothing uses it.
+and the first launch dependent on the network. `google_fonts` is no longer a
+dependency.
 
 ## 6. Icons are Lucide
 
 The design's line icons map onto Lucide. Use one icon package, not a mix with
 Material icons.
 
-## 7. Place search provider (**Open**)
+## 7. Place search provider
+
+**Settled by 16.** Kept for history.
 
 The prototype mocks place search. The choice is between Google Places and
 Apple MapKit search; it affects cost, API keys and Android support. Until it is
@@ -78,8 +82,7 @@ the `golden` tag so they can be skipped locally on macOS.
 
 A `ThemeExtension` with dark and light values taken from the design README's
 token table. No `Color(0x…)` or `Colors.*` outside `lib/theme/`.
-`tool/check_colours.sh` enforces this in CI; files that predate the redesign
-are listed in `tool/colour_baseline.txt` and leave that list as they are rebuilt.
+`tool/check_colours.sh` enforces this in CI, with no exceptions.
 
 ## 13. Internal docs live in `dev/`
 

@@ -17,7 +17,8 @@ agent; `CLAUDE.md` imports it.
   (`lib/data/supabase_client_provider.dart`). Never call
   `Supabase.instance.client` directly; tests override the provider.
 - **No router.** Tabs are switched with `setState` in
-  `lib/main_bottom_navigation.dart`; other screens are pushed with `Navigator`.
+  `lib/main_bottom_navigation.dart`, which also shows the workout detail
+  screens inside the shell. Only the Summary screen is pushed with `Navigator`.
 
 More detail: `dev/architecture.md`. Settled questions: `dev/decisions.md`.
 Read `dev/decisions.md` before proposing a new package or pattern.
@@ -31,7 +32,7 @@ lib/state/                     Riverpod notifiers (+ committed *.g.dart)
 lib/screens/<feature>/         one folder per screen
 lib/screens/<feature>/widgets/ widgets used by that screen only
 lib/widgets/                   shared widgets
-lib/theme/                     AppTokens, AppTypography, ThemeData (new in the redesign)
+lib/theme/                     AppTokens, AppTypography, ThemeData
 test/                          mirrors lib/; test/helpers/ for shared harnesses
 supabase/migrations/           timestamped SQL files; every table has RLS
 supabase/functions/            Deno edge functions
