@@ -321,16 +321,9 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     }
   }
 
-  Future<void> addSetToCurrentExercise(String reps, String weight) async {
-    var parsedReps = int.tryParse(reps);
-    var parsedWeight = double.tryParse(weight);
-    var exerciseId = state.currentExercise?.id;
-
-    if (parsedReps == null ||
-        parsedWeight == null ||
-        parsedReps < 0 ||
-        parsedWeight < 0 ||
-        exerciseId == null) {
+  Future<void> addSet({required double weight, required int reps}) async {
+    final exerciseId = state.currentExercise?.id;
+    if (reps < 0 || weight < 0 || !weight.isFinite || exerciseId == null) {
       return;
     }
 
@@ -344,8 +337,8 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
           .insert({
             'exercise_id': exerciseId,
             'set_number': state.currentExercise?.sets.length ?? 0,
-            'reps': parsedReps,
-            'weight': parsedWeight,
+            'reps': reps,
+            'weight': weight,
           })
           .select('id, created_at')
           .single();
@@ -359,8 +352,8 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
 
       final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
       updatedSets[rowId] = ExerciseSet(
-        parsedWeight,
-        parsedReps,
+        weight,
+        reps,
         rowId,
         savedAt: (savedAt ?? DateTime.now()).toLocal(),
       );
@@ -371,6 +364,62 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     } catch (error, stackTrace) {
       log(
         'Failed to add the exercise set.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Changes the weight and reps of a set in the active exercise. The set
+  /// keeps its place and the time it was first saved, so the rest timer does
+  /// not restart.
+  Future<void> updateSet(
+    int setId, {
+    required double weight,
+    required int reps,
+  }) async {
+    final currentExercise = state.currentExercise;
+    if (_client.auth.currentUser == null ||
+        !state.isInProgress ||
+        currentExercise == null ||
+        currentExercise.endTime != null ||
+        !currentExercise.sets.containsKey(setId) ||
+        reps < 0 ||
+        weight < 0 ||
+        !weight.isFinite) {
+      return;
+    }
+
+    try {
+      final updatedRows = await _client
+          .from('exercise_sets')
+          .update({'reps': reps, 'weight': weight})
+          .eq('id', setId)
+          .eq('exercise_id', currentExercise.id)
+          .select('id');
+      if (updatedRows.isEmpty) {
+        return;
+      }
+
+      final latestExercise = state.currentExercise;
+      final existing = latestExercise?.sets[setId];
+      if (latestExercise == null ||
+          latestExercise.id != currentExercise.id ||
+          existing == null) {
+        return;
+      }
+
+      // Replacing the value under the same key keeps the set's position.
+      final updatedSets = Map<int, ExerciseSet>.from(latestExercise.sets);
+      updatedSets[setId] =
+          ExerciseSet(weight, reps, setId, savedAt: existing.savedAt);
+
+      _setState(
+        currentExercise: _cloneExerciseWithSets(latestExercise, updatedSets),
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Failed to update the exercise set.',
         error: error,
         stackTrace: stackTrace,
       );

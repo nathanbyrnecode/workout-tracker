@@ -31,13 +31,15 @@ void main() {
     expect(formatCount(0, 'rep'), '0 reps');
   });
 
-  test('elapsed time reads as seconds, then minutes and seconds', () {
+  test('elapsed time reads as seconds, minutes and seconds, then hours', () {
     expect(formatElapsed(Duration.zero), '0s');
     expect(formatElapsed(const Duration(seconds: 45)), '45s');
     expect(formatElapsed(const Duration(seconds: 60)), '1m 0s');
     expect(formatElapsed(const Duration(minutes: 1, seconds: 18)), '1m 18s');
+    expect(formatElapsed(const Duration(minutes: 59, seconds: 59)), '59m 59s');
+    expect(formatElapsed(const Duration(hours: 1)), '1h 0m');
     expect(formatElapsed(const Duration(hours: 1, minutes: 2, seconds: 5)),
-        '62m 5s');
+        '1h 2m');
     expect(formatElapsed(const Duration(seconds: -5)), '0s');
   });
 }

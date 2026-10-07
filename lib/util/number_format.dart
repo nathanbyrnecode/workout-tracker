@@ -23,8 +23,14 @@ String formatCount(int count, String noun) =>
     '$count ${count == 1 ? noun : '${noun}s'}';
 
 /// Formats a length of time the way the design writes durations in prose:
-/// `45s`, `1m 18s`, `62m 5s`.
+/// `45s`, `1m 18s`, and from an hour up `1h 2m`.
 String formatElapsed(Duration duration) {
   final seconds = duration.isNegative ? 0 : duration.inSeconds;
-  return seconds < 60 ? '${seconds}s' : '${seconds ~/ 60}m ${seconds % 60}s';
+  if (seconds < 60) {
+    return '${seconds}s';
+  }
+  if (seconds < 3600) {
+    return '${seconds ~/ 60}m ${seconds % 60}s';
+  }
+  return '${seconds ~/ 3600}h ${seconds % 3600 ~/ 60}m';
 }

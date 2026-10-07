@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
+import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -204,7 +205,7 @@ void main() {
     await notifier.removeSetFromCurrentExercise(100);
     expect(
         container.read(currentWorkoutProvider).currentExercise?.sets, isEmpty);
-    await notifier.addSetToCurrentExercise('6', '82.5');
+    await notifier.addSet(weight: 82.5, reps: 6);
     expect(
         container
             .read(currentWorkoutProvider)
@@ -227,6 +228,109 @@ void main() {
       'reps': 6,
       'weight': 82.5,
     });
+  });
+
+  test('editing a set updates its row and keeps its place and timestamp',
+      () async {
+    respond = (_) async => jsonResponse([
+          activeWorkout()
+            ..['exercises'][0]['exercise_sets'] = [
+              {
+                'id': 100,
+                'set_number': 0,
+                'reps': 8,
+                'weight': 80,
+                'created_at': '2026-09-30T09:25:00Z',
+              },
+              {'id': 101, 'set_number': 1, 'reps': 6, 'weight': 85},
+            ],
+        ]);
+    final notifier = container.read(currentWorkoutProvider.notifier);
+    await notifier.restoreActiveWorkout();
+
+    respond = (request) async => jsonResponse([
+          {'id': 100}
+        ]);
+    await notifier.updateSet(100, weight: 82.5, reps: 7);
+
+    final update = requests.last;
+    expect(update.method, 'PATCH');
+    expect(update.url.path, endsWith('/exercise_sets'));
+    expect(update.url.queryParameters['id'], 'eq.100');
+    expect(update.url.queryParameters['exercise_id'], 'eq.20');
+    expect(jsonDecode(update.body), {'reps': 7, 'weight': 82.5});
+
+    final sets = container.read(currentWorkoutProvider).currentExercise!.sets;
+    expect(sets.keys.toList(), [100, 101]);
+    expect(sets[100]!.weight, 82.5);
+    expect(sets[100]!.reps, 7);
+    expect(sets[100]!.savedAt?.toUtc(), DateTime.utc(2026, 9, 30, 9, 25));
+    expect(sets[101]!.weight, 85);
+  });
+
+  test('a set edit the server did not apply leaves the set unchanged',
+      () async {
+    final notifier = container.read(currentWorkoutProvider.notifier);
+    await notifier.restoreActiveWorkout();
+
+    respond = (_) async => jsonResponse([]);
+    await notifier.updateSet(100, weight: 90, reps: 5);
+    expect(
+        container
+            .read(currentWorkoutProvider)
+            .currentExercise!
+            .sets[100]!
+            .weight,
+        80);
+
+    // Unknown sets and negative values never reach the server.
+    final before = requests.length;
+    await notifier.updateSet(999, weight: 90, reps: 5);
+    await notifier.updateSet(100, weight: -1, reps: 5);
+    expect(requests, hasLength(before));
+  });
+
+  test('manual workouts load for the signed-in user, newest day first',
+      () async {
+    respond = (_) async => jsonResponse([
+          {
+            'id': 2,
+            'date': '2026-10-05',
+            'title': 'Morning run',
+            'location_type': 'Park',
+            'place_name': 'Mayfield Park',
+            'place_address': 'Baring St',
+            'place_lat': null,
+            'place_lng': null,
+          },
+          {
+            'id': 1,
+            'date': '2026-09-21',
+            'title': 'Swim',
+            'location_type': 'Other',
+            'place_name': null,
+            'place_address': null,
+            'place_lat': null,
+            'place_lng': null,
+          },
+        ]);
+    await container
+        .read(manualWorkoutsProvider.notifier)
+        .getManualWorkoutsFromRemote();
+
+    final request = requests.single;
+    expect(request.url.path, endsWith('/manual_workouts'));
+    expect(request.url.queryParameters['user_id'], 'eq.user-a');
+    expect(request.url.queryParameters['order'],
+        'date.desc.nullslast,id.desc.nullslast');
+
+    final workouts = container.read(manualWorkoutsProvider).workouts;
+    expect(workouts.map((workout) => workout.id), [2, 1]);
+    expect(workouts.first.date, DateTime(2026, 10, 5));
+    expect(workouts.first.place?.name, 'Mayfield Park');
+
+    container.read(manualWorkoutsProvider.notifier).resetState();
+    expect(container.read(manualWorkoutsProvider).workouts, isEmpty);
   });
 
   test('history excludes unfinished workouts at the query boundary', () async {

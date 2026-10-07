@@ -34,6 +34,8 @@ Supabase (Postgres + RLS, auth, edge functions)
 | `pastWorkoutsProvider` | `lib/state/past_workouts_state.dart` | Finished workouts with exercises and sets. Also defines the `Workout` class and `mapWorkoutRows` |
 | `userAuthenticationProvider` | `lib/state/user_authentication_state.dart` | Session, Google and Apple sign-in, account deletion |
 | `currentTabProvider` | `lib/state/current_tab_state.dart` | Home's Current/Previous tab |
+| `manualWorkoutsProvider` | `lib/state/manual_workouts_state.dart` | Workouts logged by hand. Loaded at sign-in; adding and editing come with the Log workout and detail tasks |
+| `notificationsProvider` | `lib/state/notifications_state.dart` | Notifications and their read state. Always empty until a real source exists (`dev/decisions.md` 17) |
 | `themeModeProvider` | `lib/state/theme_mode_state.dart` | Light, dark or system; saved on the device |
 | `clockProvider` | `lib/state/clock_provider.dart` | The current time. Timers and the greeting read it so tests can pin it |
 
@@ -61,6 +63,16 @@ their own background, or they hide the glows.
 Home's floating actions (`WorkoutActionArea`) are passed into that slot by
 `MainBottomNavigation`; `HomeScreen` does not draw them. They show on both the
 Current and the Previous tab.
+
+`HomeScreen` is one `CustomScrollView`: the header, workout block and toggle
+scroll away with the content. That is what lets the Previous tab's year and
+month headers stick to the top of the screen (`SliverMainAxisGroup` with
+pinned headers). Once they are stuck, they and the status bar get a blurred
+fill (`StickyHeaderFill`). So `CurrentWorkoutArea` is a plain column and
+`PreviousWorkoutsArea` is a sliver; neither scrolls by itself.
+
+Screens that are not built yet open `WorkoutDetailScreen`, a placeholder that
+the detail task replaces.
 
 Bottom sheets open with `showAppSheet` (`lib/widgets/app_bottom_sheet.dart`),
 which supplies the surface, grab handle, scrim and scrolling.
@@ -154,6 +166,14 @@ The target model is in the design README under "State / Data model".
 by the user's local day, so it is parsed with `parseCalendarDate` and never
 shifted by time zone. The shared `location_type` and `place_*` columns are read
 and written through `lib/data/location_mapper.dart`.
+
+Sheets are functions that return what the user chose (`showNewExerciseSheet`,
+`showSetSheet`, `showSetMenuSheet`, `showDeleteAccountSheet`). The caller
+passes the result to a notifier; sheets do not touch state themselves.
+
+The Tracker is derived entirely by pure functions in
+`lib/data/tracker_stats.dart` from past workouts, the live workout and manual
+workouts. The Previous tab's grouping is `lib/data/workout_history.dart`.
 
 Derived values (per-day map, heat level, streak, month count, total days,
 per-exercise volume) are computed on the client from workouts and manual

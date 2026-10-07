@@ -105,6 +105,38 @@ abstract final class AppTypography {
     letterSpacing: 0.88,
   );
 
+  /// Bottom sheet titles: 22px, -0.02em.
+  static const sheetTitle = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w600,
+    fontSize: 22,
+    letterSpacing: -0.44,
+  );
+
+  /// Text typed into a field: 17px medium.
+  static const input = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w500,
+    fontSize: 17,
+  );
+
+  /// The large number typed into the set sheet: 40px, -0.04em.
+  static const numberInput = TextStyle(
+    fontFamily: mono,
+    fontWeight: FontWeight.w500,
+    fontSize: 40,
+    letterSpacing: -1.6,
+    height: 1.1,
+  );
+
+  /// The 12px mono label at 0.16em, as on WELCOME.
+  static const labelLarge = TextStyle(
+    fontFamily: mono,
+    fontWeight: FontWeight.w500,
+    fontSize: 12,
+    letterSpacing: 1.92,
+  );
+
   /// Stat numbers run from 20px to 26px.
   static const stat = TextStyle(
     fontFamily: mono,

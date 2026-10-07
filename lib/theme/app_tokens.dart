@@ -166,6 +166,9 @@ class AppTokens extends ThemeExtension<AppTokens> {
   AppRadii get radii => const AppRadii();
   AppSpacing get spacing => const AppSpacing();
 
+  /// Text on a solid [danger] button. White in both themes.
+  Color get onDanger => const Color(0xFFFFFFFF);
+
   /// Border of the completed exercise row that is open: accent at 45%.
   Color get accentBorder => accent.withValues(alpha: 0.45);
 

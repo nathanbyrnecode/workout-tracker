@@ -1,9 +1,0 @@
-lib/screens/home/widgets/home_screen/previous_workouts_area.dart
-lib/screens/home/widgets/metric_card.dart
-lib/screens/home/widgets/past_workout_card.dart
-lib/screens/home/widgets/workout_action_area/exercise_actions.dart
-lib/screens/home/widgets/workout_action_area/workout_actions.dart
-lib/screens/welcome/welcome_screen.dart
-lib/util/color_utils.dart
-lib/widgets/authentication_controller.dart
-lib/widgets/card_button.dart

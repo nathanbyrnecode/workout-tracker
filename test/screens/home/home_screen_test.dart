@@ -43,7 +43,9 @@ Future<void> pumpHome(
         home: Scaffold(
           body: Stack(
             children: [
-              HomeScreen(onOpenNotifications: onOpenNotifications ?? () {}),
+              HomeScreen(
+                  onOpenWorkout: (_) {},
+                  onOpenNotifications: onOpenNotifications ?? () {}),
               const Positioned(
                 left: 20,
                 right: 20,
