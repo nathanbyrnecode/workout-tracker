@@ -23,11 +23,6 @@ class Exercise {
   DateTime get startTime => _startTime;
   DateTime? get endTime => _endTime;
 
-  Exercise addSets(Map<int, ExerciseSet> sets) {
-    _sets.addAll(sets);
-    return this;
-  }
-
   Exercise addSet(ExerciseSet set) {
     _sets[set.id] = set;
     return this;
@@ -35,11 +30,6 @@ class Exercise {
 
   Exercise setEndTime(DateTime endTime) {
     _endTime = endTime;
-    return this;
-  }
-
-  Exercise removeSet(int setId) {
-    _sets.removeWhere((id, set) => id == setId);
     return this;
   }
 }

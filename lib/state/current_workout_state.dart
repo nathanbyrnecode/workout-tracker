@@ -327,10 +327,6 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     }
   }
 
-  Future<void> addExerciseToExerciseList(Exercise exercise) async {
-    _setState(exercises: [...state.exercises, exercise]);
-  }
-
   Future<void> startExercise(String name) async {
     final workoutId = state.workoutId;
     if (_client.auth.currentUser == null || workoutId == null) {
