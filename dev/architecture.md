@@ -34,13 +34,60 @@ Supabase (Postgres + RLS, auth, edge functions)
 | `pastWorkoutsProvider` | `lib/state/past_workouts_state.dart` | Finished workouts with exercises and sets. Also defines the `Workout` class and `mapWorkoutRows` |
 | `userAuthenticationProvider` | `lib/state/user_authentication_state.dart` | Session, Google and Apple sign-in, account deletion |
 | `currentTabProvider` | `lib/state/current_tab_state.dart` | Home's Current/Previous tab |
+| `manualWorkoutsProvider` | `lib/state/manual_workouts_state.dart` | Workouts logged by hand. Loaded at sign-in; adding and editing come with the Log workout and detail tasks |
+| `notificationsProvider` | `lib/state/notifications_state.dart` | Notifications and their read state. Always empty until a real source exists (`dev/decisions.md` 17) |
+| `themeModeProvider` | `lib/state/theme_mode_state.dart` | Light, dark or system; saved on the device |
+| `clockProvider` | `lib/state/clock_provider.dart` | The current time. Timers and the greeting read it so tests can pin it |
 
 ### Navigation
 
 There is no router package. `AuthenticatorController`
 (`lib/widgets/authentication_controller.dart`) shows the Welcome screen or the
 app shell depending on the session. `MainBottomNavigation`
-(`lib/main_bottom_navigation.dart`) holds the selected tab index in `setState`.
+(`lib/main_bottom_navigation.dart`) holds the selected `AppTab` in `setState`
+and hands the screen for it to `AppShell`.
+
+`AppShell` (`lib/widgets/app_shell.dart`) is the frame around the four main
+screens. From back to front it stacks:
+
+1. `AppBackground`: the background colour and the two blurred glows.
+2. The current screen.
+3. An optional row of floating actions, 106 above the bottom edge. Screens do
+   not position these themselves; `MainBottomNavigation` passes them in.
+4. `AppTabBar`, 26 above the bottom edge.
+
+Screens pushed with `Navigator` (Summary) cover the shell, which is how they
+hide the tab bar. The detail screens are not pushed; see below. Screens inside the shell should not paint
+their own background, or they hide the glows.
+
+Home's floating actions (`WorkoutActionArea`) are passed into that slot by
+`MainBottomNavigation`; `HomeScreen` does not draw them. They show on both the
+Current and the Previous tab.
+
+`HomeScreen` is one `CustomScrollView`: the header, workout block and toggle
+scroll away with the content. That is what lets the Previous tab's year and
+month headers stick to the top of the screen (`SliverMainAxisGroup` with
+pinned headers). Once they are stuck, they and the status bar get a blurred
+fill (`StickyHeaderFill`). So `CurrentWorkoutArea` is a plain column and
+`PreviousWorkoutsArea` is a sliver; neither scrolls by itself.
+
+Bottom sheets open with `showAppSheet` (`lib/widgets/app_bottom_sheet.dart`),
+which supplies the surface, grab handle, scrim and scrolling.
+
+### Liquid glass
+
+`AppTabBar` is `GlassTabBar.bottom` and `HomeToggle` is `GlassSegmentedControl`,
+both from `liquid_glass_widgets`, sized and coloured from tokens and sharing
+`appGlassSettings` (`lib/widgets/app_glass.dart`). Their drop shadows are drawn
+with `OuterShadow` so they do not show through the glass. The package is initialised in `lib/main.dart`
+(`LiquidGlassWidgets.initialize()` and `.wrap(...)`). It works without that
+setup in tests, where it detects the test environment and draws a simplified
+surface with no shaders, so goldens show the layout and colours but not the
+real refraction. Check the real glass on a device.
+
+`GlassScaffold` is not used: the bar has a fixed size and position and shares
+the bottom of the screen with the floating actions, which a plain `Stack`
+handles directly.
 
 ## Current schema
 
@@ -49,12 +96,18 @@ has no access.
 
 ```
 workouts        id bigint PK, user_id uuid → auth.users (cascade),
-                start_time, end_time, created_at
+                start_time, end_time, created_at,
+                title, location_type (Gym|Home|Park|Other),
+                place_name, place_address, place_lat, place_lng  (all nullable)
 exercises       id bigint PK, workout_id → workouts (cascade), name,
                 start_time, end_time, exercise_number,
                 sets, reps, weight          (legacy columns, unused)
 exercise_sets   id bigint PK, exercise_id → exercises (cascade),
-                set_number, reps integer, weight double precision
+                set_number, reps integer, weight double precision,
+                created_at timestamptz default now() (null on older rows)
+manual_workouts id bigint PK, user_id uuid → auth.users (cascade),
+                date date, title, location_type, place_* columns, created_at.
+                Many rows per date. Removed with the user by the cascade.
 apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
                    service_role only; used by the edge functions.
 ```
@@ -62,20 +115,33 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
 - A workout is owned through `workouts.user_id`. Exercises and sets are
   authorised by joining up to the owning workout in their RLS policies.
 - An unfinished workout is a row whose `end_time` is null.
+- `title` and `location_type` are null while a workout is in progress and on
+  rows written before the redesign (or by an older build). The UI falls back
+  to `Workout.displayTitle` ("Workout") and `displayLocationType` (Gym).
+- The redesign columns and `manual_workouts` come from
+  `20261006232241_add_workout_details_and_manual_workouts.sql`, applied to the
+  hosted project on 2026-10-06. The file's version matches the one recorded in
+  the project's migration history. Builds from `redesign` select the new
+  columns, so any other project they point at needs this migration too.
 
 ### When rows are written
 
 | Event | Write |
 |---|---|
 | Workout started | insert `workouts` (user_id, start_time, created_at) |
-| Workout ended | update `workouts.end_time` |
+| Workout ended | update `workouts.end_time`, `title`, `location_type`, `place_*` |
 | Workout ended with no exercises | delete the `workouts` row |
+| Workout discarded (hold to discard) | delete the `workouts` row (children cascade) |
+| Manual workout logged | insert `manual_workouts` (user_id, date, title, location columns) |
 | Exercise started | insert `exercises` (workout_id, name, start_time, exercise_number) |
 | Exercise ended | update `exercises.end_time` |
 | Exercise ended with no sets | delete the `exercises` row |
 | Set added | insert `exercise_sets` (exercise_id, set_number, reps, weight) |
 | Set removed | delete `exercise_sets` row, then renumber the remaining `set_number`s |
 | Past workout deleted | delete `workouts` row (children cascade) |
+| Past workout edited | update `workouts.title`, `location_type`, `place_*` |
+| Set edited | update `exercise_sets.reps`, `weight` |
+| Manual workout edited or deleted | update or delete the `manual_workouts` row |
 
 ### Edge functions
 
@@ -87,29 +153,64 @@ storage and full account deletion. See
 
 The target model is in the design README under "State / Data model".
 
-| Design model | Today | Change needed |
-|---|---|---|
-| `Workout.id`, `start` | `workouts.id`, `start_time` | none |
-| `Workout.durationSec` | derived from `end_time − start_time` | none; keep deriving it |
-| `Workout.title` | missing | add `workouts.title text` |
-| `Workout.locationType` (Gym, Home, Park, Other) | missing | add `workouts.location_type` with a check constraint |
-| `Workout.place {name, address, lat?, lng?}` | missing | add nullable `place_name`, `place_address`, `place_lat`, `place_lng` |
-| `Exercise {name, start, end}` | `exercises` | none |
-| `Set {kg, reps}` | `exercise_sets.weight`, `reps` | none in the schema; the Dart `ExerciseSet` holds both as `String` and should become `double` / `int` |
-| `Set.savedAt` (drives the rest timer) | missing | add `exercise_sets.created_at timestamptz default now()` |
-| `ManualWorkout {id, date, title, locationType, place?}` | missing | new `manual_workouts` table with RLS, many rows per date |
-| Notifications | none | not in the schema yet; the design uses placeholder data |
-| UI state (screen, tab, selected day, sheet, theme) | `currentTabProvider` only | client-side Riverpod state, nothing in Supabase except possibly theme (kept local) |
+| Design model | Where it lives |
+|---|---|
+| `Workout.id`, `start` | `workouts.id`, `start_time` |
+| `Workout.durationSec` | derived from `end_time − start_time` |
+| `Workout.title`, `locationType`, `place` | `workouts.title`, `location_type`, `place_*`; `Workout` in `lib/models/workout.dart` |
+| `Exercise {name, start, end}` | `exercises` |
+| `Set {kg, reps, savedAt}` | `exercise_sets.weight`, `reps`, `created_at`; `ExerciseSet` holds `double`, `int`, `DateTime?` |
+| `ManualWorkout` | `manual_workouts`; `lib/models/manual_workout.dart`, mapped by `lib/data/manual_workout_mapper.dart` |
+| Notifications | not in the schema (`dev/decisions.md` 17) |
+| UI state (screen, tab, selected day, sheet, theme) | client-side Riverpod state, nothing in Supabase |
 
-Notes for the migration task:
+`manual_workouts.date` is a calendar date, not an instant: the tracker groups
+by the user's local day, so it is parsed with `parseCalendarDate` and never
+shifted by time zone. The shared `location_type` and `place_*` columns are read
+and written through `lib/data/location_mapper.dart`.
 
-- Existing rows have no title or location. Columns must be nullable or have
-  defaults, and the UI needs a fallback (the prototype uses "Workout" and "Gym").
-- `title` is required by the UI when ending a workout, but is written at the
-  end, so the column cannot be `not null` while a workout is in progress.
-- `manual_workouts.date` is a calendar date (`date`, not `timestamptz`): the
-  tracker groups by the user's local day.
-- New migrations are new timestamped files. Never edit an applied migration.
+Place search goes through `PlaceSearchService`
+(`lib/data/place_search/place_search_service.dart`), supplied by
+`placeSearchServiceProvider`. The app's implementation is
+`OsmPlaceSearchService`: Photon for typed search, Overpass for the nearby
+list, and Photon's reverse lookup for "Use current location". Everything
+specific to those services is in that one file; to change the source, write
+another `PlaceSearchService` and return it from the provider.
+
+- The device's position comes through `DeviceLocation`
+  (`device_location.dart`, backed by `geolocator`). Permission is asked for
+  only when the user taps "Use current location". The nearby list and
+  distances appear only once a position is known; they never trigger the
+  permission prompt.
+- The service's `attribution` ("© OpenStreetMap contributors") is shown beside
+  the NEARBY / RESULTS label. The data's licence requires it.
+- A service whose `isAvailable` is false hides the Place part of
+  `LocationSection`. `UnavailablePlaceSearchService` does that, for tests and
+  for any build that should not reach a place service.
+- Tests override the provider with `FakePlaceSearchService`, and the OSM
+  service itself is tested with recorded responses through `MockClient`.
+
+Sheets that save something (End, Edit and Log workout) take a callback that
+does the save and reports success. They close on success and stay open with a
+message on failure, so a failed save never loses what was typed. Both use
+`WorkoutForm` (`lib/widgets/workout_form_sheet.dart`): name, location section,
+confirm and cancel.
+
+`WorkoutDetailScreen` and `ManualWorkoutDetailScreen` take an id and watch
+their provider, so an edit shows at once there and on every list behind them.
+They are shown inside the shell, in place of the tab's screen, so the tab bar
+stays visible as the design shows. `MainBottomNavigation` keeps the tab's
+screen in the tree (offstage) while a detail screen is open, so closing it
+(Back, the system back gesture, or after a delete) returns to the same scroll
+position or selected day. Choosing a tab also closes it.
+
+Other sheets are functions that return what the user chose (`showNewExerciseSheet`,
+`showSetSheet`, `showSetMenuSheet`, `showDeleteAccountSheet`). The caller
+passes the result to a notifier; sheets do not touch state themselves.
+
+The Tracker is derived entirely by pure functions in
+`lib/data/tracker_stats.dart` from past workouts, the live workout and manual
+workouts. The Previous tab's grouping is `lib/data/workout_history.dart`.
 
 Derived values (per-day map, heat level, streak, month count, total days,
 per-exercise volume) are computed on the client from workouts and manual

@@ -1,351 +1,203 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_tracker_app/data/workout_history.dart';
+import 'package:gym_tracker_app/models/workout.dart';
+import 'package:gym_tracker_app/screens/home/widgets/workout_history_card.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
-import 'package:gym_tracker_app/util/color_utils.dart';
+import 'package:gym_tracker_app/theme/app_tokens.dart';
+import 'package:gym_tracker_app/theme/app_typography.dart';
+import 'package:gym_tracker_app/util/date_format.dart';
+import 'package:gym_tracker_app/util/number_format.dart';
 
-class PreviousWorkoutsArea extends ConsumerStatefulWidget {
-  const PreviousWorkoutsArea({super.key});
-
-  @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _PreviousWorkoutsAreaState();
-}
-
-class _PreviousWorkoutsAreaState extends ConsumerState<PreviousWorkoutsArea> {
-  @override
-  Widget build(BuildContext context) {
-    final previousWorkouts = ref.watch(pastWorkoutsProvider).workouts;
-    if (previousWorkouts.isNotEmpty) {
-      return ListView.separated(
-        padding:
-            const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 100),
-        itemCount: previousWorkouts.length,
-        itemBuilder: (context, index) {
-          final workout = previousWorkouts[index];
-          final workoutDuration =
-              workout.endTime != null && workout.startTime != null
-                  ? workout.endTime!.difference(workout.startTime!)
-                  : Duration.zero;
-          num numOfSets = 0;
-          num numOfReps = 0;
-          for (var exercise in workout.exercises.values) {
-            numOfSets += exercise.sets.length;
-            for (var set in exercise.sets.values) {
-              numOfReps += (num.tryParse(set.reps) ?? 0);
-            }
-          }
-
-          return SizedBox(
-            key: ValueKey(workout.id),
-            child: _SwipeWorkoutItem(
-              onTap: () {
-                ref
-                    .read(pastWorkoutsProvider.notifier)
-                    .deleteWorkout(workout.id);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    begin: Alignment(0.00, 0.00),
-                    end: Alignment(1.00, 1.00),
-                    colors: [const Color(0xFF222E3D), const Color(0xFF131921)],
-                  ),
-                ),
-                child: Column(
-                  spacing: 8,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Row(
-                          spacing: 9,
-                          children: [
-                            Text(
-                              '${workout.startTime?.day.toString().padLeft(2, "0")}/${workout.startTime?.month.toString().padLeft(2, "0")}/${workout.startTime?.year.toString().substring(2)}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 2,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xffB6E3FF),
-                              ),
-                            ),
-                            Text(
-                              '•',
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 2,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xffB6E3FF),
-                              ),
-                            ),
-                            Text(
-                              '${workout.startTime?.hour.toString().padLeft(2, "0")}:${workout.startTime?.minute.toString().padLeft(2, "0")}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 2,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xffB6E3FF),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            color: Color(0xff1E252E),
-                          ),
-                          child: Text(
-                            '${workoutDuration.inHours.toString().padLeft(2, "0")}:${(workoutDuration.inMinutes % 60).toString().padLeft(2, "0")}:${(workoutDuration.inSeconds % 60).toString().padLeft(2, "0")}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xffB6E3FF),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      spacing: 14,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.only(
-                                top: 8, bottom: 8, left: 6, right: 6),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: Color.fromRGBO(255, 255, 255, .04),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  workout.exercises.length.toString(),
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xffB6E3FF),
-                                  ),
-                                ),
-                                Text(
-                                  workout.exercises.length == 1
-                                      ? 'Exercise'
-                                      : 'Exercises',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                    color: Color(0xffB6E3FF),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.only(
-                                top: 8, bottom: 8, left: 6, right: 6),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: Color.fromRGBO(255, 255, 255, .04),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  '$numOfSets',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xffB6E3FF),
-                                  ),
-                                ),
-                                Text(
-                                  'Sets',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                    color: Color(0xffB6E3FF),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.only(
-                                top: 8, bottom: 8, left: 6, right: 6),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: Color.fromRGBO(255, 255, 255, .04),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  '$numOfReps',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xffB6E3FF),
-                                  ),
-                                ),
-                                Text(
-                                  'Reps',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                    color: Color(0xffB6E3FF),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-        separatorBuilder: (BuildContext context, int index) {
-          return SizedBox(height: 10);
-        },
-      );
-    } else {
-      return Column(
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 120),
-              child: Text(
-                'No workouts have been\ncompleted yet',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Color.from(
-                        alpha: 0.44, red: 0.714, green: 0.89, blue: 1),
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal),
-              ),
-            ),
-          )
-        ],
-      );
-    }
-  }
-}
-
-class _SwipeWorkoutItem extends StatefulWidget {
-  const _SwipeWorkoutItem({
-    required this.child,
-    this.onTap,
+/// Home's Previous tab, as a sliver for Home's scroll view: finished workouts
+/// grouped by year and month, newest first. The year header sticks to the top
+/// and the month header sticks under it; each new one pushes the last away.
+class PreviousWorkoutsArea extends ConsumerWidget {
+  const PreviousWorkoutsArea({
+    super.key,
+    required this.onOpenWorkout,
   });
 
-  final Widget child;
-  final VoidCallback? onTap;
+  final ValueChanged<Workout> onOpenWorkout;
+
+  static const yearHeaderHeight = 44.0;
+  static const monthHeaderHeight = 34.0;
+
+  /// Space between the toggle and the first year header.
+  static const topPadding = 10.0;
 
   @override
-  State<_SwipeWorkoutItem> createState() => _SwipeWorkoutItemState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.tokens;
+    final years =
+        groupWorkoutsByMonth(ref.watch(pastWorkoutsProvider).workouts);
 
-class _SwipeWorkoutItemState extends State<_SwipeWorkoutItem> {
-  static const double _actionWidth = 60;
-  static const double _maxReveal = _actionWidth * 1 + 10;
-  static const Duration _snapDuration = Duration(milliseconds: 160);
-  double _offset = 0;
+    if (years.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(60, 82, 60, 64),
+          child: Text(
+            'Workouts you finish will show up here.',
+            textAlign: TextAlign.center,
+            style: AppTypography.body.copyWith(color: t.muted),
+          ),
+        ),
+      );
+    }
 
-  void _handleDragUpdate(DragUpdateDetails details) {
-    setState(() {
-      _offset = (_offset + details.delta.dx).clamp(-_maxReveal, 0);
-    });
-  }
-
-  void _handleDragEnd(DragEndDetails details) {
-    final shouldOpen = _offset.abs() > _maxReveal / 2;
-    setState(() {
-      _offset = shouldOpen ? -_maxReveal : 0;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isOpen = _offset != 0;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: GestureDetector(
-        onHorizontalDragUpdate: _handleDragUpdate,
-        onHorizontalDragEnd: _handleDragEnd,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: IgnorePointer(
-                ignoring: !isOpen,
-                child: Row(
-                  spacing: 10,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20, bottom: 20),
-                      child: _ActionButton(
-                        color: Colors.red,
-                        icon: Icons.delete,
-                        onTap: widget.onTap,
+    return SliverPadding(
+      padding: const EdgeInsets.only(top: topPadding),
+      sliver: SliverMainAxisGroup(
+        slivers: [
+          for (final year in years)
+            SliverMainAxisGroup(
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _HeaderDelegate(
+                    height: yearHeaderHeight,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${year.year}',
+                        style: AppTypography.statLarge
+                            .copyWith(letterSpacing: -1.04),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                for (final month in year.months)
+                  SliverMainAxisGroup(
+                    slivers: [
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _HeaderDelegate(
+                          height: monthHeaderHeight,
+                          underline: true,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                monthName(month.month).toUpperCase(),
+                                style: AppTypography.labelWide
+                                    .copyWith(color: t.accentText),
+                              ),
+                              Text(
+                                formatCount(month.workouts.length, 'workout')
+                                    .toUpperCase(),
+                                style: AppTypography.labelWide.copyWith(
+                                  letterSpacing: 1.32,
+                                  color: t.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(
+                          t.spacing.screen,
+                          t.spacing.gap10,
+                          t.spacing.screen,
+                          t.spacing.gap14,
+                        ),
+                        sliver: SliverList.separated(
+                          itemCount: month.workouts.length,
+                          separatorBuilder: (context, index) =>
+                              SizedBox(height: t.spacing.gap10),
+                          itemBuilder: (context, index) {
+                            final workout = month.workouts[index];
+                            return WorkoutHistoryCard(
+                              key: ValueKey(workout.id),
+                              workout: workout,
+                              onTap: () => onOpenWorkout(workout),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
-            AnimatedContainer(
-              duration: _snapDuration,
-              transform: Matrix4.translationValues(_offset, 0, 0),
-              child: widget.child,
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.color,
-    required this.icon,
-    this.onTap,
+/// A fixed-height sticky header that spans the screen. Clear while it scrolls
+/// with the list; once it is stuck at the top it gets the page colour at 70%
+/// over a blur of what is behind it.
+class _HeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _HeaderDelegate({
+    required this.height,
+    required this.child,
+    this.underline = false,
   });
 
-  final Color color;
-  final IconData icon;
-  final VoidCallback? onTap;
+  final double height;
+  final bool underline;
+  final Widget child;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final t = context.tokens;
+    // A year header is stuck once it has been scrolled past its own place in
+    // the list. A month header sticks below its year, so it is stuck once the
+    // year header overlaps it.
+    return StickyHeaderFill(
+      filled: shrinkOffset > 0 || overlapsContent,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: underline ? Border(bottom: BorderSide(color: t.line)) : null,
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: t.spacing.screen),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_HeaderDelegate oldDelegate) =>
+      height != oldDelegate.height ||
+      underline != oldDelegate.underline ||
+      child != oldDelegate.child;
+}
+
+/// The fill behind Home's sticky headers and the status bar once the history
+/// list is scrolled under them: the page colour at 70% over a 20px blur.
+class StickyHeaderFill extends StatelessWidget {
+  const StickyHeaderFill({super.key, required this.filled, this.child});
+
+  final bool filled;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: _SwipeWorkoutItemState._actionWidth,
-      height: double.infinity,
-      child: Material(
-        borderRadius: BorderRadius.circular(10),
-        clipBehavior: Clip.antiAlias,
-        color: color,
-        child: InkWell(
-          splashColor: darken(
-            color,
-            0.08,
-          ).withValues(alpha: 0.8),
-          onTap: onTap,
-          child: Center(
-            child: Icon(
-              icon,
-              color: Colors.white,
-            ),
-          ),
+    final t = context.tokens;
+    if (!filled) {
+      return SizedBox.expand(child: child);
+    }
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: ColoredBox(
+          color: t.bg.withValues(alpha: 0.7),
+          child: SizedBox.expand(child: child),
         ),
       ),
     );

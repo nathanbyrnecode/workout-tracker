@@ -3,12 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:gym_tracker_app/app.dart';
 import 'package:gym_tracker_app/util/legacy_database_cleanup.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await deleteLegacyWorkoutDatabase();
+
+  // Loads the glass shaders before the first frame so the tab bar does not
+  // flash in unstyled.
+  await LiquidGlassWidgets.initialize();
 
   await Supabase.initialize(
     url: 'https://kxcxkducxaryjzzrtcpa.supabase.co',
@@ -25,5 +30,12 @@ Future<void> main() async {
     clientId: iosClientId,
   );
 
-  runApp(ProviderScope(child: const App()));
+  runApp(
+    LiquidGlassWidgets.wrap(
+      adaptiveQuality: true,
+      // Glass follows the app's theme, including the Appearance setting.
+      brightnessResolver: Theme.maybeBrightnessOf,
+      child: ProviderScope(child: const App()),
+    ),
+  );
 }

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/screens/welcome/welcome_screen.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
-import 'package:gym_tracker_app/util/color_utils.dart';
+import 'package:gym_tracker_app/theme/app_tokens.dart';
+import 'package:gym_tracker_app/widgets/app_background.dart';
 
 class AuthenticatorController extends ConsumerStatefulWidget {
   const AuthenticatorController({super.key, required this.child});
@@ -35,8 +36,18 @@ class _AuthenticatorControllerState
 
     return switch (signedInStatus) {
       AuthStatus.unknown => Scaffold(
-          backgroundColor: Color(0xff202730),
-          body: Center(child: CircularProgressIndicator(color: primaryColour)),
+          backgroundColor: context.tokens.bg,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              const AppBackground(),
+              Center(
+                child: CircularProgressIndicator(
+                  color: context.tokens.accentText,
+                ),
+              ),
+            ],
+          ),
         ),
       AuthStatus.signedIn => widget.child,
       AuthStatus.signedOut => const WelcomeScreen(),

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.1+2
+version: 1.1.0+3
 
 environment:
   sdk: ^3.5.4
@@ -33,14 +33,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^2.0.0
   flutter_riverpod: ^3.4.3
   riverpod_annotation: ^4.0.7
-  uuid: ^4.6.0
-  google_fonts: ^9.0.0
   path_provider: ^2.1.6
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^8.2.0
@@ -48,9 +42,12 @@ dependencies:
   supabase_flutter: ^2.18.0
   url_launcher: ^6.3.3
   flutter_launcher_icons: ^0.14.4
+  liquid_glass_widgets: 1.10.0
+  lucide_icons_flutter: ^3.1.22
+  geolocator: ^14.1.1
+  http: ^1.6.0
 
 dev_dependencies:
-  http: 1.6.0
   flutter_test:
     sdk: flutter
 
@@ -78,6 +75,26 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icon/icon.png
+
+  # Bundled so text renders without the network and golden tests are
+  # deterministic (dev/decisions.md 5). Licence: assets/fonts/OFL.txt.
+  fonts:
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Geist-Bold.ttf
+          weight: 700
+    - family: GeistMono
+      fonts:
+        - asset: assets/fonts/GeistMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GeistMono-Medium.ttf
+          weight: 500
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg

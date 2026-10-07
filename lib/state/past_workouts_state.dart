@@ -1,8 +1,12 @@
 import 'dart:developer';
 
+import 'package:gym_tracker_app/data/location_mapper.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
+import 'package:gym_tracker_app/models/location_type.dart';
+import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/workout.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'past_workouts_state.g.dart';
@@ -42,7 +46,7 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
     try {
       final workoutRows = await client
           .from('workouts')
-          .select('id, start_time, end_time')
+          .select('id, start_time, end_time, title, $locationColumns')
           .eq('user_id', user.id)
           .not('end_time', 'is', null)
           .order('start_time', ascending: false);
@@ -64,7 +68,7 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
           ? <Map<String, dynamic>>[]
           : await client
               .from('exercise_sets')
-              .select('id, exercise_id, weight, reps')
+              .select('id, exercise_id, weight, reps, created_at')
               .inFilter(
                   'exercise_id', exerciseRows.map((row) => row['id']).toList())
               .order('id');
@@ -91,11 +95,68 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
     }
   }
 
-  Future<void> deleteWorkout(int workoutId) async {
+  /// Changes a finished workout's title and location. Returns whether the
+  /// change was saved.
+  Future<bool> updateWorkout(
+    int workoutId, {
+    required String title,
+    required LocationType locationType,
+    Place? place,
+  }) async {
+    final client = ref.read(supabaseClientProvider);
+    final user = client.auth.currentUser;
+    if (user == null || title.trim().isEmpty) {
+      return false;
+    }
+
+    try {
+      final updatedRows = await client
+          .from('workouts')
+          .update({
+            'title': title.trim(),
+            ...locationToColumns(locationType, place),
+          })
+          .eq('id', workoutId)
+          .eq('user_id', user.id)
+          .select('id');
+      if (updatedRows.isEmpty) {
+        return false;
+      }
+      _setState(
+        workouts: [
+          for (final workout in state.workouts)
+            if (workout.id == workoutId)
+              Workout(
+                workout.id,
+                workout.startTime,
+                workout.endTime,
+                workout.exercises,
+                title: title.trim(),
+                locationType: locationType,
+                place: place,
+              )
+            else
+              workout,
+        ],
+      );
+      return true;
+    } catch (error, stackTrace) {
+      log(
+        'Failed to update the workout.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  /// Deletes a finished workout with its exercises and sets. Returns whether
+  /// it was deleted.
+  Future<bool> deleteWorkout(int workoutId) async {
     final client = ref.read(supabaseClientProvider);
     final user = client.auth.currentUser;
     if (user == null) {
-      return;
+      return false;
     }
 
     try {
@@ -105,17 +166,21 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
           .eq('id', workoutId)
           .eq('user_id', user.id)
           .select('id');
-      if (deletedRows.isNotEmpty) {
-        final updatedWorkouts =
-            state.workouts.where((workout) => workout.id != workoutId).toList();
-        _setState(workouts: updatedWorkouts);
+      if (deletedRows.isEmpty) {
+        return false;
       }
+      _setState(
+        workouts:
+            state.workouts.where((workout) => workout.id != workoutId).toList(),
+      );
+      return true;
     } catch (error, stackTrace) {
       log(
         'Failed to delete the workout.',
         error: error,
         stackTrace: stackTrace,
       );
+      return false;
     }
   }
 }
@@ -137,6 +202,9 @@ List<Workout> mapWorkoutRows({
       _parseDateTime(row['start_time']),
       _parseDateTime(row['end_time']),
       {},
+      title: row['title'] as String?,
+      locationType: LocationType.fromLabel(row['location_type']),
+      place: mapPlaceColumns(row),
     );
   }
 
@@ -170,16 +238,17 @@ List<Workout> mapWorkoutRows({
     final exercise = exercises[exerciseId];
     final weight = row['weight'];
     final reps = row['reps'];
-    if (exercise == null || weight == null || reps == null) {
+    if (exercise == null || weight is! num || reps is! num) {
       continue;
     }
 
     final setId = (row['id'] as num).toInt();
     exercise.addSet(
       ExerciseSet(
-        _formatNumber(weight),
-        _formatNumber(reps),
+        weight.toDouble(),
+        reps.toInt(),
         setId,
+        savedAt: _parseDateTime(row['created_at']),
       ),
     );
   }
@@ -193,40 +262,4 @@ DateTime? _parseDateTime(Object? value) {
   }
 
   return DateTime.parse(value).toLocal();
-}
-
-String _formatNumber(Object value) {
-  if (value is num && value == value.roundToDouble()) {
-    return value.toInt().toString();
-  }
-
-  return value.toString();
-}
-
-class Workout {
-  final int _id;
-  final DateTime? _startTime;
-  final DateTime? _endTime;
-  final Map<int, Exercise> _exercises;
-
-  Workout(this._id, this._startTime, this._endTime, this._exercises);
-
-  int get id => _id;
-  DateTime? get startTime => _startTime;
-  DateTime? get endTime => _endTime;
-  Map<int, Exercise> get exercises => _exercises;
-
-  void addExercise(Exercise exercise) {
-    if (!_exercises.containsKey(exercise.id)) {
-      _exercises[exercise.id] = exercise;
-    }
-  }
-
-  void addSet(ExerciseSet set, int exerciseId) {
-    if (!_exercises.containsKey(exerciseId) ||
-        !_exercises[exerciseId]!.sets.containsKey(set.id)) {
-      return;
-    }
-    _exercises[exerciseId]!.addSet(set);
-  }
 }

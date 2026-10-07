@@ -1,14 +1,20 @@
 class ExerciseSet {
-  final String _weight;
-  final String _reps;
+  final double _weight;
+  final int _reps;
   final int _id;
+  final DateTime? _savedAt;
 
-  ExerciseSet(String weight, String reps, int id)
+  ExerciseSet(double weight, int reps, int id, {DateTime? savedAt})
       : _weight = weight,
         _reps = reps,
-        _id = id;
+        _id = id,
+        _savedAt = savedAt;
 
-  String get weight => _weight;
-  String get reps => _reps;
+  /// In kilograms.
+  double get weight => _weight;
+  int get reps => _reps;
   int get id => _id;
+
+  /// Null for sets saved before timestamps were recorded.
+  DateTime? get savedAt => _savedAt;
 }

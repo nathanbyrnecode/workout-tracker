@@ -4,10 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
-import 'package:gym_tracker_app/util/color_utils.dart';
+import 'package:gym_tracker_app/theme/app_tokens.dart';
+import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/privacy_policy.dart';
-import 'package:gym_tracker_app/widgets/card_button.dart';
+import 'package:gym_tracker_app/widgets/app_background.dart';
+import 'package:gym_tracker_app/widgets/app_button.dart';
 
+/// Shown when signed out: the logo, the headline and the sign-in buttons.
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -36,7 +39,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     }
 
     setState(() => _isSigningIn = true);
-
     try {
       await signIn();
     } catch (error, stackTrace) {
@@ -45,7 +47,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         error: error,
         stackTrace: stackTrace,
       );
-
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
@@ -66,103 +67,97 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
+    final auth = ref.read(userAuthenticationProvider.notifier);
+    // Sign in with Apple is offered on iOS only.
+    final showApple =
+        !kIsWeb && Theme.of(context).platform == TargetPlatform.iOS;
+
     return Scaffold(
-      backgroundColor: const Color(0xff202730),
-      body: SafeArea(
-        child: _isSigningIn
-            ? Center(
-                child: CircularProgressIndicator(color: primaryColour),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 160,
-                            height: 160,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(36),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: primaryColour.withValues(alpha: 0.35),
-                                  blurRadius: 40,
-                                  spreadRadius: 4,
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(36),
-                              child: Image.asset(
-                                'assets/icon/icon.png',
-                                fit: BoxFit.cover,
-                              ),
+      backgroundColor: t.bg,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const AppBackground(),
+          if (_isSigningIn)
+            Center(child: CircularProgressIndicator(color: t.accentText))
+          else
+            SafeArea(
+              // The design places the buttons 44 above the bottom edge.
+              bottom: false,
+              child: Padding(
+                // 44 below the link, less the 2 of padding inside it.
+                padding: const EdgeInsets.fromLTRB(24, 42, 24, 42),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(t.radii.button),
+                        child: SizedBox(
+                          width: 64,
+                          height: 64,
+                          child: Transform.scale(
+                            scale: 1.12,
+                            child: Image.asset(
+                              'assets/icon/icon.png',
+                              fit: BoxFit.cover,
+                              semanticLabel: 'FittenUp',
                             ),
                           ),
-                          const SizedBox(height: 28),
-                          const Text(
-                            'Welcome',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Track your workouts. Crush your goals.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      spacing: 12,
-                      children: [
-                        CardButton(
-                          onTap: () => _signIn(
-                            ref
-                                .read(userAuthenticationProvider.notifier)
-                                .signInWithGoogle,
+                    const SizedBox(height: 28),
+                    Text(
+                      'WELCOME',
+                      style: AppTypography.labelLarge
+                          .copyWith(color: t.accentText),
+                    ),
+                    SizedBox(height: t.spacing.gap14),
+                    const Text(
+                      'Track your workouts. Crush your goals.',
+                      style: AppTypography.headline,
+                    ),
+                    const Spacer(),
+                    if (showApple) ...[
+                      AppButton(
+                        label: 'Sign in with Apple',
+                        style: AppButtonStyle.inverse,
+                        onPressed: () => _signIn(auth.signInWithApple),
+                      ),
+                      SizedBox(height: t.spacing.gap10),
+                    ],
+                    AppButton(
+                      label: 'Sign in with Google',
+                      style: AppButtonStyle.card,
+                      onPressed: () => _signIn(auth.signInWithGoogle),
+                    ),
+                    // The design's 22, less the 2 of padding inside the link.
+                    const SizedBox(height: 20),
+                    Center(
+                      child: InkWell(
+                        onTap: _openPrivacyPolicy,
+                        borderRadius: BorderRadius.circular(t.radii.chip),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
                           ),
-                          label: 'Sign In With Google',
-                          icon: Icons.g_mobiledata_rounded,
+                          child: Text(
+                            'Privacy Policy',
+                            style: AppTypography.bodySmall
+                                .copyWith(color: t.muted),
+                          ),
                         ),
-                        if (!kIsWeb &&
-                            defaultTargetPlatform == TargetPlatform.iOS)
-                          CardButton(
-                            onTap: () => _signIn(
-                              ref
-                                  .read(userAuthenticationProvider.notifier)
-                                  .signInWithApple,
-                            ),
-                            label: 'Sign In With Apple',
-                            icon: Icons.apple,
-                          ),
-                      ],
+                      ),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: _openPrivacyPolicy,
-                    child: Text(
-                      'Privacy Policy',
-                      style: TextStyle(color: primaryColour),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
+                  ],
+                ),
               ),
+            ),
+        ],
       ),
     );
   }

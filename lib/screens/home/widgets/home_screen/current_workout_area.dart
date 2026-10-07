@@ -1,11 +1,16 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gym_tracker_app/screens/home/widgets/stat_pair.dart';
-import 'package:gym_tracker_app/screens/home/widgets/timer_count.dart';
+import 'package:gym_tracker_app/models/exercise_set.dart';
+import 'package:gym_tracker_app/screens/home/widgets/active_exercise_card.dart';
+import 'package:gym_tracker_app/screens/home/widgets/completed_exercise_card.dart';
+import 'package:gym_tracker_app/screens/home/widgets/sheets/set_menu_sheet.dart';
+import 'package:gym_tracker_app/screens/home/widgets/sheets/set_sheet.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
+import 'package:gym_tracker_app/theme/app_tokens.dart';
+import 'package:gym_tracker_app/theme/app_typography.dart';
 
+/// Home's Current tab: the exercise in progress, then the finished exercises
+/// of this workout, newest first. With nothing to list it shows a message.
 class CurrentWorkoutArea extends ConsumerStatefulWidget {
   const CurrentWorkoutArea({super.key});
 
@@ -15,358 +20,133 @@ class CurrentWorkoutArea extends ConsumerStatefulWidget {
 }
 
 class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
+  /// The finished exercise whose sets are showing. One at a time.
+  int? _openExerciseId;
+
+  Future<void> _openSetMenu(ExerciseSet set, int number) async {
+    final action = await showSetMenuSheet(
+      context: context,
+      set: set,
+      number: number,
+    );
+    if (!mounted) {
+      return;
+    }
+    final notifier = ref.read(currentWorkoutProvider.notifier);
+    switch (action) {
+      case SetMenuAction.delete:
+        await notifier.removeSetFromCurrentExercise(set.id);
+      case SetMenuAction.edit:
+        final values = await showSetSheet(
+          context: context,
+          number: number,
+          initial: (weight: set.weight, reps: set.reps),
+          editing: true,
+        );
+        if (values != null) {
+          await notifier.updateSet(
+            set.id,
+            weight: values.weight,
+            reps: values.reps,
+          );
+        }
+      case null:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    var workoutProvider = ref.watch(currentWorkoutProvider);
-    if (workoutProvider.recoveryStatus == WorkoutRecoveryStatus.pending ||
-        workoutProvider.recoveryStatus == WorkoutRecoveryStatus.loading) {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Color(0xffB6E3FF)),
-            SizedBox(height: 16),
-            Text('Checking for an unfinished workout…',
-                style: TextStyle(color: Colors.white)),
-          ],
-        ),
-      );
-    }
-    if (workoutProvider.recoveryStatus == WorkoutRecoveryStatus.failed) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Text(
-            'Could not check your saved workout.\nCheck your connection and retry.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
-    bool workoutInProgress = workoutProvider.isInProgress;
-    bool exerciseInProgress = workoutProvider.currentExercise != null;
-    final sets = workoutProvider.currentExercise?.sets.values
-            .toList()
-            .reversed
-            .toList() ??
-        [];
-    final exercises = workoutProvider.exercises.reversed.toList();
+    final t = context.tokens;
+    final workout = ref.watch(currentWorkoutProvider);
 
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        if (!workoutInProgress)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 120),
-              child: Text(
-                'Get started by starting a\nworkout!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Color.from(
-                        alpha: 0.44, red: 0.714, green: 0.89, blue: 1),
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal),
+    if (workout.recoveryStatus == WorkoutRecoveryStatus.pending ||
+        workout.recoveryStatus == WorkoutRecoveryStatus.loading) {
+      return _Message(
+        'Checking for an unfinished workout…',
+        leading: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            color: t.accentText,
+          ),
+        ),
+      );
+    }
+    if (workout.recoveryStatus == WorkoutRecoveryStatus.failed) {
+      return const _Message(
+        'Could not check your saved workout. Check your connection and retry.',
+      );
+    }
+    if (!workout.isInProgress) {
+      return const _Message('Get started by starting a workout!');
+    }
+
+    final active = workout.currentExercise;
+    final finished = workout.exercises.reversed.toList();
+    if (active == null && finished.isEmpty) {
+      return const _Message('No exercises have been added to this workout yet');
+    }
+
+    // Home scrolls as one page, so this is a plain column, not a list.
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        t.spacing.screen,
+        t.spacing.gap18,
+        t.spacing.screen,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (active != null)
+            ActiveExerciseCard(exercise: active, onSetMenu: _openSetMenu),
+          for (final exercise in finished)
+            Padding(
+              padding: EdgeInsets.only(
+                top: active != null || exercise != finished.first
+                    ? t.spacing.gap10
+                    : 0,
+              ),
+              child: CompletedExerciseCard(
+                key: ValueKey(exercise.id),
+                exercise: exercise,
+                open: _openExerciseId == exercise.id,
+                onTap: () => setState(() {
+                  _openExerciseId =
+                      _openExerciseId == exercise.id ? null : exercise.id;
+                }),
               ),
             ),
-          )
-        else if (!exerciseInProgress && exercises.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 120),
-              child: Text(
-                'No exercises have been\nadded to this workout yet',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Color.from(
-                        alpha: 0.44, red: 0.714, green: 0.89, blue: 1),
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal),
-              ),
-            ),
-          ),
-        if (workoutInProgress && exerciseInProgress)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 30),
-              Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        workoutProvider.currentExercise?.name ?? "",
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 255, 255, 255),
-                          fontSize: 16,
-                          fontWeight: FontWeight.normal,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    TimerCount(
-                      startTime: workoutProvider.currentExercise?.startTime ??
-                          DateTime.now(),
-                      isSecondary: true,
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 167,
-                child: ListView.separated(
-                  padding: const EdgeInsets.only(left: 20, right: 20),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: max(sets.length, 1),
-                  itemBuilder: (context, index) {
-                    final exerciseSet = sets.isEmpty ? null : sets[index];
-                    return sets.isEmpty
-                        ? Container(
-                            height: 167,
-                            width: 121,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              color: Color(0xff2A343E),
-                            ),
-                            padding: const EdgeInsets.only(
-                                bottom: 16, top: 16, left: 6, right: 6),
-                            child: Center(
-                              child: Text(
-                                'No sets\nadded yet',
-                                style: TextStyle(
-                                    color: Color(0xff5B7182),
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.normal),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          )
-                        : CurrentExerciseSetCard(
-                            weight: exerciseSet!.weight,
-                            reps: exerciseSet.reps,
-                            onRemove: () {
-                              ref
-                                  .read(currentWorkoutProvider.notifier)
-                                  .removeSetFromCurrentExercise(exerciseSet.id);
-                            },
-                          );
-                  },
-                  separatorBuilder: (BuildContext context, int index) {
-                    return SizedBox(width: 10);
-                  },
-                ),
-              ),
-            ],
-          ),
-        if (workoutInProgress && exercises.isNotEmpty) ...[
-          SizedBox(height: 10),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.only(
-                  left: 20, right: 20, top: 10, bottom: 100),
-              scrollDirection: Axis.vertical,
-              itemCount: exercises.length,
-              itemBuilder: (context, index) {
-                int exerciseReps = 0;
-                int exerciseSets = exercises[index].sets.length;
-                for (var set in exercises[index].sets.values) {
-                  exerciseReps += int.tryParse(set.reps) ?? 0;
-                }
-                final exerciseDuration = exercises[index]
-                    .endTime
-                    ?.difference(exercises[index].startTime);
-                final minutes = exerciseDuration?.inMinutes ?? 0;
-                final seconds = exerciseDuration?.inSeconds ?? 0;
-                final durationValue =
-                    minutes > 0 ? minutes : (seconds > 0 ? seconds : 0);
-                return Container(
-                  height: 87,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      begin: Alignment(0.00, 0.50),
-                      end: Alignment(1.00, 0.50),
-                      colors: [
-                        Colors.white.withValues(alpha: 0.03),
-                        const Color.fromRGBO(153, 153, 153, 0.04)
-                      ],
-                    ),
-                  ),
-                  padding: const EdgeInsets.only(
-                      bottom: 10, top: 10, left: 14, right: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          exercises[index].name,
-                          style: TextStyle(
-                            height: 2,
-                            color: Color.fromARGB(255, 255, 255, 255),
-                            fontSize: 14,
-                            fontWeight: FontWeight.normal,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: StatPair(
-                              value: durationValue.toString(),
-                              label: minutes > 1
-                                  ? 'Mins'
-                                  : minutes == 1
-                                      ? 'Min'
-                                      : seconds == 1
-                                          ? 'Sec'
-                                          : 'Secs',
-                            ),
-                          ),
-                          Expanded(
-                            child: StatPair(
-                              value: exerciseSets.toString(),
-                              label: exerciseSets == 1 ? 'Set' : 'Sets',
-                            ),
-                          ),
-                          Expanded(
-                            child: StatPair(
-                              value: exerciseReps.toString(),
-                              label: exerciseReps == 1 ? 'Rep' : 'Reps',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-              separatorBuilder: (BuildContext context, int index) {
-                return SizedBox(height: 10);
-              },
-            ),
-          ),
-        ]
-      ],
+        ],
+      ),
     );
   }
 }
 
-enum _ExerciseSetAction { remove }
+/// A centred line of muted text for the states with nothing to list.
+class _Message extends StatelessWidget {
+  const _Message(this.text, {this.leading});
 
-class CurrentExerciseSetCard extends StatelessWidget {
-  const CurrentExerciseSetCard({
-    super.key,
-    required this.weight,
-    required this.reps,
-    required this.onRemove,
-  });
-
-  final String weight;
-  final String reps;
-  final VoidCallback onRemove;
+  final String text;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 167,
-      width: 121,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: const Color(0xff2A343E),
-      ),
-      padding: const EdgeInsets.only(
-        bottom: 16,
-        top: 16,
-        left: 6,
-        right: 6,
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
+    final t = context.tokens;
+    return Padding(
+      // The design's 18 above the tab's content plus 64 around the message.
+      padding: const EdgeInsets.fromLTRB(60, 82, 60, 64),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        spacing: t.spacing.gap18,
         children: [
-          Positioned.fill(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  weight,
-                  style: const TextStyle(
-                    height: 0.78,
-                    color: Color(0xff5B7182),
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const Text(
-                  'KG',
-                  style: TextStyle(
-                    height: 1.16,
-                    color: Color(0xff5B7182),
-                    fontSize: 24,
-                    fontWeight: FontWeight.normal,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  reps,
-                  style: const TextStyle(
-                    color: Color(0xff5B7182),
-                    height: 0.78,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const Text(
-                  'Reps',
-                  style: TextStyle(
-                    height: 1.16,
-                    color: Color(0xff5B7182),
-                    fontSize: 24,
-                    fontWeight: FontWeight.normal,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: -16,
-            right: -6,
-            child: SizedBox(
-              height: 36,
-              width: 36,
-              child: PopupMenuButton<_ExerciseSetAction>(
-                tooltip: 'Set options',
-                padding: EdgeInsets.zero,
-                icon: const Icon(
-                  Icons.more_vert,
-                  color: Color(0xffB6E3FF),
-                  size: 20,
-                ),
-                onSelected: (action) {
-                  if (action == _ExerciseSetAction.remove) {
-                    onRemove();
-                  }
-                },
-                itemBuilder: (context) => const [
-                  PopupMenuItem<_ExerciseSetAction>(
-                    value: _ExerciseSetAction.remove,
-                    child: Text('Remove set'),
-                  ),
-                ],
-              ),
-            ),
+          if (leading != null) leading!,
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: AppTypography.body.copyWith(color: t.muted),
           ),
         ],
       ),

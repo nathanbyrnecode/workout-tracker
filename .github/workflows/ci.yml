@@ -41,6 +41,21 @@ jobs:
       - name: Test
         run: flutter test
 
+      # Goldens can only be made on Linux. This renders them from the PR's
+      # code so someone working on macOS can download the artifact and commit
+      # the files instead of needing a Linux machine.
+      - name: Render goldens
+        if: always()
+        run: flutter test --tags golden --update-goldens
+
+      - name: Upload rendered goldens
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-goldens
+          path: test/**/goldens/
+          if-no-files-found: ignore
+
       - name: Upload golden failures
         if: failure()
         uses: actions/upload-artifact@v4

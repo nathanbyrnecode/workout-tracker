@@ -1,8 +1,12 @@
 import 'dart:developer';
 
+import 'package:gym_tracker_app/data/location_mapper.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
+import 'package:gym_tracker_app/models/location_type.dart';
+import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +14,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 part 'current_workout_state.g.dart';
 
 enum WorkoutRecoveryStatus { pending, loading, ready, failed }
+
+enum EndWorkoutOutcome { saved, discarded, failed }
+
+/// What ending a workout did. [workout] is set only when it was saved.
+typedef EndWorkoutResult = ({EndWorkoutOutcome outcome, Workout? workout});
 
 const workoutRecoveryWindow = Duration(hours: 12);
 
@@ -149,7 +158,7 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
             id, start_time, end_time,
             exercises (
               id, name, start_time, end_time,
-              exercise_sets (id, set_number, reps, weight)
+              exercise_sets (id, set_number, reps, weight, created_at)
             )
           ''')
           .eq('user_id', userId)
@@ -222,44 +231,100 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     }
   }
 
-  Future<void> endWorkout() async {
+  /// Ends the workout and saves its title and location.
+  ///
+  /// A workout with no finished exercises has nothing worth keeping, so its
+  /// row is deleted and the outcome is [EndWorkoutOutcome.discarded]. On
+  /// failure the workout stays in progress so the user can try again.
+  Future<EndWorkoutResult> endWorkout({
+    required String title,
+    required LocationType locationType,
+    Place? place,
+  }) async {
     final user = _client.auth.currentUser;
     final workoutId = state.workoutId;
-    if (user == null || workoutId == null) {
-      return;
+    final startTime = state.workoutStartDateTime;
+    if (user == null || workoutId == null || startTime == null) {
+      return (outcome: EndWorkoutOutcome.failed, workout: null);
     }
 
     try {
       final endTime = DateTime.now();
+      final exercises = state.exercises;
 
-      if (state.exercises.isNotEmpty) {
-        await _client
-            .from('workouts')
-            .update({'end_time': endTime.toUtc().toIso8601String()})
-            .eq('id', workoutId)
-            .eq('user_id', user.id);
-      } else {
+      if (exercises.isEmpty) {
         await _client
             .from('workouts')
             .delete()
             .eq('id', workoutId)
             .eq('user_id', user.id);
+        resetState();
+        _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
+        return (outcome: EndWorkoutOutcome.discarded, workout: null);
       }
+
+      await _client
+          .from('workouts')
+          .update({
+            'end_time': endTime.toUtc().toIso8601String(),
+            'title': title.trim(),
+            ...locationToColumns(locationType, place),
+          })
+          .eq('id', workoutId)
+          .eq('user_id', user.id);
+
+      final saved = Workout(
+        workoutId,
+        startTime,
+        endTime,
+        {for (final exercise in exercises) exercise.id: exercise},
+        title: title.trim(),
+        locationType: locationType,
+        place: place,
+      );
 
       resetState();
       _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
       await ref.read(pastWorkoutsProvider.notifier).getWorkoutsFromRemote();
+      return (outcome: EndWorkoutOutcome.saved, workout: saved);
     } catch (error, stackTrace) {
       log(
         'Failed to end the workout.',
         error: error,
         stackTrace: stackTrace,
       );
+      return (outcome: EndWorkoutOutcome.failed, workout: null);
     }
   }
 
-  Future<void> addExerciseToExerciseList(Exercise exercise) async {
-    _setState(exercises: [...state.exercises, exercise]);
+  /// Throws the workout away: its row and everything recorded in it are
+  /// deleted and nothing reaches history or the tracker. Returns whether it
+  /// was discarded; on failure the workout stays in progress.
+  Future<bool> discardWorkout() async {
+    final user = _client.auth.currentUser;
+    final workoutId = state.workoutId;
+    if (user == null || workoutId == null) {
+      return false;
+    }
+
+    try {
+      // Exercises and sets go with the workout (cascade).
+      await _client
+          .from('workouts')
+          .delete()
+          .eq('id', workoutId)
+          .eq('user_id', user.id);
+      resetState();
+      _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
+      return true;
+    } catch (error, stackTrace) {
+      log(
+        'Failed to discard the workout.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
   }
 
   Future<void> startExercise(String name) async {
@@ -321,16 +386,9 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     }
   }
 
-  Future<void> addSetToCurrentExercise(String reps, String weight) async {
-    var parsedReps = int.tryParse(reps);
-    var parsedWeight = double.tryParse(weight);
-    var exerciseId = state.currentExercise?.id;
-
-    if (parsedReps == null ||
-        parsedWeight == null ||
-        parsedReps < 0 ||
-        parsedWeight < 0 ||
-        exerciseId == null) {
+  Future<void> addSet({required double weight, required int reps}) async {
+    final exerciseId = state.currentExercise?.id;
+    if (reps < 0 || weight < 0 || !weight.isFinite || exerciseId == null) {
       return;
     }
 
@@ -344,12 +402,13 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
           .insert({
             'exercise_id': exerciseId,
             'set_number': state.currentExercise?.sets.length ?? 0,
-            'reps': parsedReps,
-            'weight': parsedWeight,
+            'reps': reps,
+            'weight': weight,
           })
-          .select('id')
+          .select('id, created_at')
           .single();
       final rowId = (row['id'] as num).toInt();
+      final savedAt = DateTime.tryParse(row['created_at'] as String? ?? '');
 
       final currentExercise = state.currentExercise;
       if (currentExercise == null) {
@@ -357,7 +416,12 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       }
 
       final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
-      updatedSets[rowId] = ExerciseSet(weight, reps, rowId);
+      updatedSets[rowId] = ExerciseSet(
+        weight,
+        reps,
+        rowId,
+        savedAt: (savedAt ?? DateTime.now()).toLocal(),
+      );
 
       _setState(
         currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
@@ -365,6 +429,62 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     } catch (error, stackTrace) {
       log(
         'Failed to add the exercise set.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Changes the weight and reps of a set in the active exercise. The set
+  /// keeps its place and the time it was first saved, so the rest timer does
+  /// not restart.
+  Future<void> updateSet(
+    int setId, {
+    required double weight,
+    required int reps,
+  }) async {
+    final currentExercise = state.currentExercise;
+    if (_client.auth.currentUser == null ||
+        !state.isInProgress ||
+        currentExercise == null ||
+        currentExercise.endTime != null ||
+        !currentExercise.sets.containsKey(setId) ||
+        reps < 0 ||
+        weight < 0 ||
+        !weight.isFinite) {
+      return;
+    }
+
+    try {
+      final updatedRows = await _client
+          .from('exercise_sets')
+          .update({'reps': reps, 'weight': weight})
+          .eq('id', setId)
+          .eq('exercise_id', currentExercise.id)
+          .select('id');
+      if (updatedRows.isEmpty) {
+        return;
+      }
+
+      final latestExercise = state.currentExercise;
+      final existing = latestExercise?.sets[setId];
+      if (latestExercise == null ||
+          latestExercise.id != currentExercise.id ||
+          existing == null) {
+        return;
+      }
+
+      // Replacing the value under the same key keeps the set's position.
+      final updatedSets = Map<int, ExerciseSet>.from(latestExercise.sets);
+      updatedSets[setId] =
+          ExerciseSet(weight, reps, setId, savedAt: existing.savedAt);
+
+      _setState(
+        currentExercise: _cloneExerciseWithSets(latestExercise, updatedSets),
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Failed to update the exercise set.',
         error: error,
         stackTrace: stackTrace,
       );
@@ -480,13 +600,12 @@ CurrentWorkoutStateData mapActiveWorkoutRow(
       return order != 0 ? order : (a['id'] as num).compareTo(b['id'] as num);
     });
     for (final setRow in setRows) {
-      String formatNumber(num value) => value == value.roundToDouble()
-          ? value.toInt().toString()
-          : value.toString();
       exercise.addSet(ExerciseSet(
-        formatNumber(setRow['weight'] as num),
-        formatNumber(setRow['reps'] as num),
+        (setRow['weight'] as num).toDouble(),
+        (setRow['reps'] as num).toInt(),
         (setRow['id'] as num).toInt(),
+        savedAt:
+            DateTime.tryParse(setRow['created_at'] as String? ?? '')?.toLocal(),
       ));
     }
     if (exerciseRow['end_time'] != null) {

@@ -22,7 +22,13 @@ Map<String, dynamic> savedWorkout({String? endTime}) => {
           'start_time': '2026-09-30T09:05:00Z',
           'end_time': '2026-09-30T09:15:00Z',
           'exercise_sets': [
-            {'id': 100, 'set_number': 0, 'weight': 100.0, 'reps': 5},
+            {
+              'id': 100,
+              'set_number': 0,
+              'weight': 100.0,
+              'reps': 5,
+              'created_at': '2026-09-30T09:10:00Z',
+            },
           ],
         },
       ],
@@ -43,14 +49,18 @@ void main() {
     expect(state.exercises.single.name, 'Squat');
     expect(state.exercises.single.endTime?.toUtc(),
         DateTime.utc(2026, 9, 30, 9, 15));
-    expect(state.exercises.single.sets[100]?.weight, '100');
+    expect(state.exercises.single.sets[100]?.weight, 100);
     final active = state.currentExercise!;
     expect(active.id, 20);
     expect(active.endTime, isNull);
     expect(active.startTime.toUtc(), DateTime.utc(2026, 9, 30, 9, 20));
     expect(active.sets.keys.toList(), [103, 102]);
-    expect(active.sets[102]?.weight, '82.5');
-    expect(active.sets[103]?.reps, '8');
+    expect(active.sets[102]?.weight, 82.5);
+    expect(active.sets[103]?.reps, 8);
+    expect(state.exercises.single.sets[100]?.savedAt?.toUtc(),
+        DateTime.utc(2026, 9, 30, 9, 10));
+    // Sets saved before timestamps existed have none.
+    expect(active.sets[102]?.savedAt, isNull);
   });
 
   test('does not resume a completed latest workout', () {
