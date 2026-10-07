@@ -18,14 +18,9 @@ class PreviousWorkoutsArea extends ConsumerWidget {
   const PreviousWorkoutsArea({
     super.key,
     required this.onOpenWorkout,
-    this.headersFilled = false,
   });
 
   final ValueChanged<Workout> onOpenWorkout;
-
-  /// Whether the sticky headers have a blurred fill behind them. True once
-  /// the list has scrolled up under the status bar; at rest they are clear.
-  final bool headersFilled;
 
   static const yearHeaderHeight = 44.0;
   static const monthHeaderHeight = 34.0;
@@ -63,7 +58,6 @@ class PreviousWorkoutsArea extends ConsumerWidget {
                   pinned: true,
                   delegate: _HeaderDelegate(
                     height: yearHeaderHeight,
-                    filled: headersFilled,
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -81,7 +75,6 @@ class PreviousWorkoutsArea extends ConsumerWidget {
                         pinned: true,
                         delegate: _HeaderDelegate(
                           height: monthHeaderHeight,
-                          filled: headersFilled,
                           underline: true,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -134,18 +127,17 @@ class PreviousWorkoutsArea extends ConsumerWidget {
   }
 }
 
-/// A fixed-height sticky header that spans the screen. Clear at rest; with
-/// [filled] it gets the page colour at 70% over a blur of what is behind it.
+/// A fixed-height sticky header that spans the screen. Clear while it scrolls
+/// with the list; once it is stuck at the top it gets the page colour at 70%
+/// over a blur of what is behind it.
 class _HeaderDelegate extends SliverPersistentHeaderDelegate {
   const _HeaderDelegate({
     required this.height,
-    required this.filled,
     required this.child,
     this.underline = false,
   });
 
   final double height;
-  final bool filled;
   final bool underline;
   final Widget child;
 
@@ -162,8 +154,11 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     final t = context.tokens;
+    // A year header is stuck once it has been scrolled past its own place in
+    // the list. A month header sticks below its year, so it is stuck once the
+    // year header overlaps it.
     return StickyHeaderFill(
-      filled: filled,
+      filled: shrinkOffset > 0 || overlapsContent,
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: underline ? Border(bottom: BorderSide(color: t.line)) : null,
@@ -179,7 +174,6 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_HeaderDelegate oldDelegate) =>
       height != oldDelegate.height ||
-      filled != oldDelegate.filled ||
       underline != oldDelegate.underline ||
       child != oldDelegate.child;
 }
