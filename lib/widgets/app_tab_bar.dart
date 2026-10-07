@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
+import 'package:gym_tracker_app/widgets/app_glass.dart';
+import 'package:gym_tracker_app/widgets/outer_shadow.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -49,11 +51,9 @@ class AppTabBar extends StatelessWidget {
     return SizedBox(
       width: width,
       height: height,
-      child: CustomPaint(
-        painter: _OuterShadowPainter(
-          radius: radius,
-          shadows: t.tabBarShadow,
-        ),
+      child: OuterShadow(
+        borderRadius: radius,
+        shadows: t.tabBarShadow,
         child: GlassTabBar.bottom(
           selectedIndex: selected.index,
           onTabSelected: (index) => onSelected(AppTab.values[index]),
@@ -81,49 +81,11 @@ class AppTabBar extends StatelessWidget {
           unselectedIconColor: t.muted,
           unselectedLabelColor: t.muted,
           indicatorColor: t.glassBubble,
-          settings: LiquidGlassSettings(
-            glassColor: t.glass,
-            blur: 24,
-            saturation: 1.9,
-          ),
+          settings: appGlassSettings(t),
         ),
       ),
     );
   }
-}
-
-/// Draws [shadows] around the bar but not behind it. The bar is translucent,
-/// so a shadow painted underneath would show through and grey the glass.
-class _OuterShadowPainter extends CustomPainter {
-  const _OuterShadowPainter({required this.radius, required this.shadows});
-
-  final BorderRadius radius;
-  final List<BoxShadow> shadows;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bar = radius.toRRect(Offset.zero & size);
-    for (final shadow in shadows) {
-      final reach = shadow.blurRadius * 2 + shadow.offset.distance;
-      final outside = Path.combine(
-        PathOperation.difference,
-        Path()..addRect((Offset.zero & size).inflate(reach)),
-        Path()..addRRect(bar),
-      );
-      canvas
-        ..save()
-        ..clipPath(outside)
-        ..drawRRect(
-          bar.shift(shadow.offset).inflate(shadow.spreadRadius),
-          shadow.toPaint(),
-        )
-        ..restore();
-    }
-  }
-
-  @override
-  bool shouldRepaint(_OuterShadowPainter oldDelegate) =>
-      radius != oldDelegate.radius || shadows != oldDelegate.shadows;
 }
 
 class _UnreadBell extends StatelessWidget {

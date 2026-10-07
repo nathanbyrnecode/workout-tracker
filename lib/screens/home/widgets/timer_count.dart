@@ -2,19 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:gym_tracker_app/state/clock_provider.dart';
 
+/// Shows the time since [startTime] and updates every second. The value is
+/// worked out from the clock each tick, so it stays right after the app has
+/// been in the background.
 class TimerCount extends ConsumerStatefulWidget {
   const TimerCount({
     super.key,
     required this.startTime,
+    required this.style,
     this.includeHours = false,
-    this.isSecondary = false,
   });
 
   final DateTime startTime;
+  final TextStyle style;
   final bool includeHours;
-  final bool isSecondary;
+
   @override
   ConsumerState<TimerCount> createState() => _TimerCountState();
 }
@@ -28,28 +32,24 @@ class _TimerCountState extends ConsumerState<TimerCount>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _updateElapsed();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _updateElapsed();
-    });
+    _elapsed = _measure();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _update());
   }
 
   @override
   void didUpdateWidget(covariant TimerCount oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.startTime != widget.startTime) _updateElapsed();
+    if (oldWidget.startTime != widget.startTime) _update();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _updateElapsed();
+    if (state == AppLifecycleState.resumed) _update();
   }
 
-  void _updateElapsed() {
-    setState(() {
-      _elapsed = DateTime.now().difference(widget.startTime);
-    });
-  }
+  Duration _measure() => ref.read(clockProvider)().difference(widget.startTime);
+
+  void _update() => setState(() => _elapsed = _measure());
 
   @override
   void dispose() {
@@ -60,26 +60,11 @@ class _TimerCountState extends ConsumerState<TimerCount>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(100),
-          color: Color.from(alpha: 0.04, red: 1, green: 1, blue: 1)),
-      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 1),
-      child: Row(
-        spacing: 8,
-        children: [
-          Text(
-            formatTimerDuration(_elapsed, includeHours: widget.includeHours),
-            style: GoogleFonts.kodeMono(
-              color: widget.isSecondary
-                  ? Color.fromRGBO(192, 192, 192, .5)
-                  : Color.fromARGB(255, 255, 255, 255),
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
+    return Text(
+      formatTimerDuration(_elapsed, includeHours: widget.includeHours),
+      maxLines: 1,
+      softWrap: false,
+      style: widget.style,
     );
   }
 }

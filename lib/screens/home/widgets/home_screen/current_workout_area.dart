@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/screens/home/widgets/stat_pair.dart';
 import 'package:gym_tracker_app/screens/home/widgets/timer_count.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
+import 'package:gym_tracker_app/theme/app_tokens.dart';
+import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/number_format.dart';
 
 class CurrentWorkoutArea extends ConsumerStatefulWidget {
@@ -21,28 +23,21 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
     var workoutProvider = ref.watch(currentWorkoutProvider);
     if (workoutProvider.recoveryStatus == WorkoutRecoveryStatus.pending ||
         workoutProvider.recoveryStatus == WorkoutRecoveryStatus.loading) {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Color(0xffB6E3FF)),
-            SizedBox(height: 16),
-            Text('Checking for an unfinished workout…',
-                style: TextStyle(color: Colors.white)),
-          ],
+      return _Message(
+        'Checking for an unfinished workout…',
+        leading: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            color: context.tokens.accentText,
+          ),
         ),
       );
     }
     if (workoutProvider.recoveryStatus == WorkoutRecoveryStatus.failed) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Text(
-            'Could not check your saved workout.\nCheck your connection and retry.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
+      return const _Message(
+        'Could not check your saved workout. Check your connection and retry.',
       );
     }
     bool workoutInProgress = workoutProvider.isInProgress;
@@ -58,35 +53,9 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
       mainAxisSize: MainAxisSize.max,
       children: [
         if (!workoutInProgress)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 120),
-              child: Text(
-                'Get started by starting a\nworkout!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Color.from(
-                        alpha: 0.44, red: 0.714, green: 0.89, blue: 1),
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal),
-              ),
-            ),
-          )
+          const _Message('Get started by starting a workout!')
         else if (!exerciseInProgress && exercises.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 120),
-              child: Text(
-                'No exercises have been\nadded to this workout yet',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Color.from(
-                        alpha: 0.44, red: 0.714, green: 0.89, blue: 1),
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal),
-              ),
-            ),
-          ),
+          const _Message('No exercises have been added to this workout yet'),
         if (workoutInProgress && exerciseInProgress)
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -111,7 +80,10 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
                     TimerCount(
                       startTime: workoutProvider.currentExercise?.startTime ??
                           DateTime.now(),
-                      isSecondary: true,
+                      style: AppTypography.stat.copyWith(
+                        fontSize: 14,
+                        color: context.tokens.muted,
+                      ),
                     ),
                   ],
                 ),
@@ -368,6 +340,34 @@ class CurrentExerciseSetCard extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A centred line of muted text for the states with nothing to list.
+class _Message extends StatelessWidget {
+  const _Message(this.text, {this.leading});
+
+  final String text;
+  final Widget? leading;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 64),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        spacing: t.spacing.gap18,
+        children: [
+          if (leading != null) leading!,
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: AppTypography.body.copyWith(color: t.muted),
           ),
         ],
       ),

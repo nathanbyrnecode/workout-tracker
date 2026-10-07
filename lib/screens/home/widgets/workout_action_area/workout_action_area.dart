@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/exercise_actions.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_actions.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
-import 'package:gym_tracker_app/widgets/card_button.dart';
+import 'package:gym_tracker_app/widgets/action_button.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+/// The floating actions for Home. What it shows depends on the workout:
+/// start, add exercise / end workout, or add set / end exercise.
 class WorkoutActionArea extends ConsumerStatefulWidget {
   const WorkoutActionArea({super.key});
 
@@ -19,9 +22,9 @@ class _WorkoutActionAreaState extends ConsumerState<WorkoutActionArea> {
     final workoutNotifier = ref.watch(currentWorkoutProvider.notifier);
 
     if (workoutState.recoveryStatus == WorkoutRecoveryStatus.failed) {
-      return CardButton(
-        onTap: () => workoutNotifier.restoreActiveWorkout(),
-        icon: Icons.refresh,
+      return ActionButton.primary(
+        onPressed: workoutNotifier.restoreActiveWorkout,
+        icon: LucideIcons.refreshCw,
         label: 'Retry workout recovery',
       );
     }
@@ -38,10 +41,10 @@ class _WorkoutActionAreaState extends ConsumerState<WorkoutActionArea> {
     } else if (workoutInProgress && exerciseInProgress) {
       return ExerciseActions();
     }
-    return CardButton(
-      onTap: () => workoutNotifier.startWorkout(),
-      icon: Icons.fitness_center_rounded,
-      label: "Start workout",
+    return ActionButton.primary(
+      onPressed: workoutNotifier.startWorkout,
+      icon: LucideIcons.dumbbell,
+      label: 'Start workout',
     );
   }
 }

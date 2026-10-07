@@ -99,7 +99,7 @@ Work is tracked with [beads](https://github.com/steveyegge/beads) (`bd`).
    TestFlight while the redesign lands piece by piece on `redesign`.
 3. One bead per pull request. Open the PR against `redesign`.
 4. Replace widgets in place. Never create `_v2` copies or parallel
-   implementations (`home_screen_v2.dart` is a leftover that will be cleaned up).
+   implementations.
 5. Don't add ad-hoc markdown files at the repo root. Durable notes go in
    `dev/`; task notes go on the bead.
 6. If a PR adds or changes anything under `supabase/migrations/`, say so in the

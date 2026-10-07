@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/main_bottom_navigation.dart';
-import 'package:gym_tracker_app/screens/home/home_screen_v2.dart';
+import 'package:gym_tracker_app/screens/home/home_screen.dart';
 import 'package:gym_tracker_app/screens/notifications/notifications_screen.dart';
 import 'package:gym_tracker_app/screens/profile/profile_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/tracker_screen.dart';
@@ -33,14 +33,14 @@ void main() {
         child: app(const MainBottomNavigation()),
       ),
     );
-    expect(find.byType(HomeScreenV2), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
     // Home supplies the floating actions; the other tabs have none.
     expect(find.text('Start workout'), findsOneWidget);
 
     await tester.tap(tabLabel('Tracker'));
     await tester.pumpAndSettle();
     expect(find.byType(TrackerScreen), findsOneWidget);
-    expect(find.byType(HomeScreenV2), findsNothing);
+    expect(find.byType(HomeScreen), findsNothing);
     expect(find.text('Start workout'), findsNothing);
 
     await tester.tap(tabLabel('Notifications'));
@@ -53,7 +53,7 @@ void main() {
 
     await tester.tap(tabLabel('Home'));
     await tester.pumpAndSettle();
-    expect(find.byType(HomeScreenV2), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('the tab bar is 340 by 66 and sits 26 above the bottom',

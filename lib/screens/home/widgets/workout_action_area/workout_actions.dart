@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/util/color_utils.dart';
-import 'package:gym_tracker_app/widgets/card_button.dart';
+import 'package:gym_tracker_app/widgets/action_button.dart';
+import 'package:gym_tracker_app/widgets/floating_action_row.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class WorkoutActions extends ConsumerStatefulWidget {
   const WorkoutActions({
@@ -19,12 +21,12 @@ class _WorkoutActionsState extends ConsumerState<WorkoutActions> {
   final exerciseController = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    return Row(
-      spacing: 10,
+    return FloatingActionRow(
       children: [
         Expanded(
-          child: CardButton(
-            onTap: () => {
+          flex: 7,
+          child: ActionButton.primary(
+            onPressed: () => {
               showModalBottomSheet<void>(
                   backgroundColor: Colors.white,
                   isScrollControlled: true,
@@ -102,18 +104,15 @@ class _WorkoutActionsState extends ConsumerState<WorkoutActions> {
                 }
               })
             },
-            icon: Icons.add,
-            label: "Add exercise",
+            icon: LucideIcons.plus,
+            label: 'Add exercise',
           ),
         ),
         Expanded(
-          child: CardButton(
-            onTap: () => endWorkout(),
-            icon: Icons.stop_rounded,
-            iconColour: Color(0xffFF2F2F),
-            colour: Color(0xffFFE9E9),
-            textColour: Color(0xffFF2F2F),
-            label: "End workout",
+          flex: 5,
+          child: ActionButton.stop(
+            onPressed: endWorkout,
+            label: 'End workout',
           ),
         ),
       ],

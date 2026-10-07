@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gym_tracker_app/screens/home/home_screen_v2.dart';
+import 'package:gym_tracker_app/screens/home/home_screen.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_action_area.dart';
 import 'package:gym_tracker_app/screens/notifications/notifications_screen.dart';
 import 'package:gym_tracker_app/screens/profile/profile_screen.dart';
@@ -26,7 +26,10 @@ class _MainBottomNavigationState extends ConsumerState<MainBottomNavigation> {
       onSelected: (tab) => setState(() => _tab = tab),
       floatingActions: _tab == AppTab.home ? const WorkoutActionArea() : null,
       child: switch (_tab) {
-        AppTab.home => const HomeScreenV2(),
+        AppTab.home => HomeScreen(
+            onOpenNotifications: () =>
+                setState(() => _tab = AppTab.notifications),
+          ),
         AppTab.tracker => const TrackerScreen(),
         AppTab.notifications => const NotificationsScreen(),
         AppTab.profile => const ProfileScreen(),
