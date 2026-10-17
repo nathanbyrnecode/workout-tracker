@@ -160,12 +160,16 @@ class FakeAuthNotifier extends UserAuthenticationNotifier {
   final emailCalls = <({String method, Map<String, String?> args})>[];
   int passwordResetCancels = 0;
 
+  /// When set, email methods wait for it, so tests can see the busy state.
+  Future<void>? emailGate;
+
   Future<EmailAuthResult> _email(
     String method,
     Map<String, String?> args, {
     EmailAuthResult fallback = EmailAuthResult.signedIn,
   }) async {
     emailCalls.add((method: method, args: args));
+    await emailGate;
     return emailResults[method] ?? fallback;
   }
 

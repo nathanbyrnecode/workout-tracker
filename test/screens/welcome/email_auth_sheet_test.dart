@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/screens/welcome/welcome_screen.dart';
@@ -264,5 +266,23 @@ void main() {
     await settle(tester);
     expect(sheetOpen, isFalse);
     expect(auth.passwordResetCancels, 2);
+  });
+
+  testWidgets('links are disabled while a step runs', (tester) async {
+    final auth = await openSheet(tester);
+    final gate = Completer<void>();
+    auth.emailGate = gate.future;
+    await enter(tester, 'EMAIL', 'lee@example.com');
+    await enter(tester, 'PASSWORD', 'secret');
+
+    await tapButton(tester, 'Sign in');
+
+    expect(find.widgetWithText(AppButton, 'Signing in…'), findsOneWidget);
+    expect(linkEnabled(tester, 'Create an account'), isFalse);
+    expect(linkEnabled(tester, 'Forgot password?'), isFalse);
+
+    gate.complete();
+    await settle(tester);
+    expect(sheetOpen, isFalse);
   });
 }

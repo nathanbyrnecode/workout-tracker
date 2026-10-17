@@ -141,3 +141,9 @@ allow-lists) on both platforms; a code needs none of it. The Supabase email
 templates must therefore show `{{ .Token }}`, and the Email OTP length must
 stay at 6 to match `emailCodeLength` in `lib/data/email_auth.dart`. Results
 and messages never reveal whether an address has an account.
+
+The README's Welcome section lists only the Apple and Google buttons and the
+Privacy Policy link. Email sign-in adds a quiet "Sign in with email" link
+between them (fg, `AppTypography.link`), which moves the buttons up 30px.
+Links inside the email sheet use `accentText`, since no design sheet has text
+links to copy; Privacy Policy stays muted as the README says.

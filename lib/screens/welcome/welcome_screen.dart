@@ -141,8 +141,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       child: AppTextLink(
                         label: 'Sign in with email',
                         color: t.fg,
-                        style: AppTypography.bodyMedium
-                            .copyWith(fontWeight: FontWeight.w500),
+                        style: AppTypography.link,
                         verticalPadding: 10,
                         onTap: () => showEmailAuthSheet(
                           context: context,

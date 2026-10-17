@@ -329,7 +329,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
     final resendLabel = _resendSecondsLeft > 0
         ? 'Send again in ${_resendSecondsLeft}s'
         : 'Send again';
-    final canResend = !_busy && _resendSecondsLeft <= 0;
+    final canResend = _resendSecondsLeft <= 0;
 
     final links = switch (_step) {
       _Step.signIn => [
@@ -403,11 +403,13 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
     );
   }
 
+  /// Links are disabled while a step runs, so its result cannot land on a
+  /// different step.
   Widget _link(String label, VoidCallback? onTap) => AppTextLink(
         label: label,
-        onTap: onTap,
+        onTap: _busy ? null : onTap,
         color: context.tokens.accentText,
-        style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500),
+        style: AppTypography.link,
         verticalPadding: 10,
       );
 
