@@ -76,7 +76,7 @@
             them to your signed-in account. Location is used only when you
             ask for it.
           </p>
-          <p class="updated">Last updated 7 October 2026</p>
+          <p class="updated">Last updated 17 October 2026</p>
 
           <div class="summary-grid" aria-label="Privacy at a glance">
             <div class="summary-card">
@@ -89,7 +89,7 @@
             </div>
             <div class="summary-card">
               <span class="summary-eyebrow">Account access</span>
-              <strong>Apple or Google + Supabase</strong>
+              <strong>Apple, Google or email + Supabase</strong>
               <p>
                 Your chosen sign-in identity is used to authenticate and
                 maintain your account.
@@ -180,6 +180,21 @@
                 The Apple authorization code is exchanged for a refresh token,
                 which is encrypted before being stored in Supabase so that your
                 Apple authorization can be revoked if you delete your account.
+              </p>
+
+              <h3>Email and password</h3>
+              <p>
+                When you choose to sign in with email, you give an email
+                address and a password, and, if you choose, your first name.
+                Supabase stores the password only as a salted hash, so neither
+                we nor Supabase can read it.
+              </p>
+              <p>
+                To confirm your email address when you create an account, and
+                when you ask to reset a forgotten password, a 6-digit code is
+                emailed to you. Supabase sends these emails through an email
+                delivery provider, which receives your email address and the
+                message.
               </p>
 
               <h3>Supabase authentication</h3>
@@ -306,6 +321,10 @@
               <ul>
                 <li>To authenticate you and maintain your signed-in session.</li>
                 <li>To show your first name within the app.</li>
+                <li>
+                  To email you the codes that confirm your address and reset
+                  your password.
+                </li>
                 <li>To save, retrieve, update, and delete workout records.</li>
                 <li>
                   To show your activity, streaks, and totals in the Tracker.
@@ -370,6 +389,13 @@
                     target="_blank"
                     >Supabase Privacy Policy <span aria-hidden="true">↗</span></a
                   >
+                </div>
+                <div>
+                  <h3>Email delivery</h3>
+                  <p>
+                    Sends the confirmation and password-reset emails for email
+                    sign-in on our behalf.
+                  </p>
                 </div>
                 <div>
                   <h3>Komoot (Photon)</h3>
@@ -477,8 +503,9 @@
               <p class="section-number">08</p>
               <h2>Security</h2>
               <p>
-                We use established authentication providers, encryption for
-                stored Apple revocation tokens, and reasonable administrative
+                We use established authentication providers, passwords stored
+                only as salted hashes, encryption for stored Apple revocation
+                tokens, and reasonable administrative
                 and technical safeguards to protect account information. No
                 storage or transmission method is completely secure, so we
                 cannot guarantee absolute security.
@@ -500,7 +527,8 @@
               <p class="section-number">10</p>
               <h2>International transfers</h2>
               <p>
-                Apple, Google, Supabase, Komoot, and FOSSGIS e.V. may process
+                Apple, Google, Supabase, our email delivery provider, Komoot,
+                and FOSSGIS e.V. may process
                 information in countries other than the country where you live. Where required, they and
                 we use appropriate safeguards for international transfers under
                 applicable data-protection law.

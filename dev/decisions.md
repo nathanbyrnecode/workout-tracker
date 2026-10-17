@@ -130,3 +130,14 @@ The design shows the tab bar on the workout detail screens and hides it only
 on Welcome and Summary. So the detail screens are shown inside the app shell,
 in place of the tab's screen, and Summary is pushed over the shell with
 `Navigator`.
+
+## 19. Email sign-in uses 6-digit codes, not links
+
+Email and password sign-in is open to anyone, with the address confirmed
+before the first sign-in. Confirmation and password reset both email a
+6-digit code that is typed into the sheet, rather than a link. Links would
+need deep-link handling (URL schemes, universal and app links, redirect
+allow-lists) on both platforms; a code needs none of it. The Supabase email
+templates must therefore show `{{ .Token }}`, and the Email OTP length must
+stay at 6 to match `emailCodeLength` in `lib/data/email_auth.dart`. Results
+and messages never reveal whether an address has an account.
