@@ -36,6 +36,10 @@ enum EmailAuthResult {
   /// A 6-digit code is on its way. Also reported when the address already
   /// has an account, which Supabase does not reveal.
   codeSent,
+
+  /// Sign-up found an account for the address. Supabase only says so while
+  /// "Confirm email" is off; with it on, sign-up reports [codeSent].
+  accountExists,
   invalidCredentials,
 
   /// The password was right but the address was never confirmed. A new code
@@ -359,6 +363,7 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
       'email_not_confirmed' => EmailAuthResult.emailNotConfirmed,
       'otp_expired' => EmailAuthResult.invalidCode,
       'weak_password' => EmailAuthResult.weakPassword,
+      'user_already_exists' || 'email_exists' => EmailAuthResult.accountExists,
       'over_email_send_rate_limit' ||
       'over_request_rate_limit' =>
         EmailAuthResult.rateLimited,
@@ -413,9 +418,11 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
     });
   }
 
-  /// Creates an account and sends a confirmation code. Supabase reports
-  /// success for an address that already has an account and sends nothing,
-  /// so the result never reveals who is registered.
+  /// Creates an account and sends a confirmation code. With "Confirm email"
+  /// on, Supabase reports success for an address that already has an account
+  /// and sends nothing, so the result never reveals who is registered. With
+  /// it off, the account is signed in at once, and an existing address is
+  /// reported as [EmailAuthResult.accountExists].
   Future<EmailAuthResult> signUpWithEmail({
     required String email,
     required String password,
