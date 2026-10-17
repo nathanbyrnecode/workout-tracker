@@ -160,3 +160,17 @@ Privacy Policy link. Email sign-in adds a quiet "Sign in with email" link
 between them (fg, `AppTypography.link`), which moves the buttons up 30px.
 Links inside the email sheet use `accentText`, since no design sheet has text
 links to copy; Privacy Policy stays muted as the README says.
+
+## 20. App icons come from the designer's icon pack, not a generator
+
+The app icon is the lime 5×5 grid, supplied as a finished pack: an iOS
+`AppIcon.appiconset`, and Android adaptive icons (foreground, a
+`#0A0B0D` background colour, and a monochrome layer for themed icons on
+Android 13+) with legacy PNGs for older devices. The pack's master SVG and
+the 512px Play Store image are kept in `design/app-icon/`.
+`flutter_launcher_icons` was removed: running it would regenerate every
+icon from one PNG and overwrite the adaptive and monochrome layers. iOS
+icons must have no alpha channel or App Store Connect rejects the build, so
+the pack's PNGs were flattened onto `#0A0B0D` (they were already fully
+opaque). `assets/icon/icon.png`, the Welcome logo, is the same 1024px image,
+shown at 64×64 with radius 18 and no extra scaling.
