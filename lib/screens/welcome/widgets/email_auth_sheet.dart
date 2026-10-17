@@ -15,15 +15,20 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Signs in, creates an account or resets a password with an email address.
 /// The sheet closes once the user is signed in; [onOpenPrivacyPolicy] is
-/// offered when creating an account.
+/// offered when creating an account. "Forgot password?" is shown only with
+/// [allowPasswordReset].
 Future<void> showEmailAuthSheet({
   required BuildContext context,
   required VoidCallback onOpenPrivacyPolicy,
+  bool allowPasswordReset = emailPasswordResetEnabled,
 }) {
   return showAppSheet<void>(
     context: context,
     children: (sheetContext) => [
-      EmailAuthForm(onOpenPrivacyPolicy: onOpenPrivacyPolicy),
+      EmailAuthForm(
+        onOpenPrivacyPolicy: onOpenPrivacyPolicy,
+        allowPasswordReset: allowPasswordReset,
+      ),
     ],
   );
 }
@@ -34,9 +39,14 @@ enum _Step { signIn, createAccount, confirmEmail, requestReset, resetPassword }
 const resendCooldown = Duration(seconds: 60);
 
 class EmailAuthForm extends ConsumerStatefulWidget {
-  const EmailAuthForm({super.key, required this.onOpenPrivacyPolicy});
+  const EmailAuthForm({
+    super.key,
+    required this.onOpenPrivacyPolicy,
+    this.allowPasswordReset = emailPasswordResetEnabled,
+  });
 
   final VoidCallback onOpenPrivacyPolicy;
+  final bool allowPasswordReset;
 
   @override
   ConsumerState<EmailAuthForm> createState() => _EmailAuthFormState();
@@ -105,6 +115,9 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
 
   String _messageFor(EmailAuthResult result) => switch (result) {
         EmailAuthResult.invalidCredentials => 'Email or password is incorrect.',
+        EmailAuthResult.accountExists =>
+          'This email already has an account. Sign in with it instead, or '
+              'with Apple or Google if you used one of those.',
         EmailAuthResult.invalidCode =>
           'That code is wrong or has expired. Check it, or send a new one.',
         EmailAuthResult.weakPassword =>
@@ -334,7 +347,8 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
     final links = switch (_step) {
       _Step.signIn => [
           _link('Create an account', () => _goTo(_Step.createAccount)),
-          _link('Forgot password?', () => _goTo(_Step.requestReset)),
+          if (widget.allowPasswordReset)
+            _link('Forgot password?', () => _goTo(_Step.requestReset)),
         ],
       _Step.createAccount => [
           _link('I already have an account', () => _goTo(_Step.signIn)),

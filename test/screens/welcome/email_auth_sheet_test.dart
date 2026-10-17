@@ -11,14 +11,27 @@ import 'package:gym_tracker_app/widgets/app_text_link.dart';
 import '../../helpers/fakes.dart';
 import '../../helpers/pump.dart';
 
-Future<FakeAuthNotifier> openSheet(WidgetTester tester) async {
+/// Opens the sheet from Welcome's link, or, with [allowPasswordReset],
+/// directly with "Forgot password?" switched on.
+Future<FakeAuthNotifier> openSheet(
+  WidgetTester tester, {
+  bool allowPasswordReset = false,
+}) async {
   final auth = FakeAuthNotifier(null, AuthStatus.signedOut);
   await pumpApp(
     tester,
     const WelcomeScreen(),
     overrides: [userAuthenticationProvider.overrideWith(() => auth)],
   );
-  await tester.tap(find.text('Sign in with email'));
+  if (allowPasswordReset) {
+    unawaited(showEmailAuthSheet(
+      context: tester.element(find.byType(WelcomeScreen)),
+      onOpenPrivacyPolicy: () {},
+      allowPasswordReset: true,
+    ));
+  } else {
+    await tester.tap(find.text('Sign in with email'));
+  }
   await settle(tester);
   return auth;
 }
@@ -212,6 +225,41 @@ void main() {
     expect(find.textContaining('already have an account'), findsOneWidget);
   });
 
+  testWidgets('password reset is not offered until it is switched on',
+      (tester) async {
+    await openSheet(tester);
+
+    expect(find.text('Create an account'), findsOneWidget);
+    expect(find.text('Forgot password?'), findsNothing);
+  });
+
+  testWidgets('sign-up signs straight in when confirmation is off',
+      (tester) async {
+    final auth = await openSheet(tester);
+    auth.emailResults['signUpWithEmail'] = EmailAuthResult.signedIn;
+
+    await tapLink(tester, 'Create an account');
+    await enter(tester, 'EMAIL', 'lee@example.com');
+    await enter(tester, 'PASSWORD', 'correct horse');
+    await tapButton(tester, 'Create account');
+
+    expect(sheetOpen, isFalse);
+  });
+
+  testWidgets('sign-up with a registered address says to sign in',
+      (tester) async {
+    final auth = await openSheet(tester);
+    auth.emailResults['signUpWithEmail'] = EmailAuthResult.accountExists;
+
+    await tapLink(tester, 'Create an account');
+    await enter(tester, 'EMAIL', 'lee@example.com');
+    await enter(tester, 'PASSWORD', 'correct horse');
+    await tapButton(tester, 'Create account');
+
+    expect(sheetOpen, isTrue);
+    expect(find.textContaining('already has an account'), findsOneWidget);
+  });
+
   testWidgets('a rejected password on sign-up says why', (tester) async {
     final auth = await openSheet(tester);
     auth.emailResults['signUpWithEmail'] = EmailAuthResult.weakPassword;
@@ -226,7 +274,7 @@ void main() {
   });
 
   testWidgets('resets a forgotten password and signs in', (tester) async {
-    final auth = await openSheet(tester);
+    final auth = await openSheet(tester, allowPasswordReset: true);
 
     await enter(tester, 'EMAIL', 'lee@example.com');
     await tapLink(tester, 'Forgot password?');
@@ -251,7 +299,7 @@ void main() {
   });
 
   testWidgets('leaving a reset part-way drops its session', (tester) async {
-    final auth = await openSheet(tester);
+    final auth = await openSheet(tester, allowPasswordReset: true);
     await enter(tester, 'EMAIL', 'lee@example.com');
     await tapLink(tester, 'Forgot password?');
     await tapButton(tester, 'Send code');
@@ -269,7 +317,7 @@ void main() {
   });
 
   testWidgets('links are disabled while a step runs', (tester) async {
-    final auth = await openSheet(tester);
+    final auth = await openSheet(tester, allowPasswordReset: true);
     final gate = Completer<void>();
     auth.emailGate = gate.future;
     await enter(tester, 'EMAIL', 'lee@example.com');

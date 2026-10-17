@@ -6,7 +6,7 @@ These are conservative answers for the current release. They include the data ty
 
 This file is a worksheet. The answers themselves live in App Store Connect and must be changed there by the account owner.
 
-**Changed since the last audit (17 October 2026):** email and password sign-in. It adds no new data type: Email Address and Name were already selected. The email delivery provider used for confirmation and reset codes is a service provider, not a third-party partner, so it does not change the answers.
+**Changed since the last audit (17 October 2026):** email and password sign-in. It adds no new data type: Email Address and Name were already selected. For now "Confirm email" is off and password reset is hidden, so no email is sent. When a custom SMTP sender is added, it is a service provider, not a third-party partner, so it will not change these answers, but the public policy must then name it.
 
 **Changed in the 7 October 2026 audit:** the app now asks for location (when in use) for place search, sends place searches to two OpenStreetMap-based services, and stores workout names, location types, saved places and manually logged workouts. Precise Location is now selected.
 
@@ -44,7 +44,7 @@ For each selected type, answer **No** to tracking. The app does not use data for
 
 - `lib/state/user_authentication_state.dart` requests Google `email` and `profile` scopes and sends the resulting tokens to Supabase Auth.
 - `lib/state/user_authentication_state.dart` requests Apple name and email scopes, sends the Apple identity token to Supabase Auth, and stores an encrypted Apple refresh token for account-deletion revocation.
-- `lib/state/user_authentication_state.dart` signs in, signs up, confirms and resets passwords with Supabase email auth. Sign-up stores the optional first name in Supabase user metadata. Confirmation and reset codes are emailed through the email delivery provider configured as Supabase's SMTP sender.
+- `lib/state/user_authentication_state.dart` signs in, signs up, confirms and resets passwords with Supabase email auth. Sign-up stores the optional first name in Supabase user metadata. Confirmation and password reset by emailed code are built but not in use yet: "Confirm email" is off in Supabase and `emailPasswordResetEnabled` in `lib/data/email_auth.dart` is false.
 - Workout state code stores workouts, exercises, sets, reps, and weights in user-protected Supabase tables after authentication.
 - `supabase/migrations/20261006232241_add_workout_details_and_manual_workouts.sql` adds the workout name, location type, place name, address and coordinates, a saved time on each set, and the `manual_workouts` table (row level security, deleted with the account).
 - `lib/data/place_search/device_location.dart` asks for when-in-use location at medium accuracy, only from "Use current location", and reads the last known position once permission exists. `ios/Runner/Info.plist` carries `NSLocationWhenInUseUsageDescription`.

@@ -16,7 +16,7 @@ When you choose Google Sign-In, the app requests the `email` and `profile` scope
 
 When you choose Sign in with Apple, the app requests your name and email address. Apple may provide a private relay email address if you choose to hide your email. The sign-in process also provides an Apple account identifier, identity token, and authorization code. The authorization code is exchanged for a refresh token, which is encrypted before being stored in Supabase so that your Apple authorization can be revoked if you delete your account.
 
-When you choose to sign in with email, you give an email address and a password, and, if you choose, your first name. Supabase stores the password only as a salted hash, so neither we nor Supabase can read it. To confirm your email address when you create an account, and when you ask to reset a forgotten password, a 6-digit code is emailed to you. Supabase sends these emails through an email delivery provider, which receives your email address and the message.
+When you choose to sign in with email, you give an email address and a password, and, if you choose, your first name. Supabase stores the password only as a salted hash, so neither we nor Supabase can read it. The app does not currently send you any email.
 
 Supabase creates and stores an internal user ID and session records so that you can remain signed in.
 
@@ -64,7 +64,6 @@ We use account, authentication, workout, and location data:
 
 - To authenticate you and maintain your signed-in session.
 - To show your first name within the app.
-- To email you the codes that confirm your address and reset your password.
 - To save, retrieve, update, and delete your workout records.
 - To show your activity, streaks, and totals in the Tracker.
 - To suggest nearby places and attach a place to a workout when you ask for it.
@@ -79,7 +78,6 @@ Where applicable, we rely on performance of the service you request, our legitim
 - **Apple** provides identity authentication through Sign in with Apple. See the [Apple Privacy Policy](https://www.apple.com/legal/privacy/).
 - **Google** provides identity authentication through Google Sign-In. See the [Google Privacy Policy](https://policies.google.com/privacy).
 - **Supabase** provides account, session, authentication, and workout database infrastructure. See the [Supabase Privacy Policy](https://supabase.com/privacy).
-- **Our email delivery provider** sends the confirmation and password-reset emails for email sign-in on our behalf.
 - **Komoot (Photon)** provides place search and address lookup. See the [Komoot Privacy Policy](https://www.komoot.com/privacy).
 - **FOSSGIS e.V. (Overpass API)** provides the list of nearby places. See the [FOSSGIS Privacy Policy](https://www.fossgis.de/datenschutzerkl%C3%A4rung/).
 
@@ -115,7 +113,7 @@ The app is not directed to children under 13, and we do not knowingly collect pe
 
 ## International transfers
 
-Apple, Google, Supabase, our email delivery provider, Komoot, and FOSSGIS e.V. may process information in countries other than the country where you live. Where required, they and we use appropriate safeguards for international transfers under applicable data-protection law.
+Apple, Google, Supabase, Komoot, and FOSSGIS e.V. may process information in countries other than the country where you live. Where required, they and we use appropriate safeguards for international transfers under applicable data-protection law.
 
 ## Changes to this policy
 

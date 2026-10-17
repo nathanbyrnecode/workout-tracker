@@ -142,6 +142,19 @@ templates must therefore show `{{ .Token }}`, and the Email OTP length must
 stay at 6 to match `emailCodeLength` in `lib/data/email_auth.dart`. Results
 and messages never reveal whether an address has an account.
 
+**For now no email is sent.** Supabase's built-in sender only reaches the
+project's own team, and editing the templates needs a custom SMTP sender,
+which is not set up yet. Email sign-in exists mainly so App Review can sign in
+with a demo account. So "Confirm email" is off in the dashboard (sign-up
+signs straight in, and an address that already has an account is reported as
+`accountExists`), and `emailPasswordResetEnabled` is false, which hides
+"Forgot password?". The code-entry and reset steps stay built and tested.
+To turn them on: set up custom SMTP, change the "Confirm signup" and "Reset
+password" templates to show `{{ .Token }}`, check the Email OTP length is 6,
+turn "Confirm email" on, set `emailPasswordResetEnabled` to true, add the
+sign-in goldens (they gain the link), and name the email provider in
+`docs/privacy_policy.md` and `docs/index.html`.
+
 The README's Welcome section lists only the Apple and Google buttons and the
 Privacy Policy link. Email sign-in adds a quiet "Sign in with email" link
 between them (fg, `AppTypography.link`), which moves the buttons up 30px.

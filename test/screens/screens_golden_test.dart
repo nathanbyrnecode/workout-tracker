@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,7 @@ import 'package:gym_tracker_app/screens/profile/profile_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/tracker_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/widgets/tracker_grid.dart';
 import 'package:gym_tracker_app/screens/welcome/welcome_screen.dart';
+import 'package:gym_tracker_app/screens/welcome/widgets/email_auth_sheet.dart';
 import 'package:gym_tracker_app/screens/workout_detail/manual_workout_detail_screen.dart';
 import 'package:gym_tracker_app/screens/workout_detail/workout_detail_screen.dart';
 import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
@@ -573,6 +576,7 @@ void main() {
   emailSheetGolden(
     'forgotten password sheet',
     name: 'sheet_email_reset_request',
+    allowPasswordReset: true,
     setUp: (tester) async {
       await _enter(tester, 'EMAIL', 'lee@example.com');
       await _tap(tester, find.text('Forgot password?'));
@@ -582,6 +586,7 @@ void main() {
   emailSheetGolden(
     'new password sheet',
     name: 'sheet_email_reset_password',
+    allowPasswordReset: true,
     setUp: (tester) async {
       await _enter(tester, 'EMAIL', 'lee@example.com');
       await _tap(tester, find.text('Forgot password?'));
@@ -593,11 +598,14 @@ void main() {
 }
 
 /// The email sheet open over Welcome, as on iOS. [results] sets what the
-/// fake notifier reports; [setUp] fills it in after it opens.
+/// fake notifier reports; [setUp] fills it in after it opens. With
+/// [allowPasswordReset] the sheet offers "Forgot password?", which the app
+/// does not yet.
 void emailSheetGolden(
   String description, {
   required String name,
   Map<String, EmailAuthResult> results = const {},
+  bool allowPasswordReset = false,
   required Future<void> Function(WidgetTester tester) setUp,
 }) {
   goldenTest(
@@ -617,7 +625,16 @@ void emailSheetGolden(
       child: const WelcomeScreen(),
     ),
     setUp: (tester) async {
-      await _tap(tester, find.text('Sign in with email'));
+      if (allowPasswordReset) {
+        unawaited(showEmailAuthSheet(
+          context: tester.element(find.byType(WelcomeScreen)),
+          onOpenPrivacyPolicy: () {},
+          allowPasswordReset: true,
+        ));
+        await _settle(tester);
+      } else {
+        await _tap(tester, find.text('Sign in with email'));
+      }
       await setUp(tester);
       // Hides the cursor, so the image does not depend on its blink.
       FocusManager.instance.primaryFocus?.unfocus();
