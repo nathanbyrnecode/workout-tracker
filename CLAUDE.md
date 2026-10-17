@@ -7,7 +7,7 @@ Everything above applies. These notes cover the Claude-specific setup in
 
 ## Skills
 
-- `/next-task`: pick the next ready bead, claim it, branch from `redesign`,
+- `/next-task`: pick the next ready bead, claim it, branch from `main`,
   do the work, run the definition-of-done checks and close the bead.
 - `/build-screen <name>`: build one screen or sheet from the design package,
   with widget and golden tests in both themes.

@@ -23,11 +23,10 @@ If nothing is ready, say so and show `bd blocked`. Do not start blocked work.
 
 ```
 git fetch origin
-git switch -c <id>-<short-slug> origin/redesign
+git switch -c <id>-<short-slug> origin/main
 ```
 
-Branch from `redesign`, never from `main`. If `origin/redesign` does not exist,
-stop and ask the user to create it.
+Branch from `main`. Never commit to `main` directly.
 
 ## 3. Do the work
 
@@ -64,7 +63,7 @@ For UI changes, also:
 2. Run `bd export -o .beads/issues.jsonl` so the closed bead and any beads you
    filed are part of the change.
 3. Commit (including `.beads/issues.jsonl`), push the branch and open a PR
-   against `redesign` using the PR template. Mention any migration.
+   against `main` using the PR template. Mention any migration.
 4. Report: the bead, the PR, the check results, and what `bd ready` shows next.
 
 If you cannot finish, do not close the bead. Leave a note with

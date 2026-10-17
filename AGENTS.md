@@ -96,9 +96,9 @@ Work is tracked with [beads](https://github.com/steveyegge/beads) (`bd`).
 
 1. `bd ready` lists tasks with no open blockers. Pick one and claim it:
    `bd update <id> --claim`.
-2. Branch from `redesign`, not from `main`. `main` stays shippable to
-   TestFlight while the redesign lands piece by piece on `redesign`.
-3. One bead per pull request. Open the PR against `redesign`.
+2. Branch from `main`. The redesign has landed there, so the `redesign`
+   branch is no longer used.
+3. One bead per pull request. Open the PR against `main`.
 4. Replace widgets in place. Never create `_v2` copies or parallel
    implementations.
 5. Don't add ad-hoc markdown files at the repo root. Durable notes go in
