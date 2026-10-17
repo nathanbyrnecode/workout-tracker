@@ -100,13 +100,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         child: SizedBox(
                           width: 64,
                           height: 64,
-                          child: Transform.scale(
-                            scale: 1.12,
-                            child: Image.asset(
-                              'assets/icon/icon.png',
-                              fit: BoxFit.cover,
-                              semanticLabel: 'FittenUp',
-                            ),
+                          child: Image.asset(
+                            'assets/icon/icon.png',
+                            fit: BoxFit.cover,
+                            semanticLabel: 'FittenUp',
                           ),
                         ),
                       ),
