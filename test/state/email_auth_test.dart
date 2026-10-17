@@ -228,6 +228,16 @@ void main() {
       expect(state().firstName, 'Lee');
     });
 
+    test('reports an address that already has an account', () async {
+      routes['POST signup'] = () => _error('user_already_exists', 422);
+
+      final result = await notifier()
+          .signUpWithEmail(email: _email, password: 'correct horse');
+
+      expect(result, EmailAuthResult.accountExists);
+      expect(state().isSignedIn, isNot(AuthStatus.signedIn));
+    });
+
     test('reports a password Supabase rejects', () async {
       routes['POST signup'] = () => _json({
             'error_code': 'weak_password',
