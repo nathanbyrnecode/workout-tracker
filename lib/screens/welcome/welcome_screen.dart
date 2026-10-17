@@ -3,12 +3,14 @@ import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_tracker_app/screens/welcome/widgets/email_auth_sheet.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/privacy_policy.dart';
 import 'package:gym_tracker_app/widgets/app_background.dart';
 import 'package:gym_tracker_app/widgets/app_button.dart';
+import 'package:gym_tracker_app/widgets/app_text_link.dart';
 
 /// Shown when signed out: the logo, the headline and the sign-in buttons.
 class WelcomeScreen extends ConsumerStatefulWidget {
@@ -134,23 +136,24 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       style: AppButtonStyle.card,
                       onPressed: () => _signIn(auth.signInWithGoogle),
                     ),
-                    // The design's 22, less the 2 of padding inside the link.
-                    const SizedBox(height: 20),
+                    SizedBox(height: t.spacing.gap10),
                     Center(
-                      child: InkWell(
-                        onTap: _openPrivacyPolicy,
-                        borderRadius: BorderRadius.circular(t.radii.chip),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          child: Text(
-                            'Privacy Policy',
-                            style: AppTypography.bodySmall
-                                .copyWith(color: t.muted),
-                          ),
+                      child: AppTextLink(
+                        label: 'Sign in with email',
+                        color: t.fg,
+                        style: AppTypography.link,
+                        verticalPadding: 10,
+                        onTap: () => showEmailAuthSheet(
+                          context: context,
+                          onOpenPrivacyPolicy: _openPrivacyPolicy,
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Center(
+                      child: AppTextLink(
+                        label: 'Privacy Policy',
+                        onTap: _openPrivacyPolicy,
                       ),
                     ),
                   ],

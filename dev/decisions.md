@@ -130,3 +130,33 @@ The design shows the tab bar on the workout detail screens and hides it only
 on Welcome and Summary. So the detail screens are shown inside the app shell,
 in place of the tab's screen, and Summary is pushed over the shell with
 `Navigator`.
+
+## 19. Email sign-in uses 6-digit codes, not links
+
+Email and password sign-in is open to anyone, with the address confirmed
+before the first sign-in. Confirmation and password reset both email a
+6-digit code that is typed into the sheet, rather than a link. Links would
+need deep-link handling (URL schemes, universal and app links, redirect
+allow-lists) on both platforms; a code needs none of it. The Supabase email
+templates must therefore show `{{ .Token }}`, and the Email OTP length must
+stay at 6 to match `emailCodeLength` in `lib/data/email_auth.dart`. Results
+and messages never reveal whether an address has an account.
+
+**For now no email is sent.** Supabase's built-in sender only reaches the
+project's own team, and editing the templates needs a custom SMTP sender,
+which is not set up yet. Email sign-in exists mainly so App Review can sign in
+with a demo account. So "Confirm email" is off in the dashboard (sign-up
+signs straight in, and an address that already has an account is reported as
+`accountExists`), and `emailPasswordResetEnabled` is false, which hides
+"Forgot password?". The code-entry and reset steps stay built and tested.
+To turn them on: set up custom SMTP, change the "Confirm signup" and "Reset
+password" templates to show `{{ .Token }}`, check the Email OTP length is 6,
+turn "Confirm email" on, set `emailPasswordResetEnabled` to true, add the
+sign-in goldens (they gain the link), and name the email provider in
+`docs/privacy_policy.md` and `docs/index.html`.
+
+The README's Welcome section lists only the Apple and Google buttons and the
+Privacy Policy link. Email sign-in adds a quiet "Sign in with email" link
+between them (fg, `AppTypography.link`), which moves the buttons up 30px.
+Links inside the email sheet use `accentText`, since no design sheet has text
+links to copy; Privacy Policy stays muted as the README says.

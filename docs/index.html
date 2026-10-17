@@ -76,7 +76,7 @@
             them to your signed-in account. Location is used only when you
             ask for it.
           </p>
-          <p class="updated">Last updated 7 October 2026</p>
+          <p class="updated">Last updated 17 October 2026</p>
 
           <div class="summary-grid" aria-label="Privacy at a glance">
             <div class="summary-card">
@@ -89,7 +89,7 @@
             </div>
             <div class="summary-card">
               <span class="summary-eyebrow">Account access</span>
-              <strong>Apple or Google + Supabase</strong>
+              <strong>Apple, Google or email + Supabase</strong>
               <p>
                 Your chosen sign-in identity is used to authenticate and
                 maintain your account.
@@ -180,6 +180,15 @@
                 The Apple authorization code is exchanged for a refresh token,
                 which is encrypted before being stored in Supabase so that your
                 Apple authorization can be revoked if you delete your account.
+              </p>
+
+              <h3>Email and password</h3>
+              <p>
+                When you choose to sign in with email, you give an email
+                address and a password, and, if you choose, your first name.
+                Supabase stores the password only as a salted hash, so neither
+                we nor Supabase can read it. The app does not currently send
+                you any email.
               </p>
 
               <h3>Supabase authentication</h3>
@@ -477,8 +486,9 @@
               <p class="section-number">08</p>
               <h2>Security</h2>
               <p>
-                We use established authentication providers, encryption for
-                stored Apple revocation tokens, and reasonable administrative
+                We use established authentication providers, passwords stored
+                only as salted hashes, encryption for stored Apple revocation
+                tokens, and reasonable administrative
                 and technical safeguards to protect account information. No
                 storage or transmission method is completely secure, so we
                 cannot guarantee absolute security.

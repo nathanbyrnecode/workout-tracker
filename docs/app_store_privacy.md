@@ -1,12 +1,14 @@
 # App Store Connect privacy answers
 
-Last audited against the app and bundled iOS SDKs: 7 October 2026 (version 1.1.0, the redesign)
+Last audited against the app and bundled iOS SDKs: 17 October 2026 (email sign-in, after version 1.1.0)
 
 These are conservative answers for the current release. They include the data types declared by the bundled GoogleSignIn iOS SDK, not only the fields directly read by the Dart code.
 
 This file is a worksheet. The answers themselves live in App Store Connect and must be changed there by the account owner.
 
-**Changed since the last audit:** the app now asks for location (when in use) for place search, sends place searches to two OpenStreetMap-based services, and stores workout names, location types, saved places and manually logged workouts. Precise Location is now selected.
+**Changed since the last audit (17 October 2026):** email and password sign-in. It adds no new data type: Email Address and Name were already selected. For now "Confirm email" is off and password reset is hidden, so no email is sent. When a custom SMTP sender is added, it is a service provider, not a third-party partner, so it will not change these answers, but the public policy must then name it.
+
+**Changed in the 7 October 2026 audit:** the app now asks for location (when in use) for place search, sends place searches to two OpenStreetMap-based services, and stores workout names, location types, saved places and manually logged workouts. Precise Location is now selected.
 
 ## Data collection
 
@@ -19,8 +21,8 @@ For "Do you or your third-party partners collect data from this app?", answer:
 | App Store data type | Purpose | Linked to the user? | Used for tracking? | Why |
 | --- | --- | --- | --- | --- |
 | Health & Fitness → Fitness | App Functionality | Yes | No | Workout names, times, exercise names, sets, reps, weights, and manually logged workouts stored in Supabase |
-| Contact Info → Name | App Functionality | Yes | No | Google Sign-In profile and first-name greeting |
-| Contact Info → Email Address | App Functionality | Yes | No | Google Sign-In and Supabase authentication |
+| Contact Info → Name | App Functionality | Yes | No | Google Sign-In profile, the optional first name at email sign-up, and the first-name greeting |
+| Contact Info → Email Address | App Functionality | Yes | No | Google Sign-In, email sign-in, and Supabase authentication |
 | Contact Info → Phone Number | App Functionality | Yes | No | Declared by the bundled GoogleSignIn privacy manifest; the app does not request a phone scope |
 | Location → Precise Location | App Functionality | Yes | No | Device coordinates are sent to the place search services when the user has allowed location, and the coordinates of a place the user saves with a workout are stored in Supabase against their account. The app asks for reduced accuracy, but nothing guarantees the result is coarse, so answer Precise |
 | Location → Coarse Location | App Functionality | Yes | No | Declared by GoogleSignIn; authentication and place search services also receive IP/network metadata |
@@ -42,6 +44,7 @@ For each selected type, answer **No** to tracking. The app does not use data for
 
 - `lib/state/user_authentication_state.dart` requests Google `email` and `profile` scopes and sends the resulting tokens to Supabase Auth.
 - `lib/state/user_authentication_state.dart` requests Apple name and email scopes, sends the Apple identity token to Supabase Auth, and stores an encrypted Apple refresh token for account-deletion revocation.
+- `lib/state/user_authentication_state.dart` signs in, signs up, confirms and resets passwords with Supabase email auth. Sign-up stores the optional first name in Supabase user metadata. Confirmation and password reset by emailed code are built but not in use yet: "Confirm email" is off in Supabase and `emailPasswordResetEnabled` in `lib/data/email_auth.dart` is false.
 - Workout state code stores workouts, exercises, sets, reps, and weights in user-protected Supabase tables after authentication.
 - `supabase/migrations/20261006232241_add_workout_details_and_manual_workouts.sql` adds the workout name, location type, place name, address and coordinates, a saved time on each set, and the `manual_workouts` table (row level security, deleted with the account).
 - `lib/data/place_search/device_location.dart` asks for when-in-use location at medium accuracy, only from "Use current location", and reads the last known position once permission exists. `ios/Runner/Info.plist` carries `NSLocationWhenInUseUsageDescription`.
@@ -69,4 +72,4 @@ Apple guidance:
 
 ## Separate App Review consideration
 
-Sign in with Apple and in-app account deletion are implemented. Authentication is required because workout records are stored against, and retrieved from, the user's Supabase account.
+Sign in with Apple and in-app account deletion are implemented. Email and password sign-in is available for anyone, so App Review can be given a demo account in App Review Information instead of needing an Apple or Google account. Authentication is required because workout records are stored against, and retrieved from, the user's Supabase account.

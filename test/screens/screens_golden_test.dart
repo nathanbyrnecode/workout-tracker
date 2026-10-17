@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,7 @@ import 'package:gym_tracker_app/screens/profile/profile_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/tracker_screen.dart';
 import 'package:gym_tracker_app/screens/tracker/widgets/tracker_grid.dart';
 import 'package:gym_tracker_app/screens/welcome/welcome_screen.dart';
+import 'package:gym_tracker_app/screens/welcome/widgets/email_auth_sheet.dart';
 import 'package:gym_tracker_app/screens/workout_detail/manual_workout_detail_screen.dart';
 import 'package:gym_tracker_app/screens/workout_detail/workout_detail_screen.dart';
 import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
@@ -27,6 +30,7 @@ import 'package:gym_tracker_app/state/notifications_state.dart'
     as notifications_state;
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
+import 'package:gym_tracker_app/widgets/app_button.dart';
 import 'package:gym_tracker_app/widgets/app_shell.dart';
 import 'package:gym_tracker_app/widgets/app_tab_bar.dart';
 
@@ -525,4 +529,139 @@ void main() {
       child: const WelcomeScreen(),
     ),
   );
+
+  emailSheetGolden(
+    'email sign-in sheet',
+    name: 'sheet_email_sign_in',
+    setUp: (tester) async {
+      await _enter(tester, 'EMAIL', 'lee@example.com');
+      await _enter(tester, 'PASSWORD', 'correct horse');
+    },
+  );
+
+  emailSheetGolden(
+    'email sign-in sheet with wrong details',
+    name: 'sheet_email_sign_in_error',
+    results: {'signInWithEmail': EmailAuthResult.invalidCredentials},
+    setUp: (tester) async {
+      await _enter(tester, 'EMAIL', 'lee@example.com');
+      await _enter(tester, 'PASSWORD', 'wrong password');
+      await _tap(tester, find.widgetWithText(AppButton, 'Sign in'));
+    },
+  );
+
+  emailSheetGolden(
+    'create account sheet',
+    name: 'sheet_email_create_account',
+    setUp: (tester) async {
+      await _tap(tester, find.text('Create an account'));
+      await _enter(tester, 'FIRST NAME', 'Lee');
+      await _enter(tester, 'EMAIL', 'lee@example.com');
+      await _enter(tester, 'PASSWORD', 'correct horse');
+    },
+  );
+
+  emailSheetGolden(
+    'email code sheet',
+    name: 'sheet_email_code',
+    setUp: (tester) async {
+      await _tap(tester, find.text('Create an account'));
+      await _enter(tester, 'EMAIL', 'lee@example.com');
+      await _enter(tester, 'PASSWORD', 'correct horse');
+      await _tap(tester, find.widgetWithText(AppButton, 'Create account'));
+      await _enter(tester, 'CODE', '1234');
+    },
+  );
+
+  emailSheetGolden(
+    'forgotten password sheet',
+    name: 'sheet_email_reset_request',
+    allowPasswordReset: true,
+    setUp: (tester) async {
+      await _enter(tester, 'EMAIL', 'lee@example.com');
+      await _tap(tester, find.text('Forgot password?'));
+    },
+  );
+
+  emailSheetGolden(
+    'new password sheet',
+    name: 'sheet_email_reset_password',
+    allowPasswordReset: true,
+    setUp: (tester) async {
+      await _enter(tester, 'EMAIL', 'lee@example.com');
+      await _tap(tester, find.text('Forgot password?'));
+      await _tap(tester, find.widgetWithText(AppButton, 'Send code'));
+      await _enter(tester, 'CODE', '123456');
+      await _enter(tester, 'NEW PASSWORD', 'correct horse');
+    },
+  );
+}
+
+/// The email sheet open over Welcome, as on iOS. [results] sets what the
+/// fake notifier reports; [setUp] fills it in after it opens. With
+/// [allowPasswordReset] the sheet offers "Forgot password?", which the app
+/// does not yet.
+void emailSheetGolden(
+  String description, {
+  required String name,
+  Map<String, EmailAuthResult> results = const {},
+  bool allowPasswordReset = false,
+  required Future<void> Function(WidgetTester tester) setUp,
+}) {
+  goldenTest(
+    description,
+    name: name,
+    wrap: (child) => ProviderScope(
+      overrides: [
+        userAuthenticationProvider.overrideWith(
+          () => FakeAuthNotifier(null, AuthStatus.signedOut)
+            ..emailResults.addAll(results),
+        ),
+      ],
+      child: child,
+    ),
+    builder: (context) => Theme(
+      data: Theme.of(context).copyWith(platform: TargetPlatform.iOS),
+      child: const WelcomeScreen(),
+    ),
+    setUp: (tester) async {
+      if (allowPasswordReset) {
+        unawaited(showEmailAuthSheet(
+          context: tester.element(find.byType(WelcomeScreen)),
+          onOpenPrivacyPolicy: () {},
+          allowPasswordReset: true,
+        ));
+        await _settle(tester);
+      } else {
+        await _tap(tester, find.text('Sign in with email'));
+      }
+      await setUp(tester);
+      // Hides the cursor, so the image does not depend on its blink.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await _settle(tester);
+    },
+  );
+}
+
+/// Lets the sheet animate without running down the resend countdown.
+Future<void> _settle(WidgetTester tester) async {
+  for (var i = 0; i < 5; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
+Future<void> _tap(WidgetTester tester, Finder finder) async {
+  await tester.tap(finder);
+  await _settle(tester);
+}
+
+Future<void> _enter(WidgetTester tester, String label, String text) async {
+  final field = find.descendant(
+    of: find
+        .ancestor(of: find.text(label), matching: find.byType(Column))
+        .first,
+    matching: find.byType(TextField),
+  );
+  await tester.enterText(field, text);
+  await tester.pump();
 }

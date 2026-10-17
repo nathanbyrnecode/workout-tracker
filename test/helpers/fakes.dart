@@ -151,6 +151,83 @@ class FakeAuthNotifier extends UserAuthenticationNotifier {
   @override
   Future<void> signOut() async => signOuts++;
 
+  /// What each email method reports, by name, such as `signInWithEmail`.
+  /// Without an entry, sign-up and reset requests send a code and the rest
+  /// sign in.
+  final emailResults = <String, EmailAuthResult>{};
+
+  /// Each email method called, with the arguments it was given.
+  final emailCalls = <({String method, Map<String, String?> args})>[];
+  int passwordResetCancels = 0;
+
+  /// When set, email methods wait for it, so tests can see the busy state.
+  Future<void>? emailGate;
+
+  Future<EmailAuthResult> _email(
+    String method,
+    Map<String, String?> args, {
+    EmailAuthResult fallback = EmailAuthResult.signedIn,
+  }) async {
+    emailCalls.add((method: method, args: args));
+    await emailGate;
+    return emailResults[method] ?? fallback;
+  }
+
+  @override
+  Future<EmailAuthResult> signInWithEmail({
+    required String email,
+    required String password,
+  }) =>
+      _email('signInWithEmail', {'email': email, 'password': password});
+
+  @override
+  Future<EmailAuthResult> signUpWithEmail({
+    required String email,
+    required String password,
+    String? firstName,
+  }) =>
+      _email(
+        'signUpWithEmail',
+        {'email': email, 'password': password, 'firstName': firstName},
+        fallback: EmailAuthResult.codeSent,
+      );
+
+  @override
+  Future<EmailAuthResult> confirmEmail({
+    required String email,
+    required String code,
+  }) =>
+      _email('confirmEmail', {'email': email, 'code': code});
+
+  @override
+  Future<EmailAuthResult> resendConfirmation({required String email}) => _email(
+        'resendConfirmation',
+        {'email': email},
+        fallback: EmailAuthResult.codeSent,
+      );
+
+  @override
+  Future<EmailAuthResult> sendPasswordReset({required String email}) => _email(
+        'sendPasswordReset',
+        {'email': email},
+        fallback: EmailAuthResult.codeSent,
+      );
+
+  @override
+  Future<EmailAuthResult> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) =>
+      _email('resetPassword', {
+        'email': email,
+        'code': code,
+        'newPassword': newPassword,
+      });
+
+  @override
+  Future<void> cancelPasswordReset() async => passwordResetCancels++;
+
   @override
   Future<void> deleteAccount() async {
     deletions++;

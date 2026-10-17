@@ -1,6 +1,6 @@
 # FittenUp Privacy Policy
 
-Last updated: 7 October 2026
+Last updated: 17 October 2026
 
 Public URL: <https://nathanbyrnecode.github.io/workout-tracker/>
 
@@ -15,6 +15,8 @@ The app stores workout information in Supabase so that it is available through y
 When you choose Google Sign-In, the app requests the `email` and `profile` scopes. The sign-in process can provide your name, email address, Google account identifier, profile information, and authentication tokens.
 
 When you choose Sign in with Apple, the app requests your name and email address. Apple may provide a private relay email address if you choose to hide your email. The sign-in process also provides an Apple account identifier, identity token, and authorization code. The authorization code is exchanged for a refresh token, which is encrypted before being stored in Supabase so that your Apple authorization can be revoked if you delete your account.
+
+When you choose to sign in with email, you give an email address and a password, and, if you choose, your first name. Supabase stores the password only as a salted hash, so neither we nor Supabase can read it. The app does not currently send you any email.
 
 Supabase creates and stores an internal user ID and session records so that you can remain signed in.
 
@@ -103,7 +105,7 @@ Depending on where you live, you may have rights to access, correct, delete, res
 
 ## Security
 
-We use established authentication providers, encryption for stored Apple revocation tokens, and reasonable administrative and technical safeguards to protect account information. No storage or transmission method is completely secure, so we cannot guarantee absolute security.
+We use established authentication providers, passwords stored only as salted hashes, encryption for stored Apple revocation tokens, and reasonable administrative and technical safeguards to protect account information. No storage or transmission method is completely secure, so we cannot guarantee absolute security.
 
 ## Children
 

@@ -6,6 +6,11 @@ library;
 /// Supabase dashboard.
 const minPasswordLength = 8;
 
+/// Whether the sheet offers "Forgot password?". Resetting emails a code, and
+/// Supabase only emails the public once a custom SMTP sender is set up, so
+/// this stays off until then (`dev/decisions.md` 19).
+const emailPasswordResetEnabled = false;
+
 /// Digits in a confirmation or reset code. Matches the Email OTP length set
 /// in the Supabase dashboard.
 const emailCodeLength = 6;

@@ -237,6 +237,13 @@ abstract final class AppTypography {
     fontSize: 13,
   );
 
+  /// Text links such as "Sign in with email" and "Forgot password?".
+  static const link = TextStyle(
+    fontFamily: sans,
+    fontWeight: FontWeight.w500,
+    fontSize: 14,
+  );
+
   /// Tab bar labels.
   static const tabLabel = TextStyle(
     fontFamily: sans,
