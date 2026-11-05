@@ -31,11 +31,13 @@ Future<void> main() async {
   );
 
   runApp(
-    LiquidGlassWidgets.wrap(
-      adaptiveQuality: true,
-      // Glass follows the app's theme, including the Appearance setting.
-      brightnessResolver: Theme.maybeBrightnessOf,
-      child: ProviderScope(child: const App()),
+    ProviderScope(
+      child: LiquidGlassWidgets.wrap(
+        adaptiveQuality: true,
+        // Glass follows the app's theme, including the Appearance setting.
+        brightnessResolver: Theme.maybeBrightnessOf,
+        child: const App(),
+      ),
     ),
   );
 }

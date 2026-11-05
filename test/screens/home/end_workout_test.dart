@@ -92,7 +92,7 @@ void main() {
     expect(endEnabled(tester), isFalse);
     await tester.tap(endButton(), warnIfMissed: false);
     await tester.pumpAndSettle();
-    expect(sheet.workout.endedWorkouts, 0);
+    expect(sheet.workout.spy.endedWorkouts, 0);
     expect(find.text('End workout?'), findsOneWidget);
 
     // Spaces are not a name.
@@ -101,7 +101,7 @@ void main() {
     expect(endEnabled(tester), isFalse);
     await tester.tap(endButton(), warnIfMissed: false);
     await tester.pumpAndSettle();
-    expect(sheet.workout.endedWorkouts, 0);
+    expect(sheet.workout.spy.endedWorkouts, 0);
   });
 
   testWidgets('the name stops at 40 characters', (tester) async {
@@ -157,7 +157,7 @@ void main() {
   testWidgets('a failed save keeps the sheet open with a message',
       (tester) async {
     final sheet = await openEndSheet(tester);
-    sheet.workout.endOutcome = EndWorkoutOutcome.failed;
+    sheet.workout.spy.endOutcome = EndWorkoutOutcome.failed;
 
     await tester.enterText(find.byType(TextField).first, 'Push day');
     await tester.pump();
@@ -169,10 +169,10 @@ void main() {
     expect(find.byType(WorkoutSummaryScreen), findsNothing);
 
     // Trying again works.
-    sheet.workout.endOutcome = EndWorkoutOutcome.saved;
+    sheet.workout.spy.endOutcome = EndWorkoutOutcome.saved;
     await tester.tap(endButton());
     await tester.pumpAndSettle();
-    expect(sheet.workout.endedWorkouts, 2);
+    expect(sheet.workout.spy.endedWorkouts, 2);
     expect(find.byType(WorkoutSummaryScreen), findsOneWidget);
   });
 
@@ -181,7 +181,7 @@ void main() {
     await tester.tap(find.text('Keep going'));
     await tester.pumpAndSettle();
     expect(find.text('End workout?'), findsNothing);
-    expect(sheet.workout.endedWorkouts, 0);
+    expect(sheet.workout.spy.endedWorkouts, 0);
   });
 
   testWidgets('without a place search, Place is not offered', (tester) async {
@@ -233,14 +233,14 @@ void main() {
 
       final gesture = await press(tester);
       await tester.pump(const Duration(milliseconds: 2900));
-      expect(sheet.workout.discards, 0);
+      expect(sheet.workout.spy.discards, 0);
       await tester.pump(const Duration(milliseconds: 200));
       await gesture.up();
       await tester.pumpAndSettle();
 
-      expect(sheet.workout.discards, 1);
+      expect(sheet.workout.spy.discards, 1);
       // Nothing was saved, the sheet is closed and no summary opened.
-      expect(sheet.workout.endedWorkouts, 0);
+      expect(sheet.workout.spy.endedWorkouts, 0);
       expect(find.text('End workout?'), findsNothing);
       expect(find.byType(WorkoutSummaryScreen), findsNothing);
     });
@@ -257,8 +257,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // A hold never also counts as a tap, even with a name filled in.
-      expect(sheet.workout.discards, 0);
-      expect(sheet.workout.endedWorkouts, 0);
+      expect(sheet.workout.spy.discards, 0);
+      expect(sheet.workout.spy.endedWorkouts, 0);
       expect(find.text('End workout?'), findsOneWidget);
       expect(find.text('Hold to discard workout'), findsOneWidget);
       expect(
@@ -268,7 +268,7 @@ void main() {
 
       // Waiting longer after letting go does not discard either.
       await tester.pump(const Duration(seconds: 4));
-      expect(sheet.workout.discards, 0);
+      expect(sheet.workout.spy.discards, 0);
     });
 
     testWidgets('a quick tap still ends the workout', (tester) async {
@@ -281,20 +281,20 @@ void main() {
       await gesture.up();
       await tester.pumpAndSettle();
 
-      expect(sheet.workout.endedWorkouts, 1);
-      expect(sheet.workout.discards, 0);
+      expect(sheet.workout.spy.endedWorkouts, 1);
+      expect(sheet.workout.spy.discards, 0);
     });
 
     testWidgets('a failed discard leaves the sheet open', (tester) async {
       final sheet = await openEndSheet(tester);
-      sheet.workout.failDiscard = true;
+      sheet.workout.failDiscard.on = true;
 
       final gesture = await press(tester);
       await tester.pump(const Duration(milliseconds: 3100));
       await gesture.up();
       await tester.pumpAndSettle();
 
-      expect(sheet.workout.discards, 1);
+      expect(sheet.workout.spy.discards, 1);
       expect(find.text('End workout?'), findsOneWidget);
     });
 
@@ -307,8 +307,8 @@ void main() {
       await gesture.up();
       await tester.pumpAndSettle();
 
-      expect(sheet.workout.discards, 0);
-      expect(sheet.workout.endedWorkouts, 0);
+      expect(sheet.workout.spy.discards, 0);
+      expect(sheet.workout.spy.endedWorkouts, 0);
     });
   });
 

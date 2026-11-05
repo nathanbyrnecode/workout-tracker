@@ -28,13 +28,13 @@ void main() {
 
     await tester.tap(find.text('Sign in with Apple'));
     await tester.pumpAndSettle();
-    expect(auth.appleSignIns, 1);
-    expect(auth.googleSignIns, 0);
+    expect(auth.spy.appleSignIns, 1);
+    expect(auth.spy.googleSignIns, 0);
 
     await tester.tap(find.text('Sign in with Google'));
     await tester.pumpAndSettle();
-    expect(auth.googleSignIns, 1);
-    expect(auth.appleSignIns, 1);
+    expect(auth.spy.googleSignIns, 1);
+    expect(auth.spy.appleSignIns, 1);
 
     debugDefaultTargetPlatformOverride = null;
   });
@@ -46,7 +46,7 @@ void main() {
     expect(find.text('Sign in with Apple'), findsNothing);
     await tester.tap(find.text('Sign in with Google'));
     await tester.pumpAndSettle();
-    expect(auth.googleSignIns, 1);
+    expect(auth.spy.googleSignIns, 1);
 
     debugDefaultTargetPlatformOverride = null;
   });

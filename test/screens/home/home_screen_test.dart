@@ -75,7 +75,7 @@ void main() {
     expect(find.text('Get started by starting a workout!'), findsOneWidget);
 
     await tester.tap(find.text('Start workout'));
-    expect(workout.starts, 1);
+    expect(workout.spy.starts, 1);
   });
 
   testWidgets('workout with no exercises: active pill, totals, both actions',
@@ -101,7 +101,7 @@ void main() {
     await tester.tap(find.text('End workout'));
     await tester.pumpAndSettle();
     expect(find.text('End workout?'), findsOneWidget);
-    expect(workout.endedWorkouts, 0);
+    expect(workout.spy.endedWorkouts, 0);
   });
 
   testWidgets('totals include the active exercise as well as finished ones',
@@ -127,7 +127,7 @@ void main() {
     expect(find.text('Add set'), findsOneWidget);
 
     await tester.tap(find.text('End exercise'));
-    expect(workout.endedExercises, 1);
+    expect(workout.spy.endedExercises, 1);
   });
 
   testWidgets('the timer ticks every second', (tester) async {
@@ -183,7 +183,7 @@ void main() {
     expect(find.text('Start workout'), findsNothing);
 
     await tester.tap(find.text('Retry workout recovery'));
-    expect(workout.retries, 1);
+    expect(workout.spy.retries, 1);
   });
 
   testWidgets('the toggle switches between Current and Previous',

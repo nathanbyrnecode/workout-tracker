@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/theme/app_theme.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
@@ -112,14 +114,13 @@ bool get _goldensEnabled =>
 /// and compares it with `goldens/<name>_dark.png` and `goldens/<name>_light.png`
 /// next to the test file. The tests are tagged `golden`.
 ///
-/// Use [wrap] to add what the widget needs around it, such as a
-/// `ProviderScope` with overrides. Use [setUp] to interact with the widget
-/// (scroll, open a sheet) before the comparison.
+/// The widget runs in a root `ProviderScope` with [overrides]. Use [setUp]
+/// to interact with the widget (scroll, open a sheet) before the comparison.
 void goldenTest(
   String description, {
   required String name,
   required WidgetBuilder builder,
-  Widget Function(Widget child)? wrap,
+  List<Override> overrides = const [],
   Future<void> Function(WidgetTester tester)? setUp,
 }) {
   for (final brightness in [Brightness.dark, Brightness.light]) {
@@ -141,7 +142,8 @@ void goldenTest(
           brightness: brightness,
           child: Builder(builder: builder),
         );
-        await tester.pumpWidget(wrap == null ? app : wrap(app));
+        await tester
+            .pumpWidget(ProviderScope(overrides: overrides, child: app));
         await tester.pump();
         if (setUp != null) {
           await setUp(tester);

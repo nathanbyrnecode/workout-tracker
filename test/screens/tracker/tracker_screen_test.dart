@@ -275,7 +275,7 @@ void main() {
     testWidgets('a failed add keeps the sheet open with a message',
         (tester) async {
       final taps = await pumpTracker(tester);
-      taps.manual.failAdds = true;
+      taps.manual.failAdds.on = true;
       await openLogSheet(tester, 'Log workout');
       await tester.enterText(find.byType(TextField).first, 'Run');
       await tester.pump();

@@ -261,7 +261,7 @@ void main() {
   testWidgets('a failed delete stays on the screen and says so',
       (tester) async {
     final app = await pumpWholeApp(tester);
-    app.history.failWrites = true;
+    app.history.failWrites.on = true;
     await tester.tap(find.text('05/10/26'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Delete workout'), 200);

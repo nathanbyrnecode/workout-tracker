@@ -305,7 +305,7 @@ void main() {
     await tapButton(tester, 'Send code');
 
     await tapLink(tester, 'Back to sign in');
-    expect(auth.passwordResetCancels, 1);
+    expect(auth.spy.passwordResetCancels, 1);
     expect(find.text('Sign in with email'), findsWidgets);
 
     await tapLink(tester, 'Forgot password?');
@@ -313,13 +313,13 @@ void main() {
     Navigator.of(tester.element(find.byType(EmailAuthForm))).pop();
     await settle(tester);
     expect(sheetOpen, isFalse);
-    expect(auth.passwordResetCancels, 2);
+    expect(auth.spy.passwordResetCancels, 2);
   });
 
   testWidgets('links are disabled while a step runs', (tester) async {
     final auth = await openSheet(tester, allowPasswordReset: true);
     final gate = Completer<void>();
-    auth.emailGate = gate.future;
+    auth.spy.emailGate = gate.future;
     await enter(tester, 'EMAIL', 'lee@example.com');
     await enter(tester, 'PASSWORD', 'secret');
 

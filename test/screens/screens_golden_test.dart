@@ -118,34 +118,31 @@ void screenGolden(
   goldenTest(
     description,
     name: name,
-    wrap: (child) => ProviderScope(
-      overrides: [
-        clockProvider.overrideWithValue(() => demoNow),
-        currentWorkoutProvider.overrideWith(workout ?? FakeWorkoutNotifier.new),
-        userAuthenticationProvider.overrideWith(FakeAuthNotifier.new),
-        pastWorkoutsProvider.overrideWith(
-          () => FakePastWorkoutsNotifier(emptyHistory ? [] : demoHistory()),
+    overrides: [
+      clockProvider.overrideWithValue(() => demoNow),
+      currentWorkoutProvider.overrideWith(workout ?? FakeWorkoutNotifier.new),
+      userAuthenticationProvider.overrideWith(FakeAuthNotifier.new),
+      pastWorkoutsProvider.overrideWith(
+        () => FakePastWorkoutsNotifier(emptyHistory ? [] : demoHistory()),
+      ),
+      manualWorkoutsProvider.overrideWith(
+        () => FakeManualWorkoutsNotifier(
+          emptyHistory ? [] : demoManualWorkouts(),
         ),
-        manualWorkoutsProvider.overrideWith(
-          () => FakeManualWorkoutsNotifier(
-            emptyHistory ? [] : demoManualWorkouts(),
-          ),
-        ),
-        notificationsProvider
-            .overrideWith(() => FakeNotificationsNotifier(notifications)),
-        if (previousTab) currentTabProvider.overrideWith(_PreviousTab.new),
-        // Goldens never reach a real place service. With the fake, the
-        // credit line shows as it does in the app.
-        placeSearchServiceProvider.overrideWithValue(
-          placeSearch
-              ? FakePlaceSearchService(
-                  attribution: '© OpenStreetMap contributors',
-                )
-              : const UnavailablePlaceSearchService(),
-        ),
-      ],
-      child: child,
-    ),
+      ),
+      notificationsProvider
+          .overrideWith(() => FakeNotificationsNotifier(notifications)),
+      if (previousTab) currentTabProvider.overrideWith(_PreviousTab.new),
+      // Goldens never reach a real place service. With the fake, the
+      // credit line shows as it does in the app.
+      placeSearchServiceProvider.overrideWithValue(
+        placeSearch
+            ? FakePlaceSearchService(
+                attribution: '© OpenStreetMap contributors',
+              )
+            : const UnavailablePlaceSearchService(),
+      ),
+    ],
     setUp: (tester) async {
       await setUp?.call(tester);
       if (settle) {
@@ -180,18 +177,15 @@ void detailGolden(
   goldenTest(
     description,
     name: name,
-    wrap: (child) => ProviderScope(
-      overrides: [
-        clockProvider.overrideWithValue(() => demoNow),
-        pastWorkoutsProvider
-            .overrideWith(() => FakePastWorkoutsNotifier(demoHistory())),
-        manualWorkoutsProvider.overrideWith(
-          () => FakeManualWorkoutsNotifier(demoManualWorkouts()),
-        ),
-        placeSearchServiceProvider.overrideWithValue(FakePlaceSearchService()),
-      ],
-      child: child,
-    ),
+    overrides: [
+      clockProvider.overrideWithValue(() => demoNow),
+      pastWorkoutsProvider
+          .overrideWith(() => FakePastWorkoutsNotifier(demoHistory())),
+      manualWorkoutsProvider.overrideWith(
+        () => FakeManualWorkoutsNotifier(demoManualWorkouts()),
+      ),
+      placeSearchServiceProvider.overrideWithValue(FakePlaceSearchService()),
+    ],
     setUp: (tester) async {
       await setUp?.call(tester);
       await tester.pumpAndSettle();
@@ -516,14 +510,11 @@ void main() {
   goldenTest(
     'welcome',
     name: 'welcome',
-    wrap: (child) => ProviderScope(
-      overrides: [
-        userAuthenticationProvider.overrideWith(
-          () => FakeAuthNotifier(null, AuthStatus.signedOut),
-        ),
-      ],
-      child: child,
-    ),
+    overrides: [
+      userAuthenticationProvider.overrideWith(
+        () => FakeAuthNotifier(null, AuthStatus.signedOut),
+      ),
+    ],
     builder: (context) => Theme(
       data: Theme.of(context).copyWith(platform: TargetPlatform.iOS),
       child: const WelcomeScreen(),
@@ -611,15 +602,12 @@ void emailSheetGolden(
   goldenTest(
     description,
     name: name,
-    wrap: (child) => ProviderScope(
-      overrides: [
-        userAuthenticationProvider.overrideWith(
-          () => FakeAuthNotifier(null, AuthStatus.signedOut)
-            ..emailResults.addAll(results),
-        ),
-      ],
-      child: child,
-    ),
+    overrides: [
+      userAuthenticationProvider.overrideWith(
+        () => FakeAuthNotifier(null, AuthStatus.signedOut)
+          ..emailResults.addAll(results),
+      ),
+    ],
     builder: (context) => Theme(
       data: Theme.of(context).copyWith(platform: TargetPlatform.iOS),
       child: const WelcomeScreen(),

@@ -169,4 +169,95 @@ void main() {
     expect(workouts.first.title, isNull);
     expect(workouts.first.exercises[2]?.sets[3]?.savedAt, isNull);
   });
+
+  test('sets come out in set order even when the rows arrive newest first', () {
+    final workout = mapWorkoutRows(
+      workoutRows: [
+        {
+          'id': 1,
+          'start_time': '2026-10-31T12:50:00Z',
+          'end_time': '2026-10-31T14:10:00Z',
+        },
+      ],
+      exerciseRows: [
+        {
+          'id': 2,
+          'workout_id': 1,
+          'name': 'Bench Press',
+          'start_time': '2026-10-31T12:52:00Z',
+          'end_time': '2026-10-31T13:18:00Z',
+        },
+      ],
+      setRows: [
+        {'id': 7, 'exercise_id': 2, 'set_number': 2, 'weight': 80, 'reps': 8},
+        {'id': 6, 'exercise_id': 2, 'set_number': 1, 'weight': 60, 'reps': 8},
+        {'id': 5, 'exercise_id': 2, 'set_number': 0, 'weight': 60, 'reps': 10},
+      ],
+    ).single;
+
+    final sets = workout.exercises[2]!.sets.values.toList();
+    expect(sets.map((set) => set.id).toList(), [5, 6, 7]);
+    expect(sets.first.reps, 10);
+  });
+
+  test('sets without a set number fall back to id order', () {
+    final workout = mapWorkoutRows(
+      workoutRows: [
+        {
+          'id': 1,
+          'start_time': '2026-07-25T09:00:00Z',
+          'end_time': '2026-07-25T10:00:00Z',
+        },
+      ],
+      exerciseRows: [
+        {
+          'id': 2,
+          'workout_id': 1,
+          'name': 'Squat',
+          'start_time': '2026-07-25T09:05:00Z',
+          'end_time': '2026-07-25T09:20:00Z',
+        },
+      ],
+      setRows: [
+        {'id': 4, 'exercise_id': 2, 'weight': 100, 'reps': 3},
+        {'id': 3, 'exercise_id': 2, 'weight': 100, 'reps': 5},
+      ],
+    ).single;
+
+    expect(workout.exercises[2]!.sets.keys.toList(), [3, 4]);
+  });
+
+  test('exercises come out in the order they were started', () {
+    final workout = mapWorkoutRows(
+      workoutRows: [
+        {
+          'id': 1,
+          'start_time': '2026-07-25T09:00:00Z',
+          'end_time': '2026-07-25T10:00:00Z',
+        },
+      ],
+      exerciseRows: [
+        {
+          'id': 3,
+          'workout_id': 1,
+          'name': 'Dips',
+          'start_time': '2026-07-25T09:30:00Z',
+          'end_time': '2026-07-25T09:40:00Z',
+        },
+        {
+          'id': 2,
+          'workout_id': 1,
+          'name': 'Bench Press',
+          'start_time': '2026-07-25T09:05:00Z',
+          'end_time': '2026-07-25T09:25:00Z',
+        },
+      ],
+      setRows: [],
+    ).single;
+
+    expect(
+      workout.exercises.values.map((exercise) => exercise.name).toList(),
+      ['Bench Press', 'Dips'],
+    );
+  });
 }
