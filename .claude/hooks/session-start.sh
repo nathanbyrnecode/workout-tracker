@@ -67,6 +67,11 @@ if command -v bd >/dev/null 2>&1 && [ -f .beads/issues.jsonl ]; then
     if [ "$(git rev-parse HEAD)" != "$head_before" ]; then
       git reset --soft "$head_before" >&2
     fi
+    # Nor uncommitted edits they did not make: bd init also rewrites tracked
+    # files such as .beads/config.yaml (it turns on sync to the git remote),
+    # and a soft reset would leave that change for the session to commit.
+    # Untracked files bd init creates, such as its database, are kept.
+    git restore --source="$head_before" --staged --worktree -- .beads >&2 || true
   else
     bd --sandbox import .beads/issues.jsonl >&2 || true
   fi
