@@ -214,9 +214,8 @@ List<Workout> mapWorkoutRows({
     ..sort((a, b) {
       final aStart = _parseDateTime(a['start_time']);
       final bStart = _parseDateTime(b['start_time']);
-      final timeOrder = aStart == null || bStart == null
-          ? 0
-          : aStart.compareTo(bStart);
+      final timeOrder =
+          aStart == null || bStart == null ? 0 : aStart.compareTo(bStart);
       return timeOrder != 0
           ? timeOrder
           : (a['id'] as num).compareTo(b['id'] as num);

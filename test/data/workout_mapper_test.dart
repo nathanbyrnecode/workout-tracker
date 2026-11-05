@@ -170,8 +170,7 @@ void main() {
     expect(workouts.first.exercises[2]?.sets[3]?.savedAt, isNull);
   });
 
-  test('sets come out in set order even when the rows arrive newest first',
-      () {
+  test('sets come out in set order even when the rows arrive newest first', () {
     final workout = mapWorkoutRows(
       workoutRows: [
         {
