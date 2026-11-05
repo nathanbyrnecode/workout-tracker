@@ -6,6 +6,8 @@ import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/theme/app_theme.dart';
 
+import '../helpers/fakes.dart';
+
 void main() {
   testWidgets('shows recovery progress and prevents a new workout',
       (tester) async {
@@ -50,7 +52,7 @@ void main() {
     expect(find.text('Start workout'), findsNothing);
     await tester.tap(find.text('Retry workout recovery'));
     await tester.pump();
-    expect(notifier.retries, 1);
+    expect(notifier.spy.retries, 1);
     expect(find.text('Start workout'), findsOneWidget);
     expect(find.textContaining('Get started by starting a'), findsOneWidget);
   });
@@ -59,7 +61,7 @@ void main() {
 class _RecoveryNotifier extends CurrentWorkoutNotifier {
   _RecoveryNotifier({this.failed = false});
   final bool failed;
-  int retries = 0;
+  final spy = WorkoutSpy();
 
   @override
   CurrentWorkoutStateData build() => (
@@ -77,7 +79,7 @@ class _RecoveryNotifier extends CurrentWorkoutNotifier {
 
   @override
   Future<void> restoreActiveWorkout() async {
-    retries++;
+    spy.retries++;
     state = (
       workoutId: null,
       workoutStartDateTime: null,

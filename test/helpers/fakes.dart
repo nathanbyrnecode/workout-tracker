@@ -13,8 +13,38 @@ import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
 
+/// Lets a test make a fake's next write fail. Notifiers expose only their
+/// state, so switches like this live on a separate object.
+class FailSwitch {
+  bool on = false;
+}
+
+/// What a [FakeWorkoutNotifier] was asked to do, and how it should answer.
+class WorkoutSpy {
+  int starts = 0;
+  int retries = 0;
+  int endedWorkouts = 0;
+  int endedExercises = 0;
+  int discards = 0;
+
+  /// What the next [FakeWorkoutNotifier.endWorkout] reports.
+  EndWorkoutOutcome endOutcome = EndWorkoutOutcome.saved;
+}
+
+/// What a [FakeAuthNotifier] was asked to do.
+class AuthSpy {
+  int appleSignIns = 0;
+  int googleSignIns = 0;
+  int signOuts = 0;
+  int deletions = 0;
+  int passwordResetCancels = 0;
+
+  /// When set, email methods wait for it, so tests can see the busy state.
+  Future<void>? emailGate;
+}
+
 /// A workout notifier that starts in a given state and never calls Supabase.
-/// Calls are counted so tests can check what a widget asked for.
+/// Calls are counted on [spy] so tests can check what a widget asked for.
 class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   FakeWorkoutNotifier({
     this.startedAt,
@@ -29,10 +59,7 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   final Exercise? currentExercise;
   final WorkoutRecoveryStatus recoveryStatus;
 
-  int starts = 0;
-  int retries = 0;
-  int endedWorkouts = 0;
-  int endedExercises = 0;
+  final spy = WorkoutSpy();
   final removedSetIds = <int>[];
   final startedExercises = <String>[];
   final addedSets = <({double weight, int reps})>[];
@@ -51,24 +78,20 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
       );
 
   @override
-  Future<void> startWorkout() async => starts++;
+  Future<void> startWorkout() async => spy.starts++;
 
   @override
-  Future<void> restoreActiveWorkout() async => retries++;
+  Future<void> restoreActiveWorkout() async => spy.retries++;
 
-  int discards = 0;
-
-  /// Set to make the next discard fail.
-  bool failDiscard = false;
+  /// Turn on to make the next discard fail.
+  final failDiscard = FailSwitch();
 
   @override
   Future<bool> discardWorkout() async {
-    discards++;
-    return !failDiscard;
+    spy.discards++;
+    return !failDiscard.on;
   }
 
-  /// What the next [endWorkout] reports.
-  EndWorkoutOutcome endOutcome = EndWorkoutOutcome.saved;
   final endedWith = <({String title, LocationType type, Place? place})>[];
 
   @override
@@ -77,11 +100,11 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
     required LocationType locationType,
     Place? place,
   }) async {
-    endedWorkouts++;
+    spy.endedWorkouts++;
     endedWith.add((title: title, type: locationType, place: place));
     return (
-      outcome: endOutcome,
-      workout: endOutcome == EndWorkoutOutcome.saved
+      outcome: spy.endOutcome,
+      workout: spy.endOutcome == EndWorkoutOutcome.saved
           ? Workout(
               1,
               startedAt,
@@ -96,7 +119,7 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   }
 
   @override
-  Future<void> endExercise() async => endedExercises++;
+  Future<void> endExercise() async => spy.endedExercises++;
 
   @override
   Future<void> removeSetFromCurrentExercise(int setId) async =>
@@ -119,7 +142,7 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
 }
 
 /// A user with an optional first name, signed in unless told otherwise.
-/// Sign-in, sign-out and deletion are counted instead of performed.
+/// Sign-in, sign-out and deletion are counted on [spy] instead of performed.
 class FakeAuthNotifier extends UserAuthenticationNotifier {
   FakeAuthNotifier([
     this.firstName = 'Nathan',
@@ -129,27 +152,24 @@ class FakeAuthNotifier extends UserAuthenticationNotifier {
   final String? firstName;
   final AuthStatus status;
 
-  int appleSignIns = 0;
-  int googleSignIns = 0;
-  int signOuts = 0;
-  int deletions = 0;
+  final spy = AuthSpy();
 
-  /// Set to make the next account deletion fail.
-  bool failDeletion = false;
+  /// Turn on to make the next account deletion fail.
+  final failDeletion = FailSwitch();
 
   @override
   UserAuthenticationStateData build() =>
       (isSignedIn: status, firstName: firstName);
 
   @override
-  Future<void> signInWithApple() async => appleSignIns++;
+  Future<void> signInWithApple() async => spy.appleSignIns++;
 
   @override
   Future<void> signInWithGoogle({bool silentOnly = false}) async =>
-      googleSignIns++;
+      spy.googleSignIns++;
 
   @override
-  Future<void> signOut() async => signOuts++;
+  Future<void> signOut() async => spy.signOuts++;
 
   /// What each email method reports, by name, such as `signInWithEmail`.
   /// Without an entry, sign-up and reset requests send a code and the rest
@@ -158,10 +178,6 @@ class FakeAuthNotifier extends UserAuthenticationNotifier {
 
   /// Each email method called, with the arguments it was given.
   final emailCalls = <({String method, Map<String, String?> args})>[];
-  int passwordResetCancels = 0;
-
-  /// When set, email methods wait for it, so tests can see the busy state.
-  Future<void>? emailGate;
 
   Future<EmailAuthResult> _email(
     String method,
@@ -169,7 +185,7 @@ class FakeAuthNotifier extends UserAuthenticationNotifier {
     EmailAuthResult fallback = EmailAuthResult.signedIn,
   }) async {
     emailCalls.add((method: method, args: args));
-    await emailGate;
+    await spy.emailGate;
     return emailResults[method] ?? fallback;
   }
 
@@ -226,12 +242,12 @@ class FakeAuthNotifier extends UserAuthenticationNotifier {
       });
 
   @override
-  Future<void> cancelPasswordReset() async => passwordResetCancels++;
+  Future<void> cancelPasswordReset() async => spy.passwordResetCancels++;
 
   @override
   Future<void> deleteAccount() async {
-    deletions++;
-    if (failDeletion) {
+    spy.deletions++;
+    if (failDeletion.on) {
       throw StateError('deletion failed');
     }
   }
@@ -246,8 +262,8 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
   final deletedIds = <int>[];
   final added = <ManualWorkout>[];
 
-  /// Set to make adds fail.
-  bool failAdds = false;
+  /// Turn on to make adds fail.
+  final failAdds = FailSwitch();
 
   @override
   ManualWorkoutsStateData build() => (workouts: workouts);
@@ -259,7 +275,7 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
     required LocationType locationType,
     Place? place,
   }) async {
-    if (failAdds) {
+    if (failAdds.on) {
       return null;
     }
     final workout = ManualWorkout(
@@ -446,8 +462,8 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
 
   final List<Workout> workouts;
 
-  /// Set to make edits and deletes report failure.
-  bool failWrites = false;
+  /// Turn on to make edits and deletes report failure.
+  final failWrites = FailSwitch();
   final deletedIds = <int>[];
 
   @override
@@ -463,7 +479,7 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
     required LocationType locationType,
     Place? place,
   }) async {
-    if (failWrites) {
+    if (failWrites.on) {
       return false;
     }
     state = (
@@ -488,7 +504,7 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
 
   @override
   Future<bool> deleteWorkout(int workoutId) async {
-    if (failWrites) {
+    if (failWrites.on) {
       return false;
     }
     deletedIds.add(workoutId);

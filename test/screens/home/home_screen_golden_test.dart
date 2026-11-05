@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
@@ -26,15 +25,12 @@ void homeGolden(
   goldenTest(
     description,
     name: name,
-    wrap: (child) => ProviderScope(
-      overrides: [
-        currentWorkoutProvider.overrideWith(workout),
-        userAuthenticationProvider.overrideWith(FakeAuthNotifier.new),
-        pastWorkoutsProvider.overrideWith(FakePastWorkoutsNotifier.new),
-        clockProvider.overrideWithValue(() => _now),
-      ],
-      child: child,
-    ),
+    overrides: [
+      currentWorkoutProvider.overrideWith(workout),
+      userAuthenticationProvider.overrideWith(FakeAuthNotifier.new),
+      pastWorkoutsProvider.overrideWith(FakePastWorkoutsNotifier.new),
+      clockProvider.overrideWithValue(() => _now),
+    ],
     // Far enough into the loading spinner's animation for it to be visible.
     setUp: (tester) async {
       await setUp?.call(tester);

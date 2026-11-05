@@ -103,7 +103,7 @@ void main() {
     final profile = await pumpProfile(tester);
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
-    expect(profile.auth.signOuts, 1);
+    expect(profile.auth.spy.signOuts, 1);
   });
 
   testWidgets('delete account asks first and Cancel deletes nothing',
@@ -120,7 +120,7 @@ void main() {
 
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    expect(profile.auth.deletions, 0);
+    expect(profile.auth.spy.deletions, 0);
     expect(find.text('Delete account?'), findsNothing);
 
     // Tapping outside the sheet does not delete either.
@@ -128,7 +128,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tapAt(const Offset(195, 40));
     await tester.pumpAndSettle();
-    expect(profile.auth.deletions, 0);
+    expect(profile.auth.spy.deletions, 0);
   });
 
   testWidgets('confirming calls the existing account deletion', (tester) async {
@@ -138,14 +138,14 @@ void main() {
     await tester.tap(find.text('Delete account').last);
     await tester.pumpAndSettle();
 
-    expect(profile.auth.deletions, 1);
+    expect(profile.auth.spy.deletions, 1);
     expect(find.text('Deleting account…'), findsOneWidget);
   });
 
   testWidgets('a failed deletion says so and can be tried again',
       (tester) async {
     final profile = await pumpProfile(tester);
-    profile.auth.failDeletion = true;
+    profile.auth.failDeletion.on = true;
     await tester.tap(find.text('Delete account'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete account').last);
