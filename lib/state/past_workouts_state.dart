@@ -63,15 +63,15 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
           .from('exercises')
           .select('id, workout_id, name, start_time, end_time')
           .inFilter('workout_id', workoutRows.map((row) => row['id']).toList())
-          .order('start_time');
+          .order('start_time', ascending: true);
       final setRows = exerciseRows.isEmpty
           ? <Map<String, dynamic>>[]
           : await client
               .from('exercise_sets')
-              .select('id, exercise_id, weight, reps, created_at')
+              .select('id, exercise_id, set_number, weight, reps, created_at')
               .inFilter(
                   'exercise_id', exerciseRows.map((row) => row['id']).toList())
-              .order('id');
+              .order('id', ascending: true);
 
       if (!ref.mounted ||
           generation != _requestGeneration ||
@@ -208,8 +208,28 @@ List<Workout> mapWorkoutRows({
     );
   }
 
+  // Sort here rather than trust the query: postgrest's order() defaults to
+  // descending in the pinned version, which numbered the last set as set 1.
+  final sortedExerciseRows = List<Map<String, dynamic>>.from(exerciseRows)
+    ..sort((a, b) {
+      final aStart = _parseDateTime(a['start_time']);
+      final bStart = _parseDateTime(b['start_time']);
+      final timeOrder = aStart == null || bStart == null
+          ? 0
+          : aStart.compareTo(bStart);
+      return timeOrder != 0
+          ? timeOrder
+          : (a['id'] as num).compareTo(b['id'] as num);
+    });
+  final sortedSetRows = List<Map<String, dynamic>>.from(setRows)
+    ..sort((a, b) {
+      final order = ((a['set_number'] as num?) ?? 0)
+          .compareTo((b['set_number'] as num?) ?? 0);
+      return order != 0 ? order : (a['id'] as num).compareTo(b['id'] as num);
+    });
+
   final Map<int, Exercise> exercises = {};
-  for (final row in exerciseRows) {
+  for (final row in sortedExerciseRows) {
     final workoutId = (row['workout_id'] as num).toInt();
     final workout = workouts[workoutId];
     final exerciseName = row['name'] as String?;
@@ -233,7 +253,7 @@ List<Workout> mapWorkoutRows({
     workout.addExercise(exercise);
   }
 
-  for (final row in setRows) {
+  for (final row in sortedSetRows) {
     final exerciseId = (row['exercise_id'] as num).toInt();
     final exercise = exercises[exerciseId];
     final weight = row['weight'];
