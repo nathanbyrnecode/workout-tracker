@@ -13,13 +13,9 @@ workflows:
         APP_STORE_APPLE_ID: "6804228254"
       flutter: stable
       xcode: latest
-      cocoapods: default
     scripts:
       - name: Get Flutter packages
-        script: flutter packages pub get
-      - name: Install pods
-        script: |
-          find . -name "Podfile" -maxdepth 2 -execdir pod install \;
+        script: flutter pub get
       - name: Flutter analyze
         script: flutter analyze
       - name: Flutter unit tests
