@@ -39,6 +39,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>FittenUp uses your location to suggest nearby gyms and parks when you add a place to a workout. It is only requested when you tap "Use current location" and is never used in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>FittenUp uses your location to suggest nearby gyms and parks when you add a place to a workout. It is only requested when you tap "Use current location".</string>
 	<key>UIApplicationSceneManifest</key>
