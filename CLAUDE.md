@@ -9,10 +9,11 @@ Everything above applies. These notes cover the Claude-specific setup in
 
 - `/next-task`: pick the next ready bead, claim it, branch from `main`,
   do the work, run the definition-of-done checks and close the bead.
-- `/build-screen <name>`: build one screen or sheet from the design package,
-  with widget and golden tests in both themes.
+- `/build-screen <name>`: build or restyle one screen or sheet from the design
+  in its bead, with widget and golden tests in both themes.
 - `/capture-design`: re-render `design/workout-tracker/screens/` after the
-  design package changes.
+  original design package changes. That package is historical, so this is
+  rarely needed.
 - `liquid-glass-widgets`: API guide for the `liquid_glass_widgets` package,
   copied unmodified from the package's `skills/` directory. Use it for setup
   and correct widget names. Where it disagrees with the design rules in
@@ -23,9 +24,9 @@ Everything above applies. These notes cover the Claude-specific setup in
 
 ## Agents
 
-- `design-reviewer` (read-only): compares a screen's golden PNGs with the
-  reference screenshots and checks token and glass usage. Run it before closing
-  any bead that touches UI.
+- `design-reviewer` (read-only): compares a change's golden PNGs with the
+  goldens on `main` and the design in the bead, and checks token and glass
+  usage. Run it before closing any bead that touches UI.
 
 ## Hooks
 
