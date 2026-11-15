@@ -8,9 +8,9 @@ import 'package:gym_tracker_app/screens/home/widgets/sheets/new_exercise_sheet.d
 import 'package:gym_tracker_app/screens/home/widgets/sheets/set_sheet.dart';
 import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/widgets/action_button.dart';
 import 'package:gym_tracker_app/widgets/floating_action_row.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// The floating actions for Home. What it shows depends on the workout:
@@ -66,7 +66,7 @@ class WorkoutActionArea extends ConsumerWidget {
       totals: workoutTotals(workout.exercises),
       startedAt: startedAt,
       // Most people train in the same kind of place as last time.
-      initialType: defaultLocationType(ref.read(pastWorkoutsProvider).workouts),
+      initialType: defaultLocationType(ref.read(allWorkoutsProvider)),
       onDiscard: ref.read(currentWorkoutProvider.notifier).discardWorkout,
       onEnd: (details) async {
         final result =

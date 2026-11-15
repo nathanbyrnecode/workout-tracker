@@ -34,6 +34,7 @@ Supabase (Postgres + RLS, auth, edge functions)
 | Provider | File | Holds |
 |---|---|---|
 | `currentWorkoutProvider` | `lib/state/current_workout_state.dart` | The in-progress workout, its exercises and the active exercise, kept on the device; whether the device copy has been read |
+| `workoutSyncProvider` | `lib/state/workout_sync_state.dart` | Finished and logged workouts kept on the device until they upload, and their uploads. Also defines `allWorkoutsProvider` and `allManualWorkoutsProvider` |
 | `pastWorkoutsProvider` | `lib/state/past_workouts_state.dart` | Finished workouts with exercises and sets. Also defines the `Workout` class and `mapWorkoutRows` |
 | `userAuthenticationProvider` | `lib/state/user_authentication_state.dart` | Session, Google and Apple sign-in, account deletion |
 | `currentTabProvider` | `lib/state/current_tab_state.dart` | Home's Current/Previous tab |
@@ -144,9 +145,9 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
 | Workout ended | finished copy kept on the device, then `save_workout` (workout, exercises and sets in one transaction); the device copy is deleted once that succeeds |
 | Workout ended with no exercises | nothing kept; `active.json` deleted |
 | Workout discarded (hold to discard) | `active.json` deleted |
-| Manual workout logged | insert `manual_workouts` (id, user_id, date, title, location columns) |
-| Past workout deleted | delete `workouts` row (children cascade) |
-| Past workout edited | update `workouts.title`, `location_type`, `place_*` |
+| Manual workout logged | kept on the device, then upsert `manual_workouts` (id, user_id, date, title, location columns, created_at), ignoring an ID the server already has |
+| Past workout deleted | delete `workouts` row (children cascade); for one still on the device, its file |
+| Past workout edited | update `workouts.title`, `location_type`, `place_*`; for one still on the device, its file |
 | Manual workout edited or deleted | update or delete the `manual_workouts` row |
 
 ### Edge functions
@@ -274,8 +275,37 @@ actions wait until it has been read (`WorkoutRecoveryStatus.pending` /
   user gets it back on signing in again. A response that arrives after
   sign-out or reset is dropped (generation counter).
 
+**Uploading.** `WorkoutSyncNotifier` (`lib/state/workout_sync_state.dart`)
+holds the finished and logged workouts that are on the device but not on the
+server, and uploads them.
+
+- `keepWorkout` / `keepManualWorkout` write the file and list the entry.
+  Ending a workout and logging one both keep it first, then upload it, so a
+  failed upload never loses anything.
+- `uploadWorkout(id)` / `uploadManualWorkout(id)` are single-flight per ID,
+  have a 30 s timeout (`uploadTimeout`) and refresh an expired access token
+  first. On success the file is deleted, the entry moves to the
+  server-backed list (`addSavedWorkout`) and history is reloaded in the
+  background. On failure everything stays on the device.
+- `syncAll()` uploads everything waiting, one at a time. It runs after
+  sign-in (once the device copies have been read) and whenever the app comes
+  back to the foreground (`AppLifecycleListener` in
+  `AuthenticatorController`).
+- Edits and deletes from the detail screens go through
+  `updateWorkout` / `deleteWorkout` (and the manual equivalents): an entry
+  still on the device is changed there; one on the server is changed there
+  and needs the network. If an upload of that ID is running, the edit waits
+  for it first.
+- `allWorkoutsProvider` and `allManualWorkoutsProvider` are the lists every
+  screen shows: the server's plus the device's, each workout once (the
+  server's copy wins), with `synced` false on those still on the device.
+- Sign-out forgets the list in memory; the files stay for the same user's
+  next sign-in.
+
 **Tests.** `test/state/current_workout_state_test.dart` (recording with no
 network, ending, upload, recovery, the 12-hour rule, races),
+`test/state/workout_sync_state_test.dart` (loading per user, syncing,
+failures, single-flight uploads, edits during an upload, merged lists),
 `test/data/local_workout_store_test.dart` and
 `test/data/workout_json_test.dart`.
 

@@ -2,7 +2,6 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/state/theme_mode_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
@@ -12,6 +11,7 @@ import 'package:gym_tracker_app/util/privacy_policy.dart';
 import 'package:gym_tracker_app/widgets/app_bottom_sheet.dart';
 import 'package:gym_tracker_app/widgets/app_button.dart';
 import 'package:gym_tracker_app/widgets/screen_title.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Profile: who is signed in, the appearance setting, privacy policy, sign
@@ -72,7 +72,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final name = ref.watch(userAuthenticationProvider).firstName?.trim() ?? '';
-    final workouts = ref.watch(pastWorkoutsProvider).workouts.length;
+    final workouts = ref.watch(allWorkoutsProvider).length;
 
     return SafeArea(
       bottom: false,

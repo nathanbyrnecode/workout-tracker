@@ -11,7 +11,6 @@ import 'package:gym_tracker_app/screens/tracker/widgets/tracker_grid.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/date_format.dart';
@@ -20,6 +19,7 @@ import 'package:gym_tracker_app/widgets/dashed_border.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/screen_title.dart';
 import 'package:gym_tracker_app/widgets/tappable_card.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// The Tracker: streak and day counts, the 17-week grid, and what was logged
@@ -54,7 +54,7 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
       context: context,
       initialDay: day,
       today: today,
-      initialType: defaultLocationType(ref.read(pastWorkoutsProvider).workouts),
+      initialType: defaultLocationType(ref.read(allWorkoutsProvider)),
       onAdd: (loggedDay, details) async {
         final added =
             await ref.read(manualWorkoutsProvider.notifier).addManualWorkout(
@@ -78,8 +78,8 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
     final live = ref.watch(currentWorkoutProvider);
     final liveExercise = live.currentExercise;
     final days = buildTrackerDays(
-      workouts: ref.watch(pastWorkoutsProvider).workouts,
-      manualWorkouts: ref.watch(manualWorkoutsProvider).workouts,
+      workouts: ref.watch(allWorkoutsProvider),
+      manualWorkouts: ref.watch(allManualWorkoutsProvider),
       liveStart: live.isInProgress ? live.workoutStartDateTime : null,
       liveTotals: workoutTotals([
         ...live.exercises,

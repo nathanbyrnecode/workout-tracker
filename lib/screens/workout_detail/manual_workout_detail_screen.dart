@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
 import 'package:gym_tracker_app/screens/workout_detail/detail_widgets.dart';
-import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/date_format.dart';
 import 'package:gym_tracker_app/widgets/dashed_border.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/workout_form_sheet.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A manually logged workout: its date, type and place. It has no exercises.
@@ -37,7 +37,7 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
         place: workout.place,
       ),
       onSave: (details) =>
-          ref.read(manualWorkoutsProvider.notifier).updateManualWorkout(
+          ref.read(workoutSyncProvider.notifier).updateManualWorkout(
                 workout.id,
                 title: details.title,
                 locationType: details.type,
@@ -59,7 +59,7 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
       return;
     }
     final deleted = await ref
-        .read(manualWorkoutsProvider.notifier)
+        .read(workoutSyncProvider.notifier)
         .deleteManualWorkout(workout.id);
     if (deleted) {
       onClose();
@@ -75,8 +75,7 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.tokens;
     final workout = ref
-        .watch(manualWorkoutsProvider)
-        .workouts
+        .watch(allManualWorkoutsProvider)
         .where((workout) => workout.id == workoutId)
         .firstOrNull;
     if (workout == null) {

@@ -34,6 +34,15 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
     state = initialPastWorkoutsStateData;
   }
 
+  /// Adds a workout that has just been uploaded, so it shows straight away
+  /// even before the next load from the server.
+  void addSavedWorkout(Workout workout) {
+    if (state.workouts.any((existing) => existing.id == workout.id)) {
+      return;
+    }
+    _setState(workouts: [workout, ...state.workouts]);
+  }
+
   Future<void> getWorkoutsFromRemote() async {
     final client = ref.read(supabaseClientProvider);
     final user = client.auth.currentUser;

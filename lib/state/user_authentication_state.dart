@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
@@ -10,6 +11,7 @@ import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -83,8 +85,8 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
 
   Future<void> _completeSignIn({String? firstName}) async {
     // Start recovery before exposing the home screen and its workout actions.
-    final recovery =
-        ref.read(currentWorkoutProvider.notifier).restoreActiveWorkout();
+    // It reads the device only, so it does not wait for the network.
+    final recovery = _restoreWorkoutsOnDevice();
     _setState(
       isSignedIn: AuthStatus.signedIn,
       firstName: firstName,
@@ -96,8 +98,18 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
     ]);
   }
 
+  /// Reads the unsynced workouts and the active workout from the device, then
+  /// starts uploading anything waiting without holding up sign-in.
+  Future<void> _restoreWorkoutsOnDevice() async {
+    final sync = ref.read(workoutSyncProvider.notifier);
+    await sync.load();
+    await ref.read(currentWorkoutProvider.notifier).restoreActiveWorkout();
+    unawaited(sync.syncAll());
+  }
+
   void _resetSignedOutState() {
     ref.read(currentWorkoutProvider.notifier).resetState();
+    ref.read(workoutSyncProvider.notifier).resetState();
     ref.read(pastWorkoutsProvider.notifier).resetState();
     ref.read(manualWorkoutsProvider.notifier).resetState();
     ref.read(currentTabProvider.notifier).resetState();

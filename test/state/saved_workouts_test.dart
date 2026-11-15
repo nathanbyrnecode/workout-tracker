@@ -1,12 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/place.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
+import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -39,6 +43,8 @@ void main() {
   late ProviderContainer container;
   late List<http.Request> requests;
   late Future<http.Response> Function(http.Request) respond;
+  late MemoryWorkoutStore store;
+  late DateTime now;
 
   setUp(() async {
     requests = [];
@@ -55,8 +61,12 @@ void main() {
       }),
     );
     await signIn(client);
+    now = DateTime(2026, 10, 1, 9);
+    store = MemoryWorkoutStore();
     container = ProviderContainer(overrides: [
       supabaseClientProvider.overrideWithValue(client),
+      localWorkoutStoreProvider.overrideWithValue(store),
+      clockProvider.overrideWithValue(() => now),
     ]);
   });
 
@@ -66,18 +76,9 @@ void main() {
   });
 
   group('logging a manual workout', () {
-    test('inserts a row for the calendar day and adds it to the list',
+    test('keeps it on the device, uploads it and adds it to the list',
         () async {
-      respond = (request) async => jsonResponse({
-            'id': testId(9),
-            'date': '2026-10-01',
-            'title': 'Morning run',
-            'location_type': 'Park',
-            'place_name': 'Mayfield Park',
-            'place_address': null,
-            'place_lat': null,
-            'place_lng': null,
-          });
+      respond = (_) async => http.Response('', 201);
       final notifier = container.read(manualWorkoutsProvider.notifier);
       final added = await notifier.addManualWorkout(
         // A time late in the day must not move it to the next day.
@@ -90,6 +91,10 @@ void main() {
       final request = requests.single;
       expect(request.method, 'POST');
       expect(request.url.path, endsWith('/manual_workouts'));
+      // A retry of a row the server already has is ignored, not an error.
+      expect(request.url.queryParameters['on_conflict'], 'id');
+      expect(
+          request.headers['Prefer'], contains('resolution=ignore-duplicates'));
       final body = jsonDecode(request.body) as Map<String, dynamic>;
       expect(Uuid.isValidUUID(fromString: body.remove('id') as String), isTrue);
       expect(body, {
@@ -101,20 +106,35 @@ void main() {
         'place_address': null,
         'place_lat': null,
         'place_lng': null,
+        'created_at': now.toUtc().toIso8601String(),
       });
-      expect(added?.id, testId(9));
       expect(added?.date, DateTime(2026, 10, 1));
+      expect(added?.synced, isTrue);
       expect(container.read(manualWorkoutsProvider).workouts.single.title,
           'Morning run');
+      expect(store.pendingFor('user-a', PendingKind.manualWorkout), isEmpty);
     });
 
-    test('two adds on one day make two entries', () async {
-      var hour = 0;
-      respond = (request) async {
-        final body = jsonDecode(request.body) as Map<String, dynamic>;
-        return jsonResponse(
-            {...body, 'created_at': '2026-10-01T1${++hour}:00:00Z'});
-      };
+    test('with no network it is kept on the device and still listed', () async {
+      respond = (_) async => throw const SocketException('offline');
+      final added = await container
+          .read(manualWorkoutsProvider.notifier)
+          .addManualWorkout(
+            date: DateTime(2026, 10, 1),
+            title: 'Swim',
+            locationType: LocationType.other,
+          );
+
+      expect(added?.synced, isFalse);
+      expect(
+        store.pendingFor('user-a', PendingKind.manualWorkout).keys,
+        [added!.id],
+      );
+      expect(container.read(allManualWorkoutsProvider).single.id, added.id);
+    });
+
+    test('two adds on one day make two entries, newest first', () async {
+      respond = (_) async => http.Response('', 201);
       final notifier = container.read(manualWorkoutsProvider.notifier);
       for (final title in ['Morning run', 'Evening swim']) {
         await notifier.addManualWorkout(
@@ -122,19 +142,18 @@ void main() {
           title: title,
           locationType: LocationType.other,
         );
+        now = now.add(const Duration(hours: 8));
       }
 
       expect(requests, hasLength(2));
       final workouts = container.read(manualWorkoutsProvider).workouts;
-      expect(workouts, hasLength(2));
       expect(workouts.map((workout) => workout.date).toSet(),
           {DateTime(2026, 10, 1)});
-      // Newest entry first within a day.
       expect(workouts.map((workout) => workout.title),
           ['Evening swim', 'Morning run']);
     });
 
-    test('an empty name or a failed save adds nothing', () async {
+    test('an empty name, or one that cannot be kept, adds nothing', () async {
       final notifier = container.read(manualWorkoutsProvider.notifier);
       expect(
         await notifier.addManualWorkout(
@@ -144,9 +163,8 @@ void main() {
         ),
         isNull,
       );
-      expect(requests, isEmpty);
 
-      respond = (_) async => jsonResponse({'message': 'unavailable'}, 500);
+      store.failWrites.on = true;
       expect(
         await notifier.addManualWorkout(
           date: DateTime(2026, 10, 1),
@@ -155,7 +173,8 @@ void main() {
         ),
         isNull,
       );
-      expect(container.read(manualWorkoutsProvider).workouts, isEmpty);
+      expect(requests, isEmpty);
+      expect(container.read(allManualWorkoutsProvider), isEmpty);
     });
   });
 

@@ -6,13 +6,13 @@ import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/screens/home/widgets/completed_exercise_card.dart';
 import 'package:gym_tracker_app/screens/home/widgets/timer_count.dart';
 import 'package:gym_tracker_app/screens/workout_detail/detail_widgets.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/date_format.dart';
 import 'package:gym_tracker_app/util/number_format.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/workout_form_sheet.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 
 /// A recorded workout in full: when and where it was, how long it took, its
 /// totals and every set. Edit changes its name and location; Delete removes
@@ -37,13 +37,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
         type: workout.displayLocationType,
         place: workout.place,
       ),
-      onSave: (details) =>
-          ref.read(pastWorkoutsProvider.notifier).updateWorkout(
-                workout.id,
-                title: details.title,
-                locationType: details.type,
-                place: details.place,
-              ),
+      onSave: (details) => ref.read(workoutSyncProvider.notifier).updateWorkout(
+            workout.id,
+            title: details.title,
+            locationType: details.type,
+            place: details.place,
+          ),
     );
   }
 
@@ -60,7 +59,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
       return;
     }
     final deleted =
-        await ref.read(pastWorkoutsProvider.notifier).deleteWorkout(workout.id);
+        await ref.read(workoutSyncProvider.notifier).deleteWorkout(workout.id);
     if (deleted) {
       onClose();
     } else if (context.mounted) {
@@ -75,8 +74,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.tokens;
     final workout = ref
-        .watch(pastWorkoutsProvider)
-        .workouts
+        .watch(allWorkoutsProvider)
         .where((workout) => workout.id == workoutId)
         .firstOrNull;
     // Deleted from under the screen: there is nothing to show while it pops.

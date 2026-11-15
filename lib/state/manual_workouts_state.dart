@@ -6,6 +6,8 @@ import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
 import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/state/clock_provider.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -28,6 +30,16 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
   void resetState() {
     _requestGeneration++;
     state = initialManualWorkoutsStateData;
+  }
+
+  /// Adds a logged workout that has just been uploaded, so it shows straight
+  /// away even before the next load from the server.
+  void addSavedManualWorkout(ManualWorkout workout) {
+    if (state.workouts.any((existing) => existing.id == workout.id)) {
+      return;
+    }
+    state =
+        (workouts: [...state.workouts, workout]..sort(compareManualWorkouts),);
   }
 
   Future<void> getManualWorkoutsFromRemote() async {
@@ -61,48 +73,53 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
     }
   }
 
-  /// Logs a workout for [date]. A day can have any number of them. Returns
-  /// the new workout, or null if it could not be saved.
+  /// Logs a workout for [date]. A day can have any number of them.
+  ///
+  /// It is kept on the device first, so it is never lost, then uploaded (see
+  /// `WorkoutSyncNotifier`). Returns the new workout, with `synced` saying
+  /// whether the server has it yet, or null if it could not be kept at all.
   Future<ManualWorkout?> addManualWorkout({
     required DateTime date,
     required String title,
     required LocationType locationType,
     Place? place,
   }) async {
-    final client = ref.read(supabaseClientProvider);
-    final user = client.auth.currentUser;
+    final user = ref.read(supabaseClientProvider).auth.currentUser;
     if (user == null || title.trim().isEmpty) {
       return null;
     }
 
+    final workout = ManualWorkout(
+      id: const Uuid().v4(),
+      date: DateTime(date.year, date.month, date.day),
+      title: title.trim(),
+      locationType: locationType,
+      place: place,
+      createdAt: ref.read(clockProvider)(),
+      synced: false,
+    );
+    final sync = ref.read(workoutSyncProvider.notifier);
     try {
-      final row = await client
-          .from('manual_workouts')
-          .insert({
-            'id': const Uuid().v4(),
-            'user_id': user.id,
-            'date': formatCalendarDate(date),
-            'title': title.trim(),
-            ...locationToColumns(locationType, place),
-          })
-          .select(manualWorkoutColumns)
-          .single();
-      final added = mapManualWorkoutRows([row]).firstOrNull;
-      if (added == null) {
-        return null;
-      }
-      // Newest day first, then newest entry first, as the load orders them.
-      state =
-          (workouts: [...state.workouts, added]..sort(compareManualWorkouts),);
-      return added;
+      await sync.keepManualWorkout(workout);
     } catch (error, stackTrace) {
       log(
-        'Failed to add the manual workout.',
+        'Failed to keep the logged workout on the device.',
         error: error,
         stackTrace: stackTrace,
       );
       return null;
     }
+    if (!await sync.uploadManualWorkout(workout.id)) {
+      return workout;
+    }
+    return ManualWorkout(
+      id: workout.id,
+      date: workout.date,
+      title: workout.title,
+      locationType: workout.locationType,
+      place: workout.place,
+      createdAt: workout.createdAt,
+    );
   }
 
   /// Changes a manual workout's title and location. Returns whether the

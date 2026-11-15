@@ -163,6 +163,7 @@ void main() {
     expect(((exercises.single as Map)['sets'] as List).length, 2);
     expect(store.pendingFor('user-a'), isEmpty);
     // History is reloaded so the workout shows there.
+    await pumpEventQueue();
     expect(requests.any((r) => r.url.path.endsWith('/workouts')), isTrue);
   });
 

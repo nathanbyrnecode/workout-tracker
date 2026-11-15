@@ -11,7 +11,7 @@ import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/place.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -221,17 +221,10 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       if (_now().difference(active.startTime) >= workoutRecoveryWindow) {
         final finished = finishExpiredWorkout(
           active,
-          locationType: defaultLocationType(
-            ref.read(pastWorkoutsProvider).workouts,
-          ),
+          locationType: defaultLocationType(ref.read(allWorkoutsProvider)),
         );
         if (finished != null) {
-          await _store.writePending(
-            userId,
-            PendingKind.workout,
-            finished.id,
-            encodeWorkout(finished, userId: userId),
-          );
+          await ref.read(workoutSyncProvider.notifier).keepWorkout(finished);
         }
         await _store.deleteActive(userId);
         if (isCurrentRequest()) {
@@ -277,7 +270,7 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
   }
 
   /// Ends the workout with its title and location and keeps it on the device,
-  /// then tries to upload it.
+  /// then tries to upload it (see `WorkoutSyncNotifier`).
   ///
   /// A workout with no finished exercises has nothing worth keeping, so it is
   /// dropped and the outcome is [EndWorkoutOutcome.discarded]. If it cannot be
@@ -311,9 +304,9 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       place: place,
       synced: false,
     );
-    final json = encodeWorkout(workout, userId: userId);
+    final sync = ref.read(workoutSyncProvider.notifier);
     try {
-      await _store.writePending(userId, PendingKind.workout, workoutId, json);
+      await sync.keepWorkout(workout);
       await _store.deleteActive(userId);
     } catch (error, stackTrace) {
       log('Failed to keep the finished workout on the device.',
@@ -323,10 +316,7 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     _recoveryGeneration++;
     state = _readyWithNoWorkout;
 
-    try {
-      await uploadWorkout(ref.read(supabaseClientProvider), json);
-      await _store.deletePending(userId, PendingKind.workout, workoutId);
-      await ref.read(pastWorkoutsProvider.notifier).getWorkoutsFromRemote();
+    if (await sync.uploadWorkout(workoutId)) {
       return (
         outcome: EndWorkoutOutcome.saved,
         workout: Workout(
@@ -339,11 +329,8 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
           place: workout.place,
         ),
       );
-    } catch (error, stackTrace) {
-      log('Could not upload the workout; it is kept on the device.',
-          error: error, stackTrace: stackTrace);
-      return (outcome: EndWorkoutOutcome.savedLocally, workout: workout);
     }
+    return (outcome: EndWorkoutOutcome.savedLocally, workout: workout);
   }
 
   /// Throws the workout away: nothing reaches history or the tracker.
