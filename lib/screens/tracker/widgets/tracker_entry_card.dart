@@ -104,8 +104,15 @@ class TrackerEntryCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (!synced) const NotSyncedMarker(),
-            Icon(LucideIcons.chevronRight, size: 16, color: t.muted),
+            // The same gap as on the Previous tab's cards.
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: t.spacing.gap8,
+              children: [
+                if (!synced) const NotSyncedMarker(),
+                Icon(LucideIcons.chevronRight, size: 16, color: t.muted),
+              ],
+            ),
           ],
         ),
       ),

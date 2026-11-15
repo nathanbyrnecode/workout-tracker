@@ -52,7 +52,8 @@ class SyncStatusRow extends ConsumerWidget {
         ),
         decoration: BoxDecoration(
           color: t.card,
-          borderRadius: BorderRadius.circular(t.radii.rowSmall),
+          // Matches the bell button beside it in the header.
+          borderRadius: BorderRadius.circular(t.radii.iconButton),
           border: Border.all(color: t.line),
         ),
         child: Row(

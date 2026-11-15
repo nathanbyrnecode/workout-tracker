@@ -23,7 +23,7 @@ class NotSyncedMarker extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: t.spacing.gap6,
         children: [
-          Icon(LucideIcons.cloudOff, size: size, color: t.fg),
+          Icon(LucideIcons.cloudOff, size: size, color: t.muted),
           if (showLabel)
             Text(
               'NOT SYNCED',

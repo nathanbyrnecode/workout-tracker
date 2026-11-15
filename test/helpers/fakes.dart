@@ -649,7 +649,11 @@ class FakeWorkoutSyncNotifier extends WorkoutSyncNotifier {
   FakeWorkoutSyncNotifier({
     this.workouts = const [],
     this.manualWorkouts = const [],
+    this.syncing = false,
   });
+
+  /// Starts as if a sync were already running.
+  final bool syncing;
 
   final List<Workout> workouts;
   final List<ManualWorkout> manualWorkouts;
@@ -665,7 +669,7 @@ class FakeWorkoutSyncNotifier extends WorkoutSyncNotifier {
         pendingWorkouts: workouts,
         pendingManualWorkouts: manualWorkouts,
         uploading: const {},
-        isSyncing: false,
+        isSyncing: syncing,
       );
 
   @override
@@ -698,5 +702,16 @@ Workout notSynced(Workout workout) => Workout(
       title: workout.title,
       locationType: workout.locationType,
       place: workout.place,
+      synced: false,
+    );
+
+/// [workout] as it is before it reaches the server.
+ManualWorkout notSyncedManual(ManualWorkout workout) => ManualWorkout(
+      id: workout.id,
+      date: workout.date,
+      title: workout.title,
+      locationType: workout.locationType,
+      place: workout.place,
+      createdAt: workout.createdAt,
       synced: false,
     );

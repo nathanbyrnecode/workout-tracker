@@ -190,6 +190,7 @@ void detailGolden(
   required AppTab tab,
   required Widget Function() screen,
   bool firstNotSynced = false,
+  bool firstManualNotSynced = false,
   Future<void> Function(WidgetTester tester)? setUp,
 }) {
   goldenTest(
@@ -197,6 +198,18 @@ void detailGolden(
     name: name,
     overrides: [
       clockProvider.overrideWithValue(() => demoNow),
+      if (firstManualNotSynced) ...[
+        manualWorkoutsProvider.overrideWith(
+          () => FakeManualWorkoutsNotifier(
+            demoManualWorkouts().skip(1).toList(),
+          ),
+        ),
+        workoutSyncProvider.overrideWith(
+          () => FakeWorkoutSyncNotifier(
+            manualWorkouts: [notSyncedManual(demoManualWorkouts().first)],
+          ),
+        ),
+      ],
       pastWorkoutsProvider.overrideWith(
         () => FakePastWorkoutsNotifier(
           firstNotSynced ? demoHistory().skip(1).toList() : demoHistory(),
@@ -208,9 +221,10 @@ void detailGolden(
             workouts: [notSynced(demoHistory().first)],
           ),
         ),
-      manualWorkoutsProvider.overrideWith(
-        () => FakeManualWorkoutsNotifier(demoManualWorkouts()),
-      ),
+      if (!firstManualNotSynced)
+        manualWorkoutsProvider.overrideWith(
+          () => FakeManualWorkoutsNotifier(demoManualWorkouts()),
+        ),
       placeSearchServiceProvider.overrideWithValue(FakePlaceSearchService()),
     ],
     setUp: (tester) async {
@@ -401,6 +415,26 @@ void main() {
     screen: _home,
     previousTab: true,
     firstNotSynced: true,
+  );
+
+  screenGolden(
+    'tracker with a workout not synced yet',
+    name: 'tracker_not_synced',
+    hasUnread: true,
+    tab: AppTab.tracker,
+    screen: _tracker,
+    firstNotSynced: true,
+  );
+
+  detailGolden(
+    'manual workout detail for one not synced yet',
+    name: 'manual_detail_not_synced',
+    tab: AppTab.tracker,
+    firstManualNotSynced: true,
+    screen: () => ManualWorkoutDetailScreen(
+      workoutId: demoManualWorkouts().first.id,
+      onClose: () {},
+    ),
   );
 
   detailGolden(

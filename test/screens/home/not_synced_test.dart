@@ -98,6 +98,25 @@ void main() {
       expect(find.text('Sync'), findsNothing);
     });
 
+    testWidgets('while syncing, shows progress instead of Sync',
+        (tester) async {
+      await pumpApp(
+        tester,
+        const SyncStatusRow(),
+        overrides: [
+          workoutSyncProvider.overrideWith(
+            () => FakeWorkoutSyncNotifier(
+              workouts: [notSynced(demoHistory().first)],
+              syncing: true,
+            ),
+          ),
+        ],
+      );
+      expect(find.text('1 workout not synced'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Sync'), findsNothing);
+    });
+
     testWidgets('a failed Sync says so and stays', (tester) async {
       final home = await pumpHome(
         tester,
