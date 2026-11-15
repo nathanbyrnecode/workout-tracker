@@ -12,6 +12,7 @@ import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -103,7 +104,11 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
   Future<void> _restoreWorkoutsOnDevice() async {
     final sync = ref.read(workoutSyncProvider.notifier);
     await sync.load();
-    await ref.read(currentWorkoutProvider.notifier).restoreActiveWorkout();
+    final ended =
+        await ref.read(currentWorkoutProvider.notifier).restoreActiveWorkout();
+    if (ended != null) {
+      ref.read(appMessengerProvider).show(workoutExpiredMessage);
+    }
     unawaited(sync.syncAll());
   }
 

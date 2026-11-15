@@ -80,13 +80,14 @@ void main() {
         () async {
       respond = (_) async => http.Response('', 201);
       final notifier = container.read(manualWorkoutsProvider.notifier);
-      final added = await notifier.addManualWorkout(
+      final added = (await notifier.addManualWorkout(
         // A time late in the day must not move it to the next day.
         date: DateTime(2026, 10, 1, 23, 30),
         title: ' Morning run ',
         locationType: LocationType.park,
         place: const Place(name: 'Mayfield Park'),
-      );
+      ))
+          .workout;
 
       final request = requests.single;
       expect(request.method, 'POST');
@@ -117,15 +118,18 @@ void main() {
 
     test('with no network it is kept on the device and still listed', () async {
       respond = (_) async => throw const SocketException('offline');
-      final added = await container
+      final result = await container
           .read(manualWorkoutsProvider.notifier)
           .addManualWorkout(
             date: DateTime(2026, 10, 1),
             title: 'Swim',
             locationType: LocationType.other,
           );
+      final added = result.workout;
 
       expect(added?.synced, isFalse);
+      // The upload failed within the wait, so nothing is still running.
+      expect(result.stillUploading, isNull);
       expect(
         store.pendingFor('user-a', PendingKind.manualWorkout).keys,
         [added!.id],
@@ -161,7 +165,7 @@ void main() {
           title: '  ',
           locationType: LocationType.gym,
         ),
-        isNull,
+        (workout: null, stillUploading: null),
       );
 
       store.failWrites.on = true;
@@ -171,7 +175,7 @@ void main() {
           title: 'Run',
           locationType: LocationType.gym,
         ),
-        isNull,
+        (workout: null, stillUploading: null),
       );
       expect(requests, isEmpty);
       expect(container.read(allManualWorkoutsProvider), isEmpty);

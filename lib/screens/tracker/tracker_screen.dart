@@ -20,6 +20,7 @@ import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/screen_title.dart';
 import 'package:gym_tracker_app/widgets/tappable_card.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// The Tracker: streak and day counts, the 17-week grid, and what was logged
@@ -50,25 +51,36 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
   /// tracker selects the day it was logged for.
   Future<void> _logWorkout(DateTime day) async {
     final today = dayOf(ref.read(clockProvider)());
+    final messenger = ref.read(appMessengerProvider);
+    LogWorkoutResult? logged;
     await showLogWorkoutSheet(
       context: context,
       initialDay: day,
       today: today,
       initialType: defaultLocationType(ref.read(allWorkoutsProvider)),
       onAdd: (loggedDay, details) async {
-        final added =
+        final result =
             await ref.read(manualWorkoutsProvider.notifier).addManualWorkout(
                   date: loggedDay,
                   title: details.title,
                   locationType: details.type,
                   place: details.place,
                 );
-        if (added != null && mounted) {
+        logged = result;
+        final added = result.workout != null;
+        if (added && mounted) {
           setState(() => _selected = loggedDay);
         }
-        return added != null;
+        return added;
       },
     );
+    final added = logged?.workout;
+    if (added != null) {
+      messenger.reportUpload(
+        saved: added.synced,
+        stillUploading: logged?.stillUploading,
+      );
+    }
   }
 
   @override

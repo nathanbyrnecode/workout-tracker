@@ -51,7 +51,7 @@ final class CurrentWorkoutNotifierProvider
 }
 
 String _$currentWorkoutNotifierHash() =>
-    r'f065aa51fa6d1847eb09a361f25a6130a05e8a0e';
+    r'9ad232a27c053c30b8276209a89f2100887d7f9b';
 
 /// The workout in progress. It lives on the device only: every change is
 /// written to the user's `active.json` (`dev/decisions.md` 21), so nothing

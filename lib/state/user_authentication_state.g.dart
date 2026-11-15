@@ -42,7 +42,7 @@ final class UserAuthenticationNotifierProvider extends $NotifierProvider<
 }
 
 String _$userAuthenticationNotifierHash() =>
-    r'dc301780a1ebbfc763921d98f6f6e399de523cc0';
+    r'2858c828e9dc52b65616219b2bec639cdfbacb79';
 
 abstract class _$UserAuthenticationNotifier
     extends $Notifier<UserAuthenticationStateData> {

@@ -19,6 +19,14 @@ typedef ManualWorkoutsStateData = ({
 
 const ManualWorkoutsStateData initialManualWorkoutsStateData = (workouts: [],);
 
+/// What logging a workout did. [workout] is null if it could not be kept at
+/// all; its `synced` says whether the server got it within `uploadWait`.
+/// [stillUploading] is set when the upload outlasted the wait.
+typedef LogWorkoutResult = ({
+  ManualWorkout? workout,
+  Future<bool>? stillUploading,
+});
+
 /// Workouts the user logged after the fact, newest day first.
 @Riverpod(keepAlive: true)
 class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
@@ -75,18 +83,18 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
 
   /// Logs a workout for [date]. A day can have any number of them.
   ///
-  /// It is kept on the device first, so it is never lost, then uploaded (see
-  /// `WorkoutSyncNotifier`). Returns the new workout, with `synced` saying
-  /// whether the server has it yet, or null if it could not be kept at all.
-  Future<ManualWorkout?> addManualWorkout({
+  /// It is kept on the device first, so it is never lost, then the user
+  /// waits up to `uploadWait` for it to upload (see `WorkoutSyncNotifier`).
+  Future<LogWorkoutResult> addManualWorkout({
     required DateTime date,
     required String title,
     required LocationType locationType,
     Place? place,
   }) async {
+    const nothing = (workout: null, stillUploading: null);
     final user = ref.read(supabaseClientProvider).auth.currentUser;
     if (user == null || title.trim().isEmpty) {
-      return null;
+      return nothing;
     }
 
     final workout = ManualWorkout(
@@ -107,18 +115,22 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      return null;
+      return nothing;
     }
-    if (!await sync.uploadManualWorkout(workout.id)) {
-      return workout;
+    final attempt = await waitForUpload(sync.uploadManualWorkout(workout.id));
+    if (!attempt.saved) {
+      return (workout: workout, stillUploading: attempt.stillUploading);
     }
-    return ManualWorkout(
-      id: workout.id,
-      date: workout.date,
-      title: workout.title,
-      locationType: workout.locationType,
-      place: workout.place,
-      createdAt: workout.createdAt,
+    return (
+      workout: ManualWorkout(
+        id: workout.id,
+        date: workout.date,
+        title: workout.title,
+        locationType: workout.locationType,
+        place: workout.place,
+        createdAt: workout.createdAt,
+      ),
+      stillUploading: null,
     );
   }
 

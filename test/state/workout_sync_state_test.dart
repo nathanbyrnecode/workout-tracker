@@ -269,6 +269,34 @@ void main() {
     });
   });
 
+  group('waiting for an upload', () {
+    const wait = Duration(milliseconds: 50);
+
+    test('a quick success counts as saved', () async {
+      expect(await waitForUpload(Future.value(true), wait: wait),
+          (saved: true, stillUploading: null));
+    });
+
+    test('a quick failure counts as not saved, with nothing left running',
+        () async {
+      expect(await waitForUpload(Future.value(false), wait: wait),
+          (saved: false, stillUploading: null));
+    });
+
+    test('a slow upload is handed back to finish later', () async {
+      final upload = Completer<bool>();
+      final attempt = await waitForUpload(upload.future, wait: wait);
+      expect(attempt.saved, isFalse);
+      expect(attempt.stillUploading, isNotNull);
+      upload.complete(true);
+      expect(await attempt.stillUploading, isTrue);
+    });
+
+    test('the user waits five seconds', () {
+      expect(uploadWait, const Duration(seconds: 5));
+    });
+  });
+
   group('editing and deleting', () {
     test('an unsynced workout is edited on the device', () async {
       await sync().keepWorkout(unsynced(1));

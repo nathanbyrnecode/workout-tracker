@@ -1,29 +1,41 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/data/workout_stats.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/screens/home/widgets/timer_count.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/date_format.dart';
 import 'package:gym_tracker_app/util/number_format.dart';
 import 'package:gym_tracker_app/widgets/app_background.dart';
 import 'package:gym_tracker_app/widgets/app_button.dart';
+import 'package:gym_tracker_app/widgets/not_synced_marker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-/// Shown after a workout is saved: how long it took, its totals and how the
+/// Shown after a workout is ended: how long it took, its totals and how the
 /// volume split across exercises. It is pushed over the shell, so there is no
 /// tab bar. Done returns to Home.
-class WorkoutSummaryScreen extends StatelessWidget {
+///
+/// A workout that has not reached the server yet is marked as not synced;
+/// the mark goes as soon as its upload succeeds.
+class WorkoutSummaryScreen extends ConsumerWidget {
   const WorkoutSummaryScreen({super.key, required this.workout});
 
   final Workout workout;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.tokens;
+    final synced = ref
+            .watch(allWorkoutsProvider)
+            .where((listed) => listed.id == workout.id)
+            .firstOrNull
+            ?.synced ??
+        workout.synced;
     final start = workout.startTime;
     final duration = start == null
         ? Duration.zero
@@ -69,10 +81,16 @@ class WorkoutSummaryScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: t.spacing.gap6,
                   children: [
-                    Text(
-                      'WORKOUT COMPLETE',
-                      style:
-                          AppTypography.labelWide.copyWith(color: t.accentText),
+                    Row(
+                      spacing: t.spacing.gap12,
+                      children: [
+                        Text(
+                          'WORKOUT COMPLETE',
+                          style: AppTypography.labelWide
+                              .copyWith(color: t.accentText),
+                        ),
+                        if (!synced) const NotSyncedMarker(showLabel: true),
+                      ],
                     ),
                     Text(
                       workout.displayTitle,

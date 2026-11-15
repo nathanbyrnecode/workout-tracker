@@ -45,7 +45,7 @@ final class ManualWorkoutsNotifierProvider
 }
 
 String _$manualWorkoutsNotifierHash() =>
-    r'5e3ed71671b156e75908387edc04f28d1784272f';
+    r'0990e87cb57a6a59b03e7e2fcf08f90100cb6d00';
 
 /// Workouts the user logged after the fact, newest day first.
 

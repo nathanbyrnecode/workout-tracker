@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/place_search/place_search_service.dart';
 import 'package:gym_tracker_app/data/theme_mode_storage.dart';
@@ -15,6 +16,7 @@ import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 
 /// Lets a test make a fake's next write fail. Notifiers expose only their
 /// state, so switches like this live on a separate object.
@@ -32,6 +34,10 @@ class WorkoutSpy {
 
   /// What the next [FakeWorkoutNotifier.endWorkout] reports.
   EndWorkoutOutcome endOutcome = EndWorkoutOutcome.saved;
+
+  /// When set with [EndWorkoutOutcome.savedLocally], the upload is still
+  /// running when ending returns, and completes with this.
+  Future<bool>? stillUploading;
 }
 
 /// What a [FakeAuthNotifier] was asked to do.
@@ -107,9 +113,11 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   }) async {
     spy.endedWorkouts++;
     endedWith.add((title: title, type: locationType, place: place));
+    final kept = spy.endOutcome == EndWorkoutOutcome.saved ||
+        spy.endOutcome == EndWorkoutOutcome.savedLocally;
     return (
       outcome: spy.endOutcome,
-      workout: spy.endOutcome == EndWorkoutOutcome.saved
+      workout: kept
           ? Workout(
               testId(1),
               startedAt,
@@ -118,8 +126,10 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
               title: title,
               locationType: locationType,
               place: place,
+              synced: spy.endOutcome == EndWorkoutOutcome.saved,
             )
           : null,
+      stillUploading: spy.stillUploading,
     );
   }
 
@@ -270,18 +280,24 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
   /// Turn on to make adds fail.
   final failAdds = FailSwitch();
 
+  /// Turn on to make adds keep the workout on the device only.
+  final keepLocally = FailSwitch();
+
+  /// Holds the still-running upload to return from the next add, if any.
+  final stillUploading = <Future<bool>>[];
+
   @override
   ManualWorkoutsStateData build() => (workouts: workouts);
 
   @override
-  Future<ManualWorkout?> addManualWorkout({
+  Future<LogWorkoutResult> addManualWorkout({
     required DateTime date,
     required String title,
     required LocationType locationType,
     Place? place,
   }) async {
     if (failAdds.on) {
-      return null;
+      return (workout: null, stillUploading: null);
     }
     final workout = ManualWorkout(
       id: testId(1000 + added.length),
@@ -289,10 +305,14 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
       title: title.trim(),
       locationType: locationType,
       place: place,
+      synced: !keepLocally.on,
     );
     added.add(workout);
     state = (workouts: [...state.workouts, workout]);
-    return workout;
+    return (
+      workout: workout,
+      stillUploading: stillUploading.isEmpty ? null : stillUploading.first,
+    );
   }
 
   @override
@@ -610,4 +630,14 @@ class FileSystemLikeException implements Exception {
 
   @override
   String toString() => 'FileSystemLikeException: write failed';
+}
+
+/// Records the messages the app would show in a SnackBar.
+class RecordingMessenger extends AppMessenger {
+  RecordingMessenger() : super(GlobalKey<ScaffoldMessengerState>());
+
+  final messages = <String>[];
+
+  @override
+  void show(String message) => messages.add(message);
 }

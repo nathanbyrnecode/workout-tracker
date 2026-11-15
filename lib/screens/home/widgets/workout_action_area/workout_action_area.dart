@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/data/workout_history.dart';
 import 'package:gym_tracker_app/data/workout_stats.dart';
-import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/end_workout_sheet.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/new_exercise_sheet.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/set_sheet.dart';
 import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/widgets/action_button.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 import 'package:gym_tracker_app/widgets/floating_action_row.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -60,7 +60,8 @@ class WorkoutActionArea extends ConsumerWidget {
       return;
     }
     final navigator = Navigator.of(context);
-    Workout? saved;
+    final messenger = ref.read(appMessengerProvider);
+    EndWorkoutResult? ended;
     await showEndWorkoutSheet(
       context: context,
       totals: workoutTotals(workout.exercises),
@@ -75,12 +76,17 @@ class WorkoutActionArea extends ConsumerWidget {
                   locationType: details.type,
                   place: details.place,
                 );
-        saved = result.workout;
+        ended = result;
         return result.outcome != EndWorkoutOutcome.failed;
       },
     );
-    final workoutToShow = saved;
-    if (workoutToShow != null) {
+    final result = ended;
+    final workoutToShow = result?.workout;
+    if (result != null && workoutToShow != null) {
+      messenger.reportUpload(
+        saved: result.outcome == EndWorkoutOutcome.saved,
+        stillUploading: result.stillUploading,
+      );
       await navigator.push(
         MaterialPageRoute<void>(
           builder: (context) => WorkoutSummaryScreen(workout: workoutToShow),

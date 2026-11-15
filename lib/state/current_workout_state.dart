@@ -36,7 +36,13 @@ enum EndWorkoutOutcome {
 }
 
 /// What ending a workout did. [workout] is set when it was kept.
-typedef EndWorkoutResult = ({EndWorkoutOutcome outcome, Workout? workout});
+/// [stillUploading] is set when the upload outlasted [uploadWait]; it
+/// completes with whether the server got it in the end.
+typedef EndWorkoutResult = ({
+  EndWorkoutOutcome outcome,
+  Workout? workout,
+  Future<bool>? stillUploading,
+});
 
 const workoutRecoveryWindow = Duration(hours: 12);
 
@@ -270,7 +276,8 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
   }
 
   /// Ends the workout with its title and location and keeps it on the device,
-  /// then tries to upload it (see `WorkoutSyncNotifier`).
+  /// then waits up to [uploadWait] for it to upload (see
+  /// `WorkoutSyncNotifier`).
   ///
   /// A workout with no finished exercises has nothing worth keeping, so it is
   /// dropped and the outcome is [EndWorkoutOutcome.discarded]. If it cannot be
@@ -285,13 +292,25 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     final workoutId = state.workoutId;
     final startTime = state.workoutStartDateTime;
     if (userId == null || workoutId == null || startTime == null) {
-      return (outcome: EndWorkoutOutcome.failed, workout: null);
+      return (
+        outcome: EndWorkoutOutcome.failed,
+        workout: null,
+        stillUploading: null
+      );
     }
 
     if (state.exercises.isEmpty) {
       return await discardWorkout()
-          ? (outcome: EndWorkoutOutcome.discarded, workout: null)
-          : (outcome: EndWorkoutOutcome.failed, workout: null);
+          ? (
+              outcome: EndWorkoutOutcome.discarded,
+              workout: null,
+              stillUploading: null
+            )
+          : (
+              outcome: EndWorkoutOutcome.failed,
+              workout: null,
+              stillUploading: null
+            );
     }
 
     final workout = Workout(
@@ -311,13 +330,20 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     } catch (error, stackTrace) {
       log('Failed to keep the finished workout on the device.',
           error: error, stackTrace: stackTrace);
-      return (outcome: EndWorkoutOutcome.failed, workout: null);
+      return (
+        outcome: EndWorkoutOutcome.failed,
+        workout: null,
+        stillUploading: null
+      );
     }
     _recoveryGeneration++;
     state = _readyWithNoWorkout;
 
-    if (await sync.uploadWorkout(workoutId)) {
+    // The user waits at most [uploadWait]; the upload carries on after that.
+    final attempt = await waitForUpload(sync.uploadWorkout(workoutId));
+    if (attempt.saved) {
       return (
+        stillUploading: null,
         outcome: EndWorkoutOutcome.saved,
         workout: Workout(
           workout.id,
@@ -330,7 +356,11 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
         ),
       );
     }
-    return (outcome: EndWorkoutOutcome.savedLocally, workout: workout);
+    return (
+      outcome: EndWorkoutOutcome.savedLocally,
+      workout: workout,
+      stillUploading: attempt.stillUploading,
+    );
   }
 
   /// Throws the workout away: nothing reaches history or the tracker.

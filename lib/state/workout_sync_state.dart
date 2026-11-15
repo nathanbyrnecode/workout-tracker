@@ -21,6 +21,27 @@ part 'workout_sync_state.g.dart';
 /// changes nothing (`dev/decisions.md` 22).
 const uploadTimeout = Duration(seconds: 30);
 
+/// How long the user waits for an upload after ending or logging a workout.
+/// The upload carries on after that; see [waitForUpload].
+const uploadWait = Duration(seconds: 5);
+
+/// The result of waiting up to [uploadWait] for an upload. [saved] is whether
+/// the server had it in time. [stillUploading] is set when the wait ran out
+/// first, and completes with the final result.
+typedef UploadAttempt = ({bool saved, Future<bool>? stillUploading});
+
+Future<UploadAttempt> waitForUpload(
+  Future<bool> upload, {
+  Duration wait = uploadWait,
+}) async {
+  final result = await upload
+      .then<bool?>((saved) => saved)
+      .timeout(wait, onTimeout: () => null);
+  return result == null
+      ? (saved: false, stillUploading: upload)
+      : (saved: result, stillUploading: null);
+}
+
 typedef WorkoutSyncStateData = ({
   /// Finished workouts kept on the device that have not reached the server.
   List<Workout> pendingWorkouts,

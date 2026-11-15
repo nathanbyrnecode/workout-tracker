@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/data/place_search/place_search_service.dart';
@@ -11,6 +13,7 @@ import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.d
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 
 import '../../helpers/demo.dart';
 import '../../helpers/fakes.dart';
@@ -27,8 +30,12 @@ Exercise _benchPress() => Exercise(
 
 /// Pumps the Home actions for a workout with one finished exercise and opens
 /// the End workout sheet.
-Future<({FakeWorkoutNotifier workout, FakePlaceSearchService? places})>
-    openEndSheet(
+Future<
+    ({
+      FakeWorkoutNotifier workout,
+      FakePlaceSearchService? places,
+      RecordingMessenger messenger,
+    })> openEndSheet(
   WidgetTester tester, {
   List<Workout> history = const [],
   bool withPlaceSearch = false,
@@ -36,6 +43,7 @@ Future<({FakeWorkoutNotifier workout, FakePlaceSearchService? places})>
   final workout =
       FakeWorkoutNotifier(startedAt: _start, exercises: [_benchPress()]);
   final places = withPlaceSearch ? FakePlaceSearchService() : null;
+  final messenger = RecordingMessenger();
   final PlaceSearchService service =
       places ?? const UnavailablePlaceSearchService();
   await pumpApp(
@@ -50,11 +58,12 @@ Future<({FakeWorkoutNotifier workout, FakePlaceSearchService? places})>
       pastWorkoutsProvider
           .overrideWith(() => FakePastWorkoutsNotifier(history)),
       placeSearchServiceProvider.overrideWithValue(service),
+      appMessengerProvider.overrideWithValue(messenger),
     ],
   );
   await tester.tap(find.text('End workout'));
   await tester.pumpAndSettle();
-  return (workout: workout, places: places);
+  return (workout: workout, places: places, messenger: messenger);
 }
 
 /// The sheet's End workout button.
@@ -174,6 +183,66 @@ void main() {
     await tester.pumpAndSettle();
     expect(sheet.workout.spy.endedWorkouts, 2);
     expect(find.byType(WorkoutSummaryScreen), findsOneWidget);
+  });
+
+  group('saving', () {
+    Future<void> end(WidgetTester tester) async {
+      await tester.enterText(find.byType(TextField).first, 'Push day');
+      await tester.pump();
+      await tester.tap(endButton());
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('saved: Summary, no mark and no message', (tester) async {
+      final sheet = await openEndSheet(tester);
+      await end(tester);
+
+      expect(find.byType(WorkoutSummaryScreen), findsOneWidget);
+      expect(find.text('NOT SYNCED'), findsNothing);
+      expect(sheet.messenger.messages, isEmpty);
+    });
+
+    testWidgets('not saved in time: Summary is marked and a message says so',
+        (tester) async {
+      final sheet = await openEndSheet(tester);
+      sheet.workout.spy.endOutcome = EndWorkoutOutcome.savedLocally;
+      await end(tester);
+
+      expect(find.byType(WorkoutSummaryScreen), findsOneWidget);
+      expect(find.text('NOT SYNCED'), findsOneWidget);
+      expect(sheet.messenger.messages, [workoutNotSavedMessage]);
+    });
+
+    testWidgets('still uploading: the result is reported when it arrives',
+        (tester) async {
+      final sheet = await openEndSheet(tester);
+      final upload = Completer<bool>();
+      sheet.workout.spy
+        ..endOutcome = EndWorkoutOutcome.savedLocally
+        ..stillUploading = upload.future;
+      await end(tester);
+
+      expect(find.byType(WorkoutSummaryScreen), findsOneWidget);
+      expect(sheet.messenger.messages, isEmpty);
+
+      upload.complete(true);
+      await tester.pump();
+      expect(sheet.messenger.messages, [workoutSavedMessage]);
+    });
+
+    testWidgets('still uploading, then failing, says it was not saved',
+        (tester) async {
+      final sheet = await openEndSheet(tester);
+      final upload = Completer<bool>();
+      sheet.workout.spy
+        ..endOutcome = EndWorkoutOutcome.savedLocally
+        ..stillUploading = upload.future;
+      await end(tester);
+
+      upload.complete(false);
+      await tester.pump();
+      expect(sheet.messenger.messages, [workoutNotSavedMessage]);
+    });
   });
 
   testWidgets('Keep going closes the sheet and ends nothing', (tester) async {

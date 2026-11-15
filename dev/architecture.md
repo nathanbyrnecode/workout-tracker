@@ -296,6 +296,16 @@ server, and uploads them.
   still on the device is changed there; one on the server is changed there
   and needs the network. If an upload of that ID is running, the edit waits
   for it first.
+- After ending or logging a workout the user waits at most 5 s
+  (`uploadWait`, `waitForUpload`) for the upload. Saved in time: Summary
+  opens (for an ended workout) with no message. Failed in time: the entry is
+  marked not synced and a SnackBar says it is kept on the phone. Still
+  running: the same mark, and a SnackBar reports the result when the server
+  answers ("Workout saved" or the not-saved message). These SnackBars go
+  through `appMessengerProvider` (`lib/widgets/app_messenger.dart`), which
+  uses the `MaterialApp`'s root `ScaffoldMessenger`, so they show after the
+  sheet has closed. A workout ended by the 12-hour rule gets its own message
+  at sign-in.
 - `allWorkoutsProvider` and `allManualWorkoutsProvider` are the lists every
   screen shows: the server's plus the device's, each workout once (the
   server's copy wins), with `synced` false on those still on the device.
