@@ -38,8 +38,11 @@ supabase/migrations/           timestamped SQL files; every table has RLS
 supabase/functions/            Deno edge functions
 design/workout-tracker/        redesign spec, prototype, reference screenshots
 dev/                           internal docs for agents and contributors
-docs/                          PUBLIC GitHub Pages site. Not for internal docs.
 ```
+
+The public website, including the privacy policy at
+<https://fittenup.app/privacy>, lives in the separate `fittenup-site` repo. The
+app only links to it (`lib/util/privacy_policy.dart`).
 
 ## Commands
 
@@ -130,7 +133,6 @@ Work is tracked with [beads](https://github.com/steveyegge/beads) (`bd`).
 - Commit secrets, `.p8` keys or env files.
 - Edit signing configuration under `ios/` or `android/`, or `codemagic.yaml`,
   unless the task explicitly asks for it.
-- Put internal docs in `docs/`. It is published publicly.
 - Run `supabase db push` or apply migrations to the hosted project without
   being asked.
 - Commit, push or open a PR on `main` directly.

@@ -86,8 +86,9 @@ token table. No `Color(0x…)` or `Colors.*` outside `lib/theme/`.
 
 ## 13. Internal docs live in `dev/`
 
-`docs/` is the public GitHub Pages site, so anything placed there is published.
-Agent and contributor docs go in `dev/`.
+Agent and contributor docs go in `dev/`. The public website and privacy policy
+(<https://fittenup.app/privacy>) are not in this repo; they live in the
+separate `fittenup-site` repo.
 
 ## 14. Flutter version is pinned in `pubspec.yaml`
 
@@ -152,8 +153,8 @@ signs straight in, and an address that already has an account is reported as
 To turn them on: set up custom SMTP, change the "Confirm signup" and "Reset
 password" templates to show `{{ .Token }}`, check the Email OTP length is 6,
 turn "Confirm email" on, set `emailPasswordResetEnabled` to true, add the
-sign-in goldens (they gain the link), and name the email provider in
-`docs/privacy_policy.md` and `docs/index.html`.
+sign-in goldens (they gain the link), and name the email provider in the
+privacy policy (`fittenup-site` repo).
 
 The README's Welcome section lists only the Apple and Google buttons and the
 Privacy Policy link. Email sign-in adds a quiet "Sign in with email" link
