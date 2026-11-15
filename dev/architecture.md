@@ -310,7 +310,9 @@ server, and uploads them.
   screen shows: the server's plus the device's, each workout once (the
   server's copy wins), with `synced` false on those still on the device.
 - Sign-out forgets the list in memory; the files stay for the same user's
-  next sign-in.
+  next sign-in. Deleting the account removes the user's whole folder once
+  the server has confirmed the deletion, since those workouts can no longer
+  upload.
 
 **Tests.** `test/state/current_workout_state_test.dart` (recording with no
 network, ending, upload, recovery, the 12-hour rule, races),

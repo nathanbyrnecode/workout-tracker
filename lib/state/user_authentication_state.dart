@@ -5,6 +5,7 @@ import 'dart:developer';
 import 'package:crypto/crypto.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:gym_tracker_app/data/email_auth.dart';
+import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
@@ -554,6 +555,7 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
   }
 
   Future<void> deleteAccount() async {
+    final userId = _client.auth.currentUser?.id;
     final identityProviders = _currentIdentityProviders();
     final hasAppleIdentity =
         identityProviders.contains(_IdentityProvider.apple);
@@ -567,6 +569,12 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
     }
     _logSuccessfulAccountDeletion(identityProviders);
 
+    // The account is gone, so its unsynced workouts can never upload. Remove
+    // them from the device rather than leave them behind.
+    if (userId != null) {
+      await _forgetWorkoutsOnDevice(userId);
+    }
+
     if (hasGoogleIdentity) {
       await _deleteGoogleAccount();
     }
@@ -576,6 +584,18 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
       _logSuccessfulSignOut(identityProviders);
     } finally {
       _resetSignedOutState();
+    }
+  }
+
+  Future<void> _forgetWorkoutsOnDevice(String userId) async {
+    try {
+      await ref.read(localWorkoutStoreProvider).deleteUser(userId);
+    } catch (error, stackTrace) {
+      log(
+        'Could not remove the deleted account\'s workouts from the device.',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
