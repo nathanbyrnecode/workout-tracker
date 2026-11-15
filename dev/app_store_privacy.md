@@ -61,8 +61,8 @@ Before every App Store submission:
 
 1. Generate or inspect Xcode's privacy report for the exact archive being submitted.
 2. Recheck the GoogleSignIn and geolocator privacy manifests after any pod or package update.
-3. Update both App Store Connect and the public policy if an SDK or data flow changes.
-4. Confirm the public privacy-policy URL loads without authentication.
+3. Update both App Store Connect and the public policy (`fittenup-site` repo) if an SDK or data flow changes.
+4. Confirm <https://fittenup.app/privacy> loads without authentication.
 
 Apple guidance:
 

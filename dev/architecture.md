@@ -1,7 +1,7 @@
 # Architecture
 
 Internal reference for contributors and coding agents. Not published (the
-public site lives in `docs/`).
+public website and privacy policy live in the separate `fittenup-site` repo).
 
 ## Data flow
 

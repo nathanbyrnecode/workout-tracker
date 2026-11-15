@@ -43,7 +43,9 @@ on Codemagic ([`codemagic.yaml`](codemagic.yaml)).
 | `supabase/` | Database migrations and edge functions |
 | `design/workout-tracker/` | Redesign spec, prototype and screenshots |
 | `dev/` | Internal docs: [architecture](dev/architecture.md), [decisions](dev/decisions.md) |
-| `docs/` | The public website and privacy policy (GitHub Pages) |
+
+The public website and [privacy policy](https://fittenup.app/privacy) live in
+the separate `fittenup-site` repo.
 
 ## Working with coding agents
 
