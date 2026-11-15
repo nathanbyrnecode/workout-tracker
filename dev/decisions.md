@@ -205,3 +205,13 @@ retried safely: `save_workout` and the manual-workout insert skip an ID that
 is already saved. A local copy and its server copy are recognised as the same
 workout by ID. Exercise and set IDs stay bigint on the server; in a workout
 that is only on the device they are counters within that workout.
+
+## 23. Codemagic uses the pinned Flutter version too
+
+Adds to 14. `codemagic.yaml` names the same Flutter version as
+`environment.flutter` in `pubspec.yaml`, instead of `stable`. On 2026-11-15
+Codemagic picked up Flutter 3.50.0, which deprecates
+`package:flutter/material.dart` in favour of `material_ui`; every file that
+imports Material then gave an info, and `flutter analyze` failed the
+TestFlight build. Bump both places together, after the code is clean on the
+new version.
