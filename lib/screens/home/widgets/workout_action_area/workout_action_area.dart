@@ -94,15 +94,7 @@ class WorkoutActionArea extends ConsumerWidget {
     final workout = ref.watch(currentWorkoutProvider);
     final notifier = ref.read(currentWorkoutProvider.notifier);
 
-    if (workout.recoveryStatus == WorkoutRecoveryStatus.failed) {
-      return ActionButton.primary(
-        onPressed: notifier.restoreActiveWorkout,
-        icon: LucideIcons.refreshCw,
-        label: 'Retry workout recovery',
-      );
-    }
-    if (workout.recoveryStatus != WorkoutRecoveryStatus.ready ||
-        workout.isStartingWorkout) {
+    if (workout.recoveryStatus != WorkoutRecoveryStatus.ready) {
       return const SizedBox.shrink();
     }
     if (!workout.isInProgress) {

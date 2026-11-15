@@ -196,7 +196,6 @@ class _ReadyWorkoutNotifier extends CurrentWorkoutNotifier {
         exercises: [],
         currentExercise: null,
         recoveryStatus: WorkoutRecoveryStatus.ready,
-        isStartingWorkout: false,
       );
 }
 

@@ -9,86 +9,38 @@ import 'package:gym_tracker_app/theme/app_theme.dart';
 import '../helpers/fakes.dart';
 
 void main() {
-  testWidgets('shows recovery progress and prevents a new workout',
-      (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          currentWorkoutProvider.overrideWith(() => _RecoveryNotifier())
-        ],
-        child: MaterialApp(
-          theme: buildAppTheme(Brightness.dark),
-          home: Scaffold(
+  Future<void> pump(WidgetTester tester, CurrentWorkoutNotifier notifier) =>
+      tester.pumpWidget(
+        ProviderScope(
+          overrides: [currentWorkoutProvider.overrideWith(() => notifier)],
+          child: MaterialApp(
+            theme: buildAppTheme(Brightness.dark),
+            home: const Scaffold(
               body: Column(children: [
-            Expanded(child: CurrentWorkoutArea()),
-            WorkoutActionArea(),
-          ])),
+                Expanded(child: CurrentWorkoutArea()),
+                WorkoutActionArea(),
+              ]),
+            ),
+          ),
         ),
-      ),
+      );
+
+  testWidgets('shows progress and no Start while the device copy is read',
+      (tester) async {
+    await pump(
+      tester,
+      FakeWorkoutNotifier(recoveryStatus: WorkoutRecoveryStatus.loading),
     );
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text('Checking for an unfinished workout…'), findsOneWidget);
     expect(find.text('Start workout'), findsNothing);
   });
 
-  testWidgets('failed recovery offers retry before enabling workout actions',
+  testWidgets('offers Start once the device copy has been read',
       (tester) async {
-    final notifier = _RecoveryNotifier(failed: true);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [currentWorkoutProvider.overrideWith(() => notifier)],
-        child: MaterialApp(
-          theme: buildAppTheme(Brightness.dark),
-          home: Scaffold(
-              body: Column(children: [
-            Expanded(child: CurrentWorkoutArea()),
-            WorkoutActionArea(),
-          ])),
-        ),
-      ),
-    );
-    expect(find.textContaining('Could not check your saved workout.'),
-        findsOneWidget);
-    expect(find.text('Start workout'), findsNothing);
-    await tester.tap(find.text('Retry workout recovery'));
-    await tester.pump();
-    expect(notifier.spy.retries, 1);
+    await pump(tester, FakeWorkoutNotifier());
     expect(find.text('Start workout'), findsOneWidget);
     expect(find.textContaining('Get started by starting a'), findsOneWidget);
+    expect(find.textContaining('Retry'), findsNothing);
   });
-}
-
-class _RecoveryNotifier extends CurrentWorkoutNotifier {
-  _RecoveryNotifier({this.failed = false});
-  final bool failed;
-  final spy = WorkoutSpy();
-
-  @override
-  CurrentWorkoutStateData build() => (
-        workoutId: null,
-        workoutStartDateTime: null,
-        workoutEndDateTime: null,
-        isInProgress: false,
-        exercises: [],
-        currentExercise: null,
-        recoveryStatus: failed
-            ? WorkoutRecoveryStatus.failed
-            : WorkoutRecoveryStatus.loading,
-        isStartingWorkout: false,
-      );
-
-  @override
-  Future<void> restoreActiveWorkout() async {
-    spy.retries++;
-    state = (
-      workoutId: null,
-      workoutStartDateTime: null,
-      workoutEndDateTime: null,
-      isInProgress: false,
-      exercises: [],
-      currentExercise: null,
-      recoveryStatus: WorkoutRecoveryStatus.ready,
-      isStartingWorkout: false,
-    );
-  }
 }

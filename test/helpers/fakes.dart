@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/place_search/place_search_service.dart';
 import 'package:gym_tracker_app/data/theme_mode_storage.dart';
 import 'package:gym_tracker_app/models/app_notification.dart';
@@ -74,14 +77,16 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
         exercises: exercises,
         currentExercise: currentExercise,
         recoveryStatus: recoveryStatus,
-        isStartingWorkout: false,
       );
 
   @override
   Future<void> startWorkout() async => spy.starts++;
 
   @override
-  Future<void> restoreActiveWorkout() async => spy.retries++;
+  Future<Workout?> restoreActiveWorkout() async {
+    spy.retries++;
+    return null;
+  }
 
   /// Turn on to make the next discard fail.
   final failDiscard = FailSwitch();
@@ -517,4 +522,92 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
         (workouts: state.workouts.where((w) => w.id != workoutId).toList(),);
     return true;
   }
+}
+
+/// Keeps workouts in memory instead of files. Values go through JSON on the
+/// way in and out, as they would on disk.
+class MemoryWorkoutStore implements LocalWorkoutStore {
+  final active = <String, String>{};
+  final pending = <String, Map<String, String>>{};
+
+  /// Turn on to make every write fail, like a full disk.
+  final failWrites = FailSwitch();
+
+  String _key(String userId, PendingKind kind) => '$userId/${kind.folder}';
+
+  Map<String, dynamic> _decode(String text) =>
+      jsonDecode(text) as Map<String, dynamic>;
+
+  void _checkWrite() {
+    if (failWrites.on) {
+      throw const FileSystemLikeException();
+    }
+  }
+
+  /// The pending entries of [kind] for [userId], by ID.
+  Map<String, Map<String, dynamic>> pendingFor(
+    String userId, [
+    PendingKind kind = PendingKind.workout,
+  ]) =>
+      {
+        for (final MapEntry(:key, :value)
+            in (pending[_key(userId, kind)] ?? {}).entries)
+          key: _decode(value),
+      };
+
+  @override
+  Future<Map<String, dynamic>?> readActive(String userId) async {
+    final text = active[userId];
+    return text == null ? null : _decode(text);
+  }
+
+  @override
+  Future<void> writeActive(String userId, Map<String, dynamic> json) async {
+    _checkWrite();
+    active[userId] = jsonEncode(json);
+  }
+
+  @override
+  Future<void> deleteActive(String userId) async {
+    _checkWrite();
+    active.remove(userId);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> readPending(
+    String userId,
+    PendingKind kind,
+  ) async =>
+      pendingFor(userId, kind).values.toList();
+
+  @override
+  Future<void> writePending(
+    String userId,
+    PendingKind kind,
+    String id,
+    Map<String, dynamic> json,
+  ) async {
+    _checkWrite();
+    (pending[_key(userId, kind)] ??= {})[id] = jsonEncode(json);
+  }
+
+  @override
+  Future<void> deletePending(String userId, PendingKind kind, String id) async {
+    _checkWrite();
+    pending[_key(userId, kind)]?.remove(id);
+  }
+
+  @override
+  Future<void> deleteUser(String userId) async {
+    _checkWrite();
+    active.remove(userId);
+    pending.removeWhere((key, _) => key.startsWith('$userId/'));
+  }
+}
+
+class FileSystemLikeException implements Exception {
+  const FileSystemLikeException();
+
+  @override
+  String toString() => 'FileSystemLikeException: write failed';
 }
