@@ -34,6 +34,15 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
     state = initialPastWorkoutsStateData;
   }
 
+  /// Adds a workout that has just been uploaded, so it shows straight away
+  /// even before the next load from the server.
+  void addSavedWorkout(Workout workout) {
+    if (state.workouts.any((existing) => existing.id == workout.id)) {
+      return;
+    }
+    _setState(workouts: [workout, ...state.workouts]);
+  }
+
   Future<void> getWorkoutsFromRemote() async {
     final client = ref.read(supabaseClientProvider);
     final user = client.auth.currentUser;
@@ -98,7 +107,7 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
   /// Changes a finished workout's title and location. Returns whether the
   /// change was saved.
   Future<bool> updateWorkout(
-    int workoutId, {
+    String workoutId, {
     required String title,
     required LocationType locationType,
     Place? place,
@@ -152,7 +161,7 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
 
   /// Deletes a finished workout with its exercises and sets. Returns whether
   /// it was deleted.
-  Future<bool> deleteWorkout(int workoutId) async {
+  Future<bool> deleteWorkout(String workoutId) async {
     final client = ref.read(supabaseClientProvider);
     final user = client.auth.currentUser;
     if (user == null) {
@@ -190,13 +199,13 @@ List<Workout> mapWorkoutRows({
   required List<Map<String, dynamic>> exerciseRows,
   required List<Map<String, dynamic>> setRows,
 }) {
-  final Map<int, Workout> workouts = {};
+  final Map<String, Workout> workouts = {};
 
   for (final row in workoutRows) {
     if (row['end_time'] == null) {
       continue;
     }
-    final workoutId = (row['id'] as num).toInt();
+    final workoutId = row['id'] as String;
     workouts[workoutId] = Workout(
       workoutId,
       _parseDateTime(row['start_time']),
@@ -229,7 +238,7 @@ List<Workout> mapWorkoutRows({
 
   final Map<int, Exercise> exercises = {};
   for (final row in sortedExerciseRows) {
-    final workoutId = (row['workout_id'] as num).toInt();
+    final workoutId = row['workout_id'] as String;
     final workout = workouts[workoutId];
     final exerciseName = row['name'] as String?;
     final exerciseStart = _parseDateTime(row['start_time']);

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
@@ -65,6 +66,7 @@ void main() {
   late SupabaseClient client;
   late ProviderContainer container;
   late List<http.Request> requests;
+  late MemoryWorkoutStore store;
 
   /// Answers by endpoint, such as `POST token` or `PUT user`.
   late Map<String, http.Response Function()> routes;
@@ -104,8 +106,10 @@ void main() {
             headers: response.headers, request: request);
       }),
     );
+    store = MemoryWorkoutStore();
     container = ProviderContainer(overrides: [
       supabaseClientProvider.overrideWithValue(client),
+      localWorkoutStoreProvider.overrideWithValue(store),
       currentWorkoutProvider.overrideWith(() => FakeWorkoutNotifier()),
       pastWorkoutsProvider.overrideWith(() => FakePastWorkoutsNotifier()),
       manualWorkoutsProvider.overrideWith(() => FakeManualWorkoutsNotifier()),
@@ -411,6 +415,45 @@ void main() {
 
       expect(client.auth.currentUser, isNotNull);
       expect(hits(), isNot(contains('POST logout')));
+    });
+  });
+
+  group('deleting the account', () {
+    Future<String> signInWithWorkoutsOnDevice() async {
+      routes['POST token'] = () => _json(_session());
+      await notifier().signInWithEmail(
+        email: 'lee@example.com',
+        password: 'correct horse',
+      );
+      final userId = client.auth.currentUser!.id;
+      await store.writeActive(userId, {'id': 'active'});
+      await store.writePending(userId, PendingKind.workout, 'w1', {'id': 'w1'});
+      await store.writeActive('someone-else', {'id': 'theirs'});
+      return userId;
+    }
+
+    test('also removes its workouts from the device', () async {
+      final userId = await signInWithWorkoutsOnDevice();
+      routes['POST delete-account'] = () => _json({'deleted': true});
+
+      await notifier().deleteAccount();
+
+      expect(await store.readActive(userId), isNull);
+      expect(await store.readPending(userId, PendingKind.workout), isEmpty);
+      expect(await store.readActive('someone-else'), {'id': 'theirs'});
+      expect(state().isSignedIn, AuthStatus.signedOut);
+    });
+
+    test('keeps them when the server did not delete the account', () async {
+      final userId = await signInWithWorkoutsOnDevice();
+      routes['POST delete-account'] =
+          () => _json({'error': 'Try again later'}, 500);
+
+      await expectLater(notifier().deleteAccount(), throwsA(anything));
+
+      expect(await store.readActive(userId), {'id': 'active'});
+      expect(
+          await store.readPending(userId, PendingKind.workout), hasLength(1));
     });
   });
 }

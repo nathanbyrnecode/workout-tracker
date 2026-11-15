@@ -109,20 +109,20 @@ List<Workout> demoHistory() => [
 
 List<ManualWorkout> demoManualWorkouts() => [
       ManualWorkout(
-        id: 1,
+        id: testId(1),
         date: DateTime(2026, 10, 4),
         title: 'Morning run',
         locationType: LocationType.park,
         place: mayfieldPark,
       ),
       ManualWorkout(
-        id: 2,
+        id: testId(2),
         date: DateTime(2026, 10, 4),
         title: 'Evening stretch and mobility',
         locationType: LocationType.home,
       ),
       ManualWorkout(
-        id: 3,
+        id: testId(3),
         date: DateTime(2026, 9, 30),
         title: 'Swim',
         locationType: LocationType.other,

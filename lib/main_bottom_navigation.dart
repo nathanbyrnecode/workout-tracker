@@ -15,7 +15,7 @@ import 'package:gym_tracker_app/widgets/app_shell.dart';
 import 'package:gym_tracker_app/widgets/app_tab_bar.dart';
 
 /// The workout whose detail screen is open over a tab.
-typedef _OpenDetail = ({int id, bool manual});
+typedef _OpenDetail = ({String id, bool manual});
 
 class MainBottomNavigation extends ConsumerStatefulWidget {
   const MainBottomNavigation({super.key});

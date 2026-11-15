@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
+import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
 import 'package:gym_tracker_app/widgets/app_tab_bar.dart';
 
@@ -32,6 +33,31 @@ void main() {
     expect(find.text('412'), findsOneWidget);
     // No tab bar on this screen.
     expect(find.byType(AppTabBar), findsNothing);
+  });
+
+  testWidgets('a workout only on the device is marked not synced',
+      (tester) async {
+    final saved = demoHistory().first;
+    await pumpApp(
+      tester,
+      WorkoutSummaryScreen(
+        workout: Workout(
+          saved.id,
+          saved.startTime,
+          saved.endTime,
+          saved.exercises,
+          title: saved.title,
+          synced: false,
+        ),
+      ),
+    );
+    expect(find.text('NOT SYNCED'), findsOneWidget);
+    expect(find.bySemanticsLabel('Not synced'), findsOneWidget);
+  });
+
+  testWidgets('a synced workout has no mark', (tester) async {
+    await pumpApp(tester, WorkoutSummaryScreen(workout: demoHistory().first));
+    expect(find.text('NOT SYNCED'), findsNothing);
   });
 
   testWidgets('with no place it names the location type', (tester) async {

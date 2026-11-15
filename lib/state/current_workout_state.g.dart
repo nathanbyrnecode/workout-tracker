@@ -8,12 +8,21 @@ part of 'current_workout_state.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The workout in progress. It lives on the device only: every change is
+/// written to the user's `active.json` (`dev/decisions.md` 21), so nothing
+/// here needs the network until the workout is ended.
 
 @ProviderFor(CurrentWorkoutNotifier)
 final currentWorkoutProvider = CurrentWorkoutNotifierProvider._();
 
+/// The workout in progress. It lives on the device only: every change is
+/// written to the user's `active.json` (`dev/decisions.md` 21), so nothing
+/// here needs the network until the workout is ended.
 final class CurrentWorkoutNotifierProvider
     extends $NotifierProvider<CurrentWorkoutNotifier, CurrentWorkoutStateData> {
+  /// The workout in progress. It lives on the device only: every change is
+  /// written to the user's `active.json` (`dev/decisions.md` 21), so nothing
+  /// here needs the network until the workout is ended.
   CurrentWorkoutNotifierProvider._()
       : super(
           from: null,
@@ -42,7 +51,11 @@ final class CurrentWorkoutNotifierProvider
 }
 
 String _$currentWorkoutNotifierHash() =>
-    r'b925ed972dac418d1a8571946c57c48b874b18d1';
+    r'9ad232a27c053c30b8276209a89f2100887d7f9b';
+
+/// The workout in progress. It lives on the device only: every change is
+/// written to the user's `active.json` (`dev/decisions.md` 21), so nothing
+/// here needs the network until the workout is ended.
 
 abstract class _$CurrentWorkoutNotifier
     extends $Notifier<CurrentWorkoutStateData> {

@@ -11,7 +11,9 @@ workflows:
       vars:
         BUNDLE_ID: com.nathanbyrne.workouttrackerapp
         APP_STORE_APPLE_ID: "6804228254"
-      flutter: stable
+      # Keep in step with environment.flutter in pubspec.yaml
+      # (dev/decisions.md 14), so a new stable release can't break builds.
+      flutter: 3.47.5
       xcode: latest
     scripts:
       - name: Get Flutter packages

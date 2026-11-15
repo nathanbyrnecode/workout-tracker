@@ -33,6 +33,8 @@ import 'package:gym_tracker_app/state/user_authentication_state.dart';
 import 'package:gym_tracker_app/widgets/app_button.dart';
 import 'package:gym_tracker_app/widgets/app_shell.dart';
 import 'package:gym_tracker_app/widgets/app_tab_bar.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 
 import '../helpers/demo.dart';
 import '../helpers/fakes.dart';
@@ -109,6 +111,10 @@ void screenGolden(
   FakeWorkoutNotifier Function()? workout,
   List<AppNotification> notifications = const [],
   bool emptyHistory = false,
+
+  /// Moves the most recent demo workout from the server to the device, so
+  /// it shows as not synced.
+  bool firstNotSynced = false,
   bool previousTab = false,
   bool? hasUnread,
   bool placeSearch = false,
@@ -123,8 +129,20 @@ void screenGolden(
       currentWorkoutProvider.overrideWith(workout ?? FakeWorkoutNotifier.new),
       userAuthenticationProvider.overrideWith(FakeAuthNotifier.new),
       pastWorkoutsProvider.overrideWith(
-        () => FakePastWorkoutsNotifier(emptyHistory ? [] : demoHistory()),
+        () => FakePastWorkoutsNotifier(
+          emptyHistory
+              ? []
+              : firstNotSynced
+                  ? demoHistory().skip(1).toList()
+                  : demoHistory(),
+        ),
       ),
+      if (firstNotSynced)
+        workoutSyncProvider.overrideWith(
+          () => FakeWorkoutSyncNotifier(
+            workouts: [notSynced(demoHistory().first)],
+          ),
+        ),
       manualWorkoutsProvider.overrideWith(
         () => FakeManualWorkoutsNotifier(
           emptyHistory ? [] : demoManualWorkouts(),
@@ -172,6 +190,8 @@ void detailGolden(
   required String name,
   required AppTab tab,
   required Widget Function() screen,
+  bool firstNotSynced = false,
+  bool firstManualNotSynced = false,
   Future<void> Function(WidgetTester tester)? setUp,
 }) {
   goldenTest(
@@ -179,11 +199,33 @@ void detailGolden(
     name: name,
     overrides: [
       clockProvider.overrideWithValue(() => demoNow),
-      pastWorkoutsProvider
-          .overrideWith(() => FakePastWorkoutsNotifier(demoHistory())),
-      manualWorkoutsProvider.overrideWith(
-        () => FakeManualWorkoutsNotifier(demoManualWorkouts()),
+      if (firstManualNotSynced) ...[
+        manualWorkoutsProvider.overrideWith(
+          () => FakeManualWorkoutsNotifier(
+            demoManualWorkouts().skip(1).toList(),
+          ),
+        ),
+        workoutSyncProvider.overrideWith(
+          () => FakeWorkoutSyncNotifier(
+            manualWorkouts: [notSyncedManual(demoManualWorkouts().first)],
+          ),
+        ),
+      ],
+      pastWorkoutsProvider.overrideWith(
+        () => FakePastWorkoutsNotifier(
+          firstNotSynced ? demoHistory().skip(1).toList() : demoHistory(),
+        ),
       ),
+      if (firstNotSynced)
+        workoutSyncProvider.overrideWith(
+          () => FakeWorkoutSyncNotifier(
+            workouts: [notSynced(demoHistory().first)],
+          ),
+        ),
+      if (!firstManualNotSynced)
+        manualWorkoutsProvider.overrideWith(
+          () => FakeManualWorkoutsNotifier(demoManualWorkouts()),
+        ),
       placeSearchServiceProvider.overrideWithValue(FakePlaceSearchService()),
     ],
     setUp: (tester) async {
@@ -349,6 +391,86 @@ void main() {
     builder: (context) => WorkoutSummaryScreen(workout: demoHistory().first),
   );
 
+  // ── SnackBar ───────────────────────────────────────────────────────────
+  Future<void> showSnackBar(WidgetTester tester) async {
+    ScaffoldMessenger.of(tester.element(find.byType(Scaffold).last))
+        .showSnackBar(const SnackBar(content: Text(workoutNotSavedMessage)));
+  }
+
+  screenGolden(
+    'a message on Home, above the floating actions',
+    name: 'snackbar_home',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    setUp: showSnackBar,
+  );
+
+  screenGolden(
+    'a message on the Tracker, above the tab bar',
+    name: 'snackbar_tracker',
+    hasUnread: true,
+    tab: AppTab.tracker,
+    screen: _tracker,
+    setUp: showSnackBar,
+  );
+
+  // ── Not synced (fit-35g.5) ─────────────────────────────────────────────
+  goldenTest(
+    'workout summary for a workout not synced yet',
+    name: 'summary_not_synced',
+    builder: (context) =>
+        WorkoutSummaryScreen(workout: notSynced(demoHistory().first)),
+  );
+
+  screenGolden(
+    'home with a workout waiting to sync',
+    name: 'home_not_synced',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    firstNotSynced: true,
+  );
+
+  screenGolden(
+    'previous tab with a workout not synced yet',
+    name: 'home_previous_not_synced',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    previousTab: true,
+    firstNotSynced: true,
+  );
+
+  screenGolden(
+    'tracker with a workout not synced yet',
+    name: 'tracker_not_synced',
+    hasUnread: true,
+    tab: AppTab.tracker,
+    screen: _tracker,
+    firstNotSynced: true,
+  );
+
+  detailGolden(
+    'manual workout detail for one not synced yet',
+    name: 'manual_detail_not_synced',
+    tab: AppTab.tracker,
+    firstManualNotSynced: true,
+    screen: () => ManualWorkoutDetailScreen(
+      workoutId: demoManualWorkouts().first.id,
+      onClose: () {},
+    ),
+  );
+
+  detailGolden(
+    'workout detail for a workout not synced yet',
+    name: 'detail_not_synced',
+    tab: AppTab.home,
+    firstNotSynced: true,
+    screen: () =>
+        WorkoutDetailScreen(workoutId: demoHistory().first.id, onClose: () {}),
+  );
+
   // ── Log workout (fit-epic.12) ──────────────────────────────────────────
   screenGolden(
     'log workout sheet',
@@ -365,21 +487,22 @@ void main() {
     'recorded workout detail',
     name: 'detail',
     tab: AppTab.home,
-    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
+    screen: () => WorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
   );
 
   detailGolden(
     'manual workout detail',
     name: 'manual_detail',
     tab: AppTab.tracker,
-    screen: () => ManualWorkoutDetailScreen(workoutId: 1, onClose: () {}),
+    screen: () =>
+        ManualWorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
   );
 
   detailGolden(
     'edit workout sheet',
     name: 'sheet_edit_workout',
     tab: AppTab.home,
-    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
+    screen: () => WorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
     setUp: (tester) => tester.tap(find.text('Edit')),
   );
 
@@ -387,7 +510,7 @@ void main() {
     'delete workout sheet',
     name: 'sheet_delete_workout',
     tab: AppTab.home,
-    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
+    screen: () => WorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
     setUp: (tester) async {
       await tester.scrollUntilVisible(find.text('Delete workout'), 200);
       await tester.tap(find.text('Delete workout'));

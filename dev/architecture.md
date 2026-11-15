@@ -18,7 +18,10 @@ Supabase (Postgres + RLS, auth, edge functions)
 
 - Widgets never talk to Supabase. They call notifier methods.
 - Notifiers write to Supabase first and update local state from the response,
-  so local state only holds rows that have reached the server.
+  so that state only holds rows that have reached the server. The exception
+  is workouts: the active workout lives on the device only, and finished and
+  logged workouts are kept on the device until they upload (`dev/decisions.md`
+  21; see "Workouts on the device" below).
 - `supabaseClientProvider` (`lib/data/supabase_client_provider.dart`) is the
   single access point, which is what lets tests swap in a client backed by
   `MockClient`.
@@ -30,7 +33,8 @@ Supabase (Postgres + RLS, auth, edge functions)
 
 | Provider | File | Holds |
 |---|---|---|
-| `currentWorkoutProvider` | `lib/state/current_workout_state.dart` | The in-progress workout, its exercises, the active exercise, recovery status |
+| `currentWorkoutProvider` | `lib/state/current_workout_state.dart` | The in-progress workout, its exercises and the active exercise, kept on the device; whether the device copy has been read |
+| `workoutSyncProvider` | `lib/state/workout_sync_state.dart` | Finished and logged workouts kept on the device until they upload, and their uploads. Also defines `allWorkoutsProvider` and `allManualWorkoutsProvider` |
 | `pastWorkoutsProvider` | `lib/state/past_workouts_state.dart` | Finished workouts with exercises and sets. Also defines the `Workout` class and `mapWorkoutRows` |
 | `userAuthenticationProvider` | `lib/state/user_authentication_state.dart` | Session, Google and Apple sign-in, account deletion |
 | `currentTabProvider` | `lib/state/current_tab_state.dart` | Home's Current/Previous tab |
@@ -95,17 +99,17 @@ Defined in `supabase/migrations/`. Every table has row level security; `anon`
 has no access.
 
 ```
-workouts        id bigint PK, user_id uuid → auth.users (cascade),
+workouts        id uuid PK (made by the app), user_id uuid → auth.users (cascade),
                 start_time, end_time, created_at,
                 title, location_type (Gym|Home|Park|Other),
                 place_name, place_address, place_lat, place_lng  (all nullable)
-exercises       id bigint PK, workout_id → workouts (cascade), name,
+exercises       id bigint PK, workout_id uuid → workouts (cascade), name,
                 start_time, end_time, exercise_number,
                 sets, reps, weight          (legacy columns, unused)
 exercise_sets   id bigint PK, exercise_id → exercises (cascade),
                 set_number, reps integer, weight double precision,
                 created_at timestamptz default now() (null on older rows)
-manual_workouts id bigint PK, user_id uuid → auth.users (cascade),
+manual_workouts id uuid PK (made by the app), user_id uuid → auth.users (cascade),
                 date date, title, location_type, place_* columns, created_at.
                 Many rows per date. Removed with the user by the cascade.
 apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
@@ -114,33 +118,38 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
 
 - A workout is owned through `workouts.user_id`. Exercises and sets are
   authorised by joining up to the owning workout in their RLS policies.
-- An unfinished workout is a row whose `end_time` is null.
-- `title` and `location_type` are null while a workout is in progress and on
-  rows written before the redesign (or by an older build). The UI falls back
+- Workouts reach the server only once finished, so every row has an
+  `end_time`. Unfinished rows written by older builds were deleted by
+  `20261115125648_offline_first_workouts.sql`.
+- `title` and `location_type` are null on rows written before the redesign
+  (or by an older build). The UI falls back
   to `Workout.displayTitle` ("Workout") and `displayLocationType` (Gym).
 - The redesign columns and `manual_workouts` come from
   `20261006232241_add_workout_details_and_manual_workouts.sql`, applied to the
   hosted project on 2026-10-06. The file's version matches the one recorded in
   the project's migration history. Builds from `redesign` select the new
   columns, so any other project they point at needs this migration too.
+- `20261115125648_offline_first_workouts.sql` makes the workout and manual
+  workout IDs UUIDs (`dev/decisions.md` 22), deletes unfinished workout rows,
+  and adds `save_workout(payload jsonb)`. That function inserts one finished
+  workout with its exercises and sets in a single transaction, owned by the
+  caller (`auth.uid()`), runs as the caller so RLS applies, and returns the
+  ID without changing anything if that ID is already saved. Applied to the
+  hosted project on 2026-11-15; the file's version matches the one recorded
+  in its migration history. Builds from this change need the migration on
+  the project they point at, and older builds can no longer save there.
 
 ### When rows are written
 
 | Event | Write |
 |---|---|
-| Workout started | insert `workouts` (user_id, start_time, created_at) |
-| Workout ended | update `workouts.end_time`, `title`, `location_type`, `place_*` |
-| Workout ended with no exercises | delete the `workouts` row |
-| Workout discarded (hold to discard) | delete the `workouts` row (children cascade) |
-| Manual workout logged | insert `manual_workouts` (user_id, date, title, location columns) |
-| Exercise started | insert `exercises` (workout_id, name, start_time, exercise_number) |
-| Exercise ended | update `exercises.end_time` |
-| Exercise ended with no sets | delete the `exercises` row |
-| Set added | insert `exercise_sets` (exercise_id, set_number, reps, weight) |
-| Set removed | delete `exercise_sets` row, then renumber the remaining `set_number`s |
-| Past workout deleted | delete `workouts` row (children cascade) |
-| Past workout edited | update `workouts.title`, `location_type`, `place_*` |
-| Set edited | update `exercise_sets.reps`, `weight` |
+| Workout started, exercise or set added, edited or removed | the user's `active.json` on the device only |
+| Workout ended | finished copy kept on the device, then `save_workout` (workout, exercises and sets in one transaction); the device copy is deleted once that succeeds |
+| Workout ended with no exercises | nothing kept; `active.json` deleted |
+| Workout discarded (hold to discard) | `active.json` deleted |
+| Manual workout logged | kept on the device, then upsert `manual_workouts` (id, user_id, date, title, location columns, created_at), ignoring an ID the server already has |
+| Past workout deleted | delete `workouts` row (children cascade); for one still on the device, its file |
+| Past workout edited | update `workouts.title`, `location_type`, `place_*`; for one still on the device, its file |
 | Manual workout edited or deleted | update or delete the `manual_workouts` row |
 
 ### Edge functions
@@ -216,49 +225,103 @@ Derived values (per-day map, heat level, streak, month count, total days,
 per-exercise volume) are computed on the client from workouts and manual
 entries. Keep that logic in pure functions so it can be unit-tested.
 
-## Workout recovery
+## Workouts on the device
 
-Workout, exercise and set changes are written to Supabase as they happen, so
-an unfinished workout can be restored after the app is killed.
+The active workout is kept on the device, not on the server, so a workout can
+be started and recorded with no signal (`dev/decisions.md` 21).
 
-**When it runs.** After a session is restored or after Google/Apple sign-in,
-`CurrentWorkoutNotifier` loads the signed-in user's single latest workout,
-ordered by start time and then ID.
+**Where.** `LocalWorkoutStore` (`lib/data/local_workout_store.dart`, supplied
+by `localWorkoutStoreProvider`) keeps JSON files under the app support
+directory, one folder per user:
 
-**What resumes.** That workout resumes only if its `end_time` is null and it
-started less than 12 hours ago (`workoutRecoveryWindow`). If the latest workout
-is finished, expired, missing or dated in the future, nothing resumes; the app
-does not go looking for an older unfinished one. The limit is measured from the
-workout's start, not from when the app closed.
+```
+workouts/<userId>/active.json                 the workout in progress
+workouts/<userId>/pending/<uuid>.json         finished, not uploaded yet
+workouts/<userId>/pending_manual/<uuid>.json  logged, not uploaded yet
+```
 
-**What is preserved.** IDs, completed exercises, the active exercise, saved
-sets, and the original start and end timestamps. Sets are ordered by set number
-and then ID. Timers are computed from timestamps, so they include time spent
-with the app closed and are correct as soon as the app is foregrounded. There
-is no background timer service.
+Files are written to `<name>.tmp` and renamed, and writes to one file are
+queued, so a crash or two quick changes never leave a half-written file. A
+file that cannot be read is logged and skipped. The JSON format is in
+`lib/data/workout_json.dart`; its keys are the server's column names, so a
+finished workout's file is exactly the `save_workout` payload. Tests use
+`MemoryWorkoutStore` from `test/helpers/fakes.dart`.
 
-**Guarantees.**
+**Recording.** `CurrentWorkoutNotifier` changes its state and then writes
+`active.json` on every action. Workout IDs are UUIDs made by the app;
+exercise and set IDs are counters within the workout. A set's time is the
+device clock (`clockProvider`).
 
-- Workout actions are unavailable while recovery is in progress
-  (`WorkoutRecoveryStatus.pending` / `loading`).
-- A failed query times out after 15 seconds and shows a retry action
-  (`WorkoutRecoveryStatus.failed`).
-- Recovery never creates, deletes or finishes workout rows.
-- Unfinished workouts, including expired ones, are excluded from history.
-- A response that arrives after sign-out or reset cannot repopulate the next
-  user's state (generation counter).
-- Invalid child data produces a recoverable error instead of a partial restore.
+**Ending.** The finished copy is written to `pending/` before `active.json`
+is removed, so a crash in between leaves both; recovery then keeps the
+finished copy. The upload goes to `save_workout` (`lib/data/workout_upload.dart`),
+which skips an ID it already has, so retrying is always safe.
 
-**Limits.** Recovery is Supabase-only: it needs connectivity and restores only
-what reached the server. Unsubmitted text fields and offline edits are not
-recovered.
+**Recovery.** After a session is restored or after sign-in,
+`restoreActiveWorkout()` reads the signed-in user's `active.json`. Workout
+actions wait until it has been read (`WorkoutRecoveryStatus.pending` /
+`loading`), which is a local read and needs no network.
 
-**Tests.** `test/state/current_workout_recovery_test.dart`,
-`test/data/active_workout_mapper_test.dart` and
-`test/widgets/current_workout_area_test.dart` cover the age boundary, time
-zones, empty workouts and exercises, mapping, set order, the scoped latest-only
-query, failure and retry, account and reset races, duplicate start prevention,
-history filtering and the loading/retry UI.
+- A workout resumes if it started less than 12 hours ago
+  (`workoutRecoveryWindow`), measured from its start. IDs, finished
+  exercises, the active exercise, set order and timestamps are preserved.
+  Timers are computed from timestamps, so they include time spent with the app
+  closed.
+- A workout found 12 hours or more after it started is ended instead
+  (`finishExpiredWorkout`): it ends at the last thing recorded in it, an
+  exercise still in progress is kept (ending at its last set) if it has sets,
+  it is titled "Workout" with the latest workout's location type, and it is
+  kept for upload. With nothing recorded it is dropped.
+- A file written for another user, or one that cannot be read, is ignored.
+- Signing out forgets the workout in memory but leaves its file, so the same
+  user gets it back on signing in again. A response that arrives after
+  sign-out or reset is dropped (generation counter).
 
-**The redesign must keep this behaviour.** The redesigned Home screen still
-needs the loading and retry states, even though the prototype does not show them.
+**Uploading.** `WorkoutSyncNotifier` (`lib/state/workout_sync_state.dart`)
+holds the finished and logged workouts that are on the device but not on the
+server, and uploads them.
+
+- `keepWorkout` / `keepManualWorkout` write the file and list the entry.
+  Ending a workout and logging one both keep it first, then upload it, so a
+  failed upload never loses anything.
+- `uploadWorkout(id)` / `uploadManualWorkout(id)` are single-flight per ID,
+  have a 30 s timeout (`uploadTimeout`) and refresh an expired access token
+  first. On success the file is deleted, the entry moves to the
+  server-backed list (`addSavedWorkout`) and history is reloaded in the
+  background. On failure everything stays on the device.
+- `syncAll()` uploads everything waiting, one at a time. It runs after
+  sign-in (once the device copies have been read) and whenever the app comes
+  back to the foreground (`AppLifecycleListener` in
+  `AuthenticatorController`).
+- Edits and deletes from the detail screens go through
+  `updateWorkout` / `deleteWorkout` (and the manual equivalents): an entry
+  still on the device is changed there; one on the server is changed there
+  and needs the network. If an upload of that ID is running, the edit waits
+  for it first.
+- After ending or logging a workout the user waits at most 5 s
+  (`uploadWait`, `waitForUpload`) for the upload. Saved in time: Summary
+  opens (for an ended workout) with no message. Failed in time: the entry is
+  marked not synced and a SnackBar says it is kept on the phone. Still
+  running: the same mark, and a SnackBar reports the result when the server
+  answers ("Workout saved" or the not-saved message). These SnackBars go
+  through `appMessengerProvider` (`lib/widgets/app_messenger.dart`), which
+  uses the `MaterialApp`'s root `ScaffoldMessenger`, so they show after the
+  sheet has closed. A workout ended by the 12-hour rule gets its own message
+  at sign-in.
+- `allWorkoutsProvider` and `allManualWorkoutsProvider` are the lists every
+  screen shows: the server's plus the device's, each workout once (the
+  server's copy wins), with `synced` false on those still on the device.
+- Sign-out forgets the list in memory; the files stay for the same user's
+  next sign-in. Deleting the account removes the user's whole folder once
+  the server has confirmed the deletion, since those workouts can no longer
+  upload.
+
+**Tests.** `test/state/current_workout_state_test.dart` (recording with no
+network, ending, upload, recovery, the 12-hour rule, races),
+`test/state/workout_sync_state_test.dart` (loading per user, syncing,
+failures, single-flight uploads, edits during an upload, merged lists),
+`test/data/local_workout_store_test.dart` and
+`test/data/workout_json_test.dart`.
+
+Home shows a short loading state while the device copy is read, even though
+the prototype does not show it.

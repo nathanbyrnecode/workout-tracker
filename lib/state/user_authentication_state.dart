@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
 import 'package:crypto/crypto.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:gym_tracker_app/data/email_auth.dart';
+import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -83,8 +87,8 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
 
   Future<void> _completeSignIn({String? firstName}) async {
     // Start recovery before exposing the home screen and its workout actions.
-    final recovery =
-        ref.read(currentWorkoutProvider.notifier).restoreActiveWorkout();
+    // It reads the device only, so it does not wait for the network.
+    final recovery = _restoreWorkoutsOnDevice();
     _setState(
       isSignedIn: AuthStatus.signedIn,
       firstName: firstName,
@@ -96,8 +100,22 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
     ]);
   }
 
+  /// Reads the unsynced workouts and the active workout from the device, then
+  /// starts uploading anything waiting without holding up sign-in.
+  Future<void> _restoreWorkoutsOnDevice() async {
+    final sync = ref.read(workoutSyncProvider.notifier);
+    await sync.load();
+    final ended =
+        await ref.read(currentWorkoutProvider.notifier).restoreActiveWorkout();
+    if (ended != null) {
+      ref.read(appMessengerProvider).show(workoutExpiredMessage);
+    }
+    unawaited(sync.syncAll());
+  }
+
   void _resetSignedOutState() {
     ref.read(currentWorkoutProvider.notifier).resetState();
+    ref.read(workoutSyncProvider.notifier).resetState();
     ref.read(pastWorkoutsProvider.notifier).resetState();
     ref.read(manualWorkoutsProvider.notifier).resetState();
     ref.read(currentTabProvider.notifier).resetState();
@@ -537,6 +555,7 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
   }
 
   Future<void> deleteAccount() async {
+    final userId = _client.auth.currentUser?.id;
     final identityProviders = _currentIdentityProviders();
     final hasAppleIdentity =
         identityProviders.contains(_IdentityProvider.apple);
@@ -550,6 +569,12 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
     }
     _logSuccessfulAccountDeletion(identityProviders);
 
+    // The account is gone, so its unsynced workouts can never upload. Remove
+    // them from the device rather than leave them behind.
+    if (userId != null) {
+      await _forgetWorkoutsOnDevice(userId);
+    }
+
     if (hasGoogleIdentity) {
       await _deleteGoogleAccount();
     }
@@ -559,6 +584,18 @@ class UserAuthenticationNotifier extends _$UserAuthenticationNotifier {
       _logSuccessfulSignOut(identityProviders);
     } finally {
       _resetSignedOutState();
+    }
+  }
+
+  Future<void> _forgetWorkoutsOnDevice(String userId) async {
+    try {
+      await ref.read(localWorkoutStoreProvider).deleteUser(userId);
+    } catch (error, stackTrace) {
+      log(
+        'Could not remove the deleted account\'s workouts from the device.',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 

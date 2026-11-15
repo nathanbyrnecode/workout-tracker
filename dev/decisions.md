@@ -174,3 +174,44 @@ icons must have no alpha channel or App Store Connect rejects the build, so
 the pack's PNGs were flattened onto `#0A0B0D` (they were already fully
 opaque). `assets/icon/icon.png`, the Welcome logo, is the same 1024px image,
 shown at 64×64 with radius 18 and no extra scaling.
+
+## 21. Active and unsynced workouts are kept on the device as JSON
+
+Partly supersedes 1: Supabase is still the backend and the only store for
+synced history, but the active workout and any finished or logged workout
+that has not reached the server yet are kept on the device. Starting and
+recording a workout needs no network; only uploading does. Recovery after the
+app is killed reads the device copy; the server-side recovery query is gone.
+
+They are JSON files under the app support directory, one folder per user
+(`workouts/<userId>/`), not a database. A workout is one small document that
+is read and written whole, there are only ever a few unsynced ones, and the
+finished-workout file has the same shape as the `save_workout` payload, so an
+upload sends it as it is. Sorting and filtering stay in Dart over the combined
+list of server and local workouts, as before. Files are written to a temporary
+file and renamed, so a crash cannot leave half a file. If the app later needs
+full history offline, revisit this in favour of a local database.
+
+Unsynced workouts stay on the device after sign-out and sync when the same
+user signs in again. Uninstalling the app loses them. Deleting the account
+removes them.
+
+## 22. Workouts and logged workouts use client-generated UUIDs
+
+`workouts.id` and `manual_workouts.id` are UUIDs that the app creates when a
+workout starts or is logged, and the same ID is used on the device, on the
+server and in the app's models. An upload whose response was lost can be
+retried safely: `save_workout` and the manual-workout insert skip an ID that
+is already saved. A local copy and its server copy are recognised as the same
+workout by ID. Exercise and set IDs stay bigint on the server; in a workout
+that is only on the device they are counters within that workout.
+
+## 23. Codemagic uses the pinned Flutter version too
+
+Adds to 14. `codemagic.yaml` names the same Flutter version as
+`environment.flutter` in `pubspec.yaml`, instead of `stable`. On 2026-11-15
+Codemagic picked up Flutter 3.50.0, which deprecates
+`package:flutter/material.dart` in favour of `material_ui`; every file that
+imports Material then gave an info, and `flutter analyze` failed the
+TestFlight build. Bump both places together, after the code is clean on the
+new version.

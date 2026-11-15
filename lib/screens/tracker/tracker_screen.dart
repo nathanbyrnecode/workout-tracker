@@ -11,7 +11,6 @@ import 'package:gym_tracker_app/screens/tracker/widgets/tracker_grid.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/date_format.dart';
@@ -20,6 +19,8 @@ import 'package:gym_tracker_app/widgets/dashed_border.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/screen_title.dart';
 import 'package:gym_tracker_app/widgets/tappable_card.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// The Tracker: streak and day counts, the 17-week grid, and what was logged
@@ -50,25 +51,36 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
   /// tracker selects the day it was logged for.
   Future<void> _logWorkout(DateTime day) async {
     final today = dayOf(ref.read(clockProvider)());
+    final messenger = ref.read(appMessengerProvider);
+    LogWorkoutResult? logged;
     await showLogWorkoutSheet(
       context: context,
       initialDay: day,
       today: today,
-      initialType: defaultLocationType(ref.read(pastWorkoutsProvider).workouts),
+      initialType: defaultLocationType(ref.read(allWorkoutsProvider)),
       onAdd: (loggedDay, details) async {
-        final added =
+        final result =
             await ref.read(manualWorkoutsProvider.notifier).addManualWorkout(
                   date: loggedDay,
                   title: details.title,
                   locationType: details.type,
                   place: details.place,
                 );
-        if (added != null && mounted) {
+        logged = result;
+        final added = result.workout != null;
+        if (added && mounted) {
           setState(() => _selected = loggedDay);
         }
-        return added != null;
+        return added;
       },
     );
+    final added = logged?.workout;
+    if (added != null) {
+      messenger.reportUpload(
+        saved: added.synced,
+        stillUploading: logged?.stillUploading,
+      );
+    }
   }
 
   @override
@@ -78,8 +90,8 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
     final live = ref.watch(currentWorkoutProvider);
     final liveExercise = live.currentExercise;
     final days = buildTrackerDays(
-      workouts: ref.watch(pastWorkoutsProvider).workouts,
-      manualWorkouts: ref.watch(manualWorkoutsProvider).workouts,
+      workouts: ref.watch(allWorkoutsProvider),
+      manualWorkouts: ref.watch(allManualWorkoutsProvider),
       liveStart: live.isInProgress ? live.workoutStartDateTime : null,
       liveTotals: workoutTotals([
         ...live.exercises,
@@ -206,6 +218,7 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
               '${formatVolume(totals.volume)} kg',
           locationType: workout.displayLocationType,
           place: workout.place,
+          synced: workout.synced,
           onTap: () => widget.onOpenWorkout(workout),
         );
       case LiveEntry(:final totals):
@@ -225,6 +238,7 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
           subtitle: 'Logged manually',
           locationType: workout.locationType,
           place: workout.place,
+          synced: workout.synced,
           onTap: () => widget.onOpenManualWorkout(workout),
         );
     }

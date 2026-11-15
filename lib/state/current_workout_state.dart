@@ -1,36 +1,59 @@
 import 'dart:developer';
 
-import 'package:gym_tracker_app/data/location_mapper.dart';
+import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
+import 'package:gym_tracker_app/data/workout_history.dart';
+import 'package:gym_tracker_app/data/workout_json.dart';
+import 'package:gym_tracker_app/data/workout_upload.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/place.dart';
 import 'package:gym_tracker_app/models/workout.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
+import 'package:gym_tracker_app/state/clock_provider.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 part 'current_workout_state.g.dart';
 
-enum WorkoutRecoveryStatus { pending, loading, ready, failed }
+/// Whether the device copy of the active workout has been read yet. Workout
+/// actions wait for [ready].
+enum WorkoutRecoveryStatus { pending, loading, ready }
 
-enum EndWorkoutOutcome { saved, discarded, failed }
+enum EndWorkoutOutcome {
+  /// The server has it.
+  saved,
 
-/// What ending a workout did. [workout] is set only when it was saved.
-typedef EndWorkoutResult = ({EndWorkoutOutcome outcome, Workout? workout});
+  /// It is kept on the device and will be uploaded later.
+  savedLocally,
+
+  /// It had no exercises, so nothing was kept.
+  discarded,
+
+  /// It could not even be kept on the device. The workout is still active.
+  failed,
+}
+
+/// What ending a workout did. [workout] is set when it was kept.
+/// [stillUploading] is set when the upload outlasted [uploadWait]; it
+/// completes with whether the server got it in the end.
+typedef EndWorkoutResult = ({
+  EndWorkoutOutcome outcome,
+  Workout? workout,
+  Future<bool>? stillUploading,
+});
 
 const workoutRecoveryWindow = Duration(hours: 12);
 
 typedef CurrentWorkoutStateData = ({
-  int? workoutId,
+  String? workoutId,
   DateTime? workoutStartDateTime,
   DateTime? workoutEndDateTime,
   bool isInProgress,
   List<Exercise> exercises,
   Exercise? currentExercise,
   WorkoutRecoveryStatus recoveryStatus,
-  bool isStartingWorkout,
 });
 
 const CurrentWorkoutStateData initialCurrentWorkoutStateData = (
@@ -41,9 +64,21 @@ const CurrentWorkoutStateData initialCurrentWorkoutStateData = (
   exercises: [],
   currentExercise: null,
   recoveryStatus: WorkoutRecoveryStatus.pending,
-  isStartingWorkout: false,
 );
 
+const CurrentWorkoutStateData _readyWithNoWorkout = (
+  workoutId: null,
+  workoutStartDateTime: null,
+  workoutEndDateTime: null,
+  isInProgress: false,
+  exercises: [],
+  currentExercise: null,
+  recoveryStatus: WorkoutRecoveryStatus.ready,
+);
+
+/// The workout in progress. It lives on the device only: every change is
+/// written to the user's `active.json` (`dev/decisions.md` 21), so nothing
+/// here needs the network until the workout is ended.
 @Riverpod(keepAlive: true)
 class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
   int _recoveryGeneration = 0;
@@ -54,7 +89,26 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     return initialCurrentWorkoutStateData;
   }
 
-  SupabaseClient get _client => ref.read(supabaseClientProvider);
+  LocalWorkoutStore get _store => ref.read(localWorkoutStoreProvider);
+
+  String? get _userId => ref.read(supabaseClientProvider).auth.currentUser?.id;
+
+  DateTime _now() => ref.read(clockProvider)();
+
+  /// Exercise and set IDs only have to be unique within the workout.
+  int _nextLocalId() {
+    var highest = 0;
+    for (final exercise in [
+      ...state.exercises,
+      if (state.currentExercise != null) state.currentExercise!,
+    ]) {
+      if (exercise.id > highest) highest = exercise.id;
+      for (final setId in exercise.sets.keys) {
+        if (setId > highest) highest = setId;
+      }
+    }
+    return highest + 1;
+  }
 
   Exercise _cloneExerciseWithSets(
       Exercise exercise, Map<int, ExerciseSet> sets) {
@@ -71,368 +125,306 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
   }
 
   void _setState({
-    int? workoutId,
+    String? workoutId,
     DateTime? workoutStartDateTime,
-    DateTime? workoutEndDateTime,
     bool? isInProgress,
     List<Exercise>? exercises,
     Exercise? currentExercise,
+    bool clearCurrentExercise = false,
     WorkoutRecoveryStatus? recoveryStatus,
-    bool? isStartingWorkout,
   }) {
     state = (
       workoutId: workoutId ?? state.workoutId,
       workoutStartDateTime: workoutStartDateTime ?? state.workoutStartDateTime,
-      workoutEndDateTime: workoutEndDateTime ?? state.workoutEndDateTime,
+      workoutEndDateTime: state.workoutEndDateTime,
       isInProgress: isInProgress ?? state.isInProgress,
       exercises: exercises ?? state.exercises,
-      currentExercise: currentExercise ?? state.currentExercise,
+      currentExercise: clearCurrentExercise
+          ? null
+          : currentExercise ?? state.currentExercise,
       recoveryStatus: recoveryStatus ?? state.recoveryStatus,
-      isStartingWorkout: isStartingWorkout ?? state.isStartingWorkout,
     );
   }
 
-  // Provide "true" for the values that should be reset
-  void _resetState({
-    bool workoutId = false,
-    bool workoutStartDateTime = false,
-    bool workoutEndDateTime = false,
-    bool isInProgress = false,
-    bool exercises = false,
-    bool currentExercise = false,
-  }) {
-    state = (
-      workoutId: workoutId == true
-          ? initialCurrentWorkoutStateData.workoutId
-          : state.workoutId,
-      workoutStartDateTime: workoutStartDateTime == true
-          ? initialCurrentWorkoutStateData.workoutStartDateTime
-          : state.workoutStartDateTime,
-      workoutEndDateTime: workoutEndDateTime == true
-          ? initialCurrentWorkoutStateData.workoutEndDateTime
-          : state.workoutEndDateTime,
-      isInProgress: isInProgress == true
-          ? initialCurrentWorkoutStateData.isInProgress
-          : state.isInProgress,
-      exercises: exercises == true
-          ? initialCurrentWorkoutStateData.exercises
-          : state.exercises,
-      currentExercise: currentExercise == true
-          ? initialCurrentWorkoutStateData.currentExercise
-          : state.currentExercise,
-      recoveryStatus: state.recoveryStatus,
-      isStartingWorkout: state.isStartingWorkout,
-    );
+  /// Writes the workout as it is now. A failed write is logged; the workout
+  /// carries on in memory and the next change tries again.
+  Future<void> _persist() async {
+    final userId = _userId;
+    final workoutId = state.workoutId;
+    final startTime = state.workoutStartDateTime;
+    if (userId == null || workoutId == null || startTime == null) {
+      return;
+    }
+    try {
+      await _store.writeActive(
+        userId,
+        encodeActiveWorkout(
+          userId: userId,
+          id: workoutId,
+          startTime: startTime,
+          exercises: state.exercises,
+          currentExercise: state.currentExercise,
+        ),
+      );
+    } catch (error, stackTrace) {
+      log('Failed to keep the active workout on the device.',
+          error: error, stackTrace: stackTrace);
+    }
   }
 
+  /// Forgets the workout in memory. Its file stays, so the same user gets it
+  /// back after signing in again.
   void resetState() {
     _recoveryGeneration++;
     state = initialCurrentWorkoutStateData;
   }
 
-  Future<void> restoreActiveWorkout() async {
+  /// Reads the signed-in user's active workout from the device.
+  ///
+  /// A workout that started [workoutRecoveryWindow] or more ago is ended
+  /// instead, at the last thing recorded in it, and kept for upload (see
+  /// [finishExpiredWorkout]); one with no exercises is dropped. Returns the
+  /// workout that was ended this way, if any.
+  Future<Workout?> restoreActiveWorkout() async {
     if (state.recoveryStatus == WorkoutRecoveryStatus.loading ||
-        state.isInProgress ||
-        state.isStartingWorkout) {
-      return;
+        state.isInProgress) {
+      return null;
     }
-    final client = _client;
-    final userId = client.auth.currentUser?.id;
+    final userId = _userId;
     if (userId == null) {
       resetState();
-      return;
+      return null;
     }
 
     final generation = ++_recoveryGeneration;
     _setState(recoveryStatus: WorkoutRecoveryStatus.loading);
     bool isCurrentRequest() =>
-        ref.mounted &&
-        generation == _recoveryGeneration &&
-        client.auth.currentUser?.id == userId;
+        ref.mounted && generation == _recoveryGeneration && _userId == userId;
 
     try {
-      // Do not filter unfinished/age here: only the latest workout may resume.
-      final row = await client
-          .from('workouts')
-          .select('''
-            id, start_time, end_time,
-            exercises (
-              id, name, start_time, end_time,
-              exercise_sets (id, set_number, reps, weight, created_at)
-            )
-          ''')
-          .eq('user_id', userId)
-          .order('start_time', ascending: false, nullsFirst: false)
-          .order('id', ascending: false)
-          .limit(1)
-          .maybeSingle()
-          .timeout(const Duration(seconds: 15));
+      final json = await _store.readActive(userId);
       if (!isCurrentRequest()) {
-        return;
+        return null;
       }
-      state = mapActiveWorkoutRow(row, now: DateTime.now());
+      if (json == null || storedUserId(json) != userId) {
+        state = _readyWithNoWorkout;
+        return null;
+      }
+      final active = decodeActiveWorkout(json);
+
+      // Ending writes the finished copy before removing the active one, so a
+      // crash in between leaves both. The finished copy wins.
+      final pending = await _store.readPending(userId, PendingKind.workout);
+      if (!isCurrentRequest()) {
+        return null;
+      }
+      if (pending.any((entry) => entry['id'] == active.id)) {
+        await _store.deleteActive(userId);
+        state = _readyWithNoWorkout;
+        return null;
+      }
+
+      if (_now().difference(active.startTime) >= workoutRecoveryWindow) {
+        final finished = finishExpiredWorkout(
+          active,
+          locationType: defaultLocationType(ref.read(allWorkoutsProvider)),
+        );
+        if (finished != null) {
+          await ref.read(workoutSyncProvider.notifier).keepWorkout(finished);
+        }
+        await _store.deleteActive(userId);
+        if (isCurrentRequest()) {
+          state = _readyWithNoWorkout;
+        }
+        return finished;
+      }
+
+      state = (
+        workoutId: active.id,
+        workoutStartDateTime: active.startTime,
+        workoutEndDateTime: null,
+        isInProgress: true,
+        exercises: active.exercises,
+        currentExercise: active.currentExercise,
+        recoveryStatus: WorkoutRecoveryStatus.ready,
+      );
+      return null;
     } catch (error, stackTrace) {
-      if (!isCurrentRequest()) {
-        return;
-      }
-      _setState(recoveryStatus: WorkoutRecoveryStatus.failed);
-      log('Failed to restore the active workout.',
+      log('Could not read the active workout on the device.',
           error: error, stackTrace: stackTrace);
+      if (isCurrentRequest()) {
+        state = _readyWithNoWorkout;
+      }
+      return null;
     }
   }
 
   Future<void> startWorkout() async {
     if (state.recoveryStatus != WorkoutRecoveryStatus.ready ||
         state.isInProgress ||
-        state.isStartingWorkout) {
+        _userId == null) {
       return;
     }
-    final user = _client.auth.currentUser;
-    if (user == null) {
-      return;
-    }
-
-    final generation = _recoveryGeneration;
-    _setState(isStartingWorkout: true);
-    try {
-      final startTime = DateTime.now();
-      final row = await _client
-          .from('workouts')
-          .insert({
-            'user_id': user.id,
-            'start_time': startTime.toUtc().toIso8601String(),
-            'created_at': startTime.toUtc().toIso8601String(),
-          })
-          .select('id')
-          .single();
-      final rowId = (row['id'] as num).toInt();
-
-      if (!ref.mounted ||
-          generation != _recoveryGeneration ||
-          _client.auth.currentUser?.id != user.id) {
-        return;
-      }
-
-      _setState(
-        isInProgress: true,
-        workoutStartDateTime: startTime,
-        workoutId: rowId,
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Failed to start the workout.',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    } finally {
-      if (ref.mounted && generation == _recoveryGeneration) {
-        _setState(isStartingWorkout: false);
-      }
-    }
+    _setState(
+      workoutId: const Uuid().v4(),
+      workoutStartDateTime: _now(),
+      isInProgress: true,
+      exercises: const [],
+      clearCurrentExercise: true,
+    );
+    await _persist();
   }
 
-  /// Ends the workout and saves its title and location.
+  /// Ends the workout with its title and location and keeps it on the device,
+  /// then waits up to [uploadWait] for it to upload (see
+  /// `WorkoutSyncNotifier`).
   ///
-  /// A workout with no finished exercises has nothing worth keeping, so its
-  /// row is deleted and the outcome is [EndWorkoutOutcome.discarded]. On
-  /// failure the workout stays in progress so the user can try again.
+  /// A workout with no finished exercises has nothing worth keeping, so it is
+  /// dropped and the outcome is [EndWorkoutOutcome.discarded]. If it cannot be
+  /// kept on the device the workout stays in progress so the user can try
+  /// again.
   Future<EndWorkoutResult> endWorkout({
     required String title,
     required LocationType locationType,
     Place? place,
   }) async {
-    final user = _client.auth.currentUser;
+    final userId = _userId;
     final workoutId = state.workoutId;
     final startTime = state.workoutStartDateTime;
-    if (user == null || workoutId == null || startTime == null) {
-      return (outcome: EndWorkoutOutcome.failed, workout: null);
+    if (userId == null || workoutId == null || startTime == null) {
+      return (
+        outcome: EndWorkoutOutcome.failed,
+        workout: null,
+        stillUploading: null
+      );
     }
 
+    if (state.exercises.isEmpty) {
+      return await discardWorkout()
+          ? (
+              outcome: EndWorkoutOutcome.discarded,
+              workout: null,
+              stillUploading: null
+            )
+          : (
+              outcome: EndWorkoutOutcome.failed,
+              workout: null,
+              stillUploading: null
+            );
+    }
+
+    final workout = Workout(
+      workoutId,
+      startTime,
+      _now(),
+      {for (final exercise in state.exercises) exercise.id: exercise},
+      title: title.trim(),
+      locationType: locationType,
+      place: place,
+      synced: false,
+    );
+    final sync = ref.read(workoutSyncProvider.notifier);
     try {
-      final endTime = DateTime.now();
-      final exercises = state.exercises;
-
-      if (exercises.isEmpty) {
-        await _client
-            .from('workouts')
-            .delete()
-            .eq('id', workoutId)
-            .eq('user_id', user.id);
-        resetState();
-        _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
-        return (outcome: EndWorkoutOutcome.discarded, workout: null);
-      }
-
-      await _client
-          .from('workouts')
-          .update({
-            'end_time': endTime.toUtc().toIso8601String(),
-            'title': title.trim(),
-            ...locationToColumns(locationType, place),
-          })
-          .eq('id', workoutId)
-          .eq('user_id', user.id);
-
-      final saved = Workout(
-        workoutId,
-        startTime,
-        endTime,
-        {for (final exercise in exercises) exercise.id: exercise},
-        title: title.trim(),
-        locationType: locationType,
-        place: place,
-      );
-
-      resetState();
-      _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
-      await ref.read(pastWorkoutsProvider.notifier).getWorkoutsFromRemote();
-      return (outcome: EndWorkoutOutcome.saved, workout: saved);
+      await sync.keepWorkout(workout);
+      await _store.deleteActive(userId);
     } catch (error, stackTrace) {
-      log(
-        'Failed to end the workout.',
-        error: error,
-        stackTrace: stackTrace,
+      log('Failed to keep the finished workout on the device.',
+          error: error, stackTrace: stackTrace);
+      return (
+        outcome: EndWorkoutOutcome.failed,
+        workout: null,
+        stillUploading: null
       );
-      return (outcome: EndWorkoutOutcome.failed, workout: null);
     }
+    _recoveryGeneration++;
+    state = _readyWithNoWorkout;
+
+    // The user waits at most [uploadWait]; the upload carries on after that.
+    final attempt = await waitForUpload(sync.uploadWorkout(workoutId));
+    if (attempt.saved) {
+      return (
+        stillUploading: null,
+        outcome: EndWorkoutOutcome.saved,
+        workout: Workout(
+          workout.id,
+          workout.startTime,
+          workout.endTime,
+          workout.exercises,
+          title: workout.title,
+          locationType: workout.locationType,
+          place: workout.place,
+        ),
+      );
+    }
+    return (
+      outcome: EndWorkoutOutcome.savedLocally,
+      workout: workout,
+      stillUploading: attempt.stillUploading,
+    );
   }
 
-  /// Throws the workout away: its row and everything recorded in it are
-  /// deleted and nothing reaches history or the tracker. Returns whether it
-  /// was discarded; on failure the workout stays in progress.
+  /// Throws the workout away: nothing reaches history or the tracker.
+  /// Returns whether it was discarded; on failure the workout stays in
+  /// progress.
   Future<bool> discardWorkout() async {
-    final user = _client.auth.currentUser;
-    final workoutId = state.workoutId;
-    if (user == null || workoutId == null) {
+    final userId = _userId;
+    if (userId == null || state.workoutId == null) {
       return false;
     }
-
     try {
-      // Exercises and sets go with the workout (cascade).
-      await _client
-          .from('workouts')
-          .delete()
-          .eq('id', workoutId)
-          .eq('user_id', user.id);
-      resetState();
-      _setState(recoveryStatus: WorkoutRecoveryStatus.ready);
-      return true;
+      await _store.deleteActive(userId);
     } catch (error, stackTrace) {
-      log(
-        'Failed to discard the workout.',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      log('Failed to discard the workout.',
+          error: error, stackTrace: stackTrace);
       return false;
     }
+    _recoveryGeneration++;
+    state = _readyWithNoWorkout;
+    return true;
   }
 
   Future<void> startExercise(String name) async {
-    final workoutId = state.workoutId;
-    if (_client.auth.currentUser == null || workoutId == null) {
+    if (!state.isInProgress || state.currentExercise != null) {
       return;
     }
-
-    try {
-      final startTime = DateTime.now();
-      final row = await _client
-          .from('exercises')
-          .insert({
-            'start_time': startTime.toUtc().toIso8601String(),
-            'workout_id': workoutId,
-            'name': name,
-          })
-          .select('id')
-          .single();
-      final rowId = (row['id'] as num).toInt();
-
-      _setState(currentExercise: Exercise(name, {}, rowId, startTime));
-    } catch (error, stackTrace) {
-      log(
-        'Failed to start the exercise.',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
+    _setState(
+      currentExercise: Exercise(name, {}, _nextLocalId(), _now()),
+    );
+    await _persist();
   }
 
+  /// Finishes the exercise in progress. One with no sets is dropped.
   Future<void> endExercise() async {
     final currentExercise = state.currentExercise;
-    if (_client.auth.currentUser == null || currentExercise == null) {
+    if (currentExercise == null) {
       return;
     }
-
-    try {
-      final endTime = DateTime.now();
-
-      if (currentExercise.sets.isNotEmpty) {
-        await _client
-            .from('exercises')
-            .update({'end_time': endTime.toUtc().toIso8601String()}).eq(
-                'id', currentExercise.id);
-        currentExercise.setEndTime(endTime);
-        _setState(exercises: [...state.exercises, currentExercise]);
-      } else {
-        await _client.from('exercises').delete().eq('id', currentExercise.id);
-      }
-
-      _resetState(currentExercise: true);
-    } catch (error, stackTrace) {
-      log(
-        'Failed to end the exercise.',
-        error: error,
-        stackTrace: stackTrace,
+    if (currentExercise.sets.isNotEmpty) {
+      final finished =
+          _cloneExerciseWithSets(currentExercise, currentExercise.sets)
+            ..setEndTime(_now());
+      _setState(
+        exercises: [...state.exercises, finished],
+        clearCurrentExercise: true,
       );
+    } else {
+      _setState(clearCurrentExercise: true);
     }
+    await _persist();
   }
 
   Future<void> addSet({required double weight, required int reps}) async {
-    final exerciseId = state.currentExercise?.id;
-    if (reps < 0 || weight < 0 || !weight.isFinite || exerciseId == null) {
+    final currentExercise = state.currentExercise;
+    if (reps < 0 || weight < 0 || !weight.isFinite || currentExercise == null) {
       return;
     }
-
-    if (_client.auth.currentUser == null) {
-      return;
-    }
-
-    try {
-      final row = await _client
-          .from('exercise_sets')
-          .insert({
-            'exercise_id': exerciseId,
-            'set_number': state.currentExercise?.sets.length ?? 0,
-            'reps': reps,
-            'weight': weight,
-          })
-          .select('id, created_at')
-          .single();
-      final rowId = (row['id'] as num).toInt();
-      final savedAt = DateTime.tryParse(row['created_at'] as String? ?? '');
-
-      final currentExercise = state.currentExercise;
-      if (currentExercise == null) {
-        return;
-      }
-
-      final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
-      updatedSets[rowId] = ExerciseSet(
-        weight,
-        reps,
-        rowId,
-        savedAt: (savedAt ?? DateTime.now()).toLocal(),
-      );
-
-      _setState(
-        currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Failed to add the exercise set.',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
+    final setId = _nextLocalId();
+    final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
+    updatedSets[setId] = ExerciseSet(weight, reps, setId, savedAt: _now());
+    _setState(
+      currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
+    );
+    await _persist();
   }
 
   /// Changes the weight and reps of a set in the active exercise. The set
@@ -444,189 +436,39 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     required int reps,
   }) async {
     final currentExercise = state.currentExercise;
-    if (_client.auth.currentUser == null ||
-        !state.isInProgress ||
+    final existing = currentExercise?.sets[setId];
+    if (!state.isInProgress ||
         currentExercise == null ||
         currentExercise.endTime != null ||
-        !currentExercise.sets.containsKey(setId) ||
+        existing == null ||
         reps < 0 ||
         weight < 0 ||
         !weight.isFinite) {
       return;
     }
-
-    try {
-      final updatedRows = await _client
-          .from('exercise_sets')
-          .update({'reps': reps, 'weight': weight})
-          .eq('id', setId)
-          .eq('exercise_id', currentExercise.id)
-          .select('id');
-      if (updatedRows.isEmpty) {
-        return;
-      }
-
-      final latestExercise = state.currentExercise;
-      final existing = latestExercise?.sets[setId];
-      if (latestExercise == null ||
-          latestExercise.id != currentExercise.id ||
-          existing == null) {
-        return;
-      }
-
-      // Replacing the value under the same key keeps the set's position.
-      final updatedSets = Map<int, ExerciseSet>.from(latestExercise.sets);
-      updatedSets[setId] =
-          ExerciseSet(weight, reps, setId, savedAt: existing.savedAt);
-
-      _setState(
-        currentExercise: _cloneExerciseWithSets(latestExercise, updatedSets),
-      );
-    } catch (error, stackTrace) {
-      log(
-        'Failed to update the exercise set.',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
+    // Replacing the value under the same key keeps the set's position.
+    final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
+    updatedSets[setId] =
+        ExerciseSet(weight, reps, setId, savedAt: existing.savedAt);
+    _setState(
+      currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
+    );
+    await _persist();
   }
 
   Future<void> removeSetFromCurrentExercise(int setId) async {
     final currentExercise = state.currentExercise;
-    if (_client.auth.currentUser == null ||
-        !state.isInProgress ||
+    if (!state.isInProgress ||
         currentExercise == null ||
         currentExercise.endTime != null ||
         !currentExercise.sets.containsKey(setId)) {
       return;
     }
-
-    try {
-      final deletedRows = await _client
-          .from('exercise_sets')
-          .delete()
-          .eq('id', setId)
-          .eq('exercise_id', currentExercise.id)
-          .select('id');
-
-      if (deletedRows.isEmpty) {
-        return;
-      }
-
-      final latestExercise = state.currentExercise;
-      if (!state.isInProgress ||
-          latestExercise == null ||
-          latestExercise.id != currentExercise.id ||
-          latestExercise.endTime != null) {
-        return;
-      }
-
-      final updatedSets = Map<int, ExerciseSet>.from(latestExercise.sets)
-        ..remove(setId);
-
-      _setState(
-        currentExercise: _cloneExerciseWithSets(latestExercise, updatedSets),
-      );
-
-      var setNumber = 0;
-      for (final remainingSetId in updatedSets.keys) {
-        await _client
-            .from('exercise_sets')
-            .update({'set_number': setNumber})
-            .eq('id', remainingSetId)
-            .eq('exercise_id', currentExercise.id);
-        setNumber++;
-      }
-    } catch (error, stackTrace) {
-      log(
-        'Failed to remove the exercise set.',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-  }
-}
-
-/// Reconstructs one snapshot without changing saved timestamps or finishing it.
-CurrentWorkoutStateData mapActiveWorkoutRow(
-  Map<String, dynamic>? row, {
-  required DateTime now,
-}) {
-  final empty = (
-    workoutId: initialCurrentWorkoutStateData.workoutId,
-    workoutStartDateTime: initialCurrentWorkoutStateData.workoutStartDateTime,
-    workoutEndDateTime: initialCurrentWorkoutStateData.workoutEndDateTime,
-    isInProgress: false,
-    exercises: <Exercise>[],
-    currentExercise: initialCurrentWorkoutStateData.currentExercise,
-    recoveryStatus: WorkoutRecoveryStatus.ready,
-    isStartingWorkout: false,
-  );
-  if (row == null || row['end_time'] != null) {
-    return empty;
-  }
-  final startTime = DateTime.tryParse(row['start_time'] as String? ?? '');
-  if (startTime == null) {
-    return empty;
-  }
-  final age = now.difference(startTime);
-  if (age.isNegative || age >= workoutRecoveryWindow) {
-    return empty;
-  }
-
-  final exerciseRows =
-      List<Map<String, dynamic>>.from(row['exercises'] as List);
-  exerciseRows.sort((a, b) {
-    final timeOrder = DateTime.parse(a['start_time'] as String)
-        .compareTo(DateTime.parse(b['start_time'] as String));
-    return timeOrder != 0
-        ? timeOrder
-        : (a['id'] as num).compareTo(b['id'] as num);
-  });
-  final completedExercises = <Exercise>[];
-  Exercise? currentExercise;
-  for (final exerciseRow in exerciseRows) {
-    final exercise = Exercise(
-      exerciseRow['name'] as String,
-      {},
-      (exerciseRow['id'] as num).toInt(),
-      DateTime.parse(exerciseRow['start_time'] as String).toLocal(),
+    final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets)
+      ..remove(setId);
+    _setState(
+      currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
     );
-    final setRows =
-        List<Map<String, dynamic>>.from(exerciseRow['exercise_sets'] as List);
-    setRows.sort((a, b) {
-      final order = ((a['set_number'] as num?) ?? 0)
-          .compareTo((b['set_number'] as num?) ?? 0);
-      return order != 0 ? order : (a['id'] as num).compareTo(b['id'] as num);
-    });
-    for (final setRow in setRows) {
-      exercise.addSet(ExerciseSet(
-        (setRow['weight'] as num).toDouble(),
-        (setRow['reps'] as num).toInt(),
-        (setRow['id'] as num).toInt(),
-        savedAt:
-            DateTime.tryParse(setRow['created_at'] as String? ?? '')?.toLocal(),
-      ));
-    }
-    if (exerciseRow['end_time'] != null) {
-      exercise.setEndTime(
-          DateTime.parse(exerciseRow['end_time'] as String).toLocal());
-      completedExercises.add(exercise);
-    } else {
-      if (currentExercise != null) {
-        throw const FormatException('Workout has multiple active exercises.');
-      }
-      currentExercise = exercise;
-    }
+    await _persist();
   }
-  return (
-    workoutId: (row['id'] as num).toInt(),
-    workoutStartDateTime: startTime.toLocal(),
-    workoutEndDateTime: null,
-    isInProgress: true,
-    exercises: completedExercises,
-    currentExercise: currentExercise,
-    recoveryStatus: WorkoutRecoveryStatus.ready,
-    isStartingWorkout: false,
-  );
 }

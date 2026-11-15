@@ -12,6 +12,7 @@ import 'package:gym_tracker_app/state/current_tab_state.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
+import 'package:gym_tracker_app/screens/home/widgets/sync_status_row.dart';
 
 /// Home: header, workout block, the Current / Previous toggle and the tab it
 /// selects, all in one scrolling page. The floating actions belong to the
@@ -105,6 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           onOpenNotifications: widget.onOpenNotifications,
                           hasUnread: widget.hasUnread,
                         ),
+                        const SyncStatusRow(),
                         WorkoutBlock(
                           startTime: workout.isInProgress
                               ? workout.workoutStartDateTime

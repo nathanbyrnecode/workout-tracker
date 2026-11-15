@@ -74,11 +74,6 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
         ),
       );
     }
-    if (workout.recoveryStatus == WorkoutRecoveryStatus.failed) {
-      return const _Message(
-        'Could not check your saved workout. Check your connection and retry.',
-      );
-    }
     if (!workout.isInProgress) {
       return const _Message('Get started by starting a workout!');
     }

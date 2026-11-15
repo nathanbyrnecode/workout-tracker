@@ -2,7 +2,7 @@ import 'package:gym_tracker_app/data/location_mapper.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
 
-const manualWorkoutColumns = 'id, date, title, $locationColumns';
+const manualWorkoutColumns = 'id, date, title, created_at, $locationColumns';
 
 /// Rows that cannot be read (no date or title) are skipped.
 List<ManualWorkout> mapManualWorkoutRows(List<Map<String, dynamic>> rows) {
@@ -14,15 +14,34 @@ List<ManualWorkout> mapManualWorkoutRows(List<Map<String, dynamic>> rows) {
       continue;
     }
     workouts.add(ManualWorkout(
-      id: (row['id'] as num).toInt(),
+      id: row['id'] as String,
       date: date,
       title: title,
       locationType:
           LocationType.fromLabel(row['location_type']) ?? LocationType.fallback,
       place: mapPlaceColumns(row),
+      createdAt:
+          DateTime.tryParse(row['created_at'] as String? ?? '')?.toLocal(),
     ));
   }
   return workouts;
+}
+
+/// Newest day first, then the most recently logged entry first.
+int compareManualWorkouts(ManualWorkout a, ManualWorkout b) {
+  final byDate = b.date.compareTo(a.date);
+  if (byDate != 0) {
+    return byDate;
+  }
+  final aCreated = a.createdAt;
+  final bCreated = b.createdAt;
+  if (aCreated != null && bCreated != null) {
+    final byCreated = bCreated.compareTo(aCreated);
+    if (byCreated != 0) {
+      return byCreated;
+    }
+  }
+  return b.id.compareTo(a.id);
 }
 
 /// Parses a Postgres `date` (`yyyy-mm-dd`) as a local calendar day. It is not

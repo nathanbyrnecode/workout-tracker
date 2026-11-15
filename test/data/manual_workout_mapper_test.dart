@@ -8,7 +8,7 @@ void main() {
   test('maps manual workouts, including several on one date', () {
     final workouts = mapManualWorkoutRows([
       {
-        'id': 1,
+        'id': 'm1',
         'date': '2026-09-21',
         'title': 'Morning run',
         'location_type': 'Park',
@@ -18,7 +18,7 @@ void main() {
         'place_lng': -2.2262,
       },
       {
-        'id': 2,
+        'id': 'm2',
         'date': '2026-09-21',
         'title': 'Evening stretch',
         'location_type': 'Home',
@@ -30,7 +30,7 @@ void main() {
     ]);
 
     expect(workouts, hasLength(2));
-    expect(workouts.first.id, 1);
+    expect(workouts.first.id, 'm1');
     expect(workouts.first.title, 'Morning run');
     expect(workouts.first.locationType, LocationType.park);
     expect(workouts.first.place?.name, 'Mayfield Park');
@@ -43,7 +43,7 @@ void main() {
   test('the date is a local calendar day, not a UTC instant', () {
     final workout = mapManualWorkoutRows([
       {
-        'id': 1,
+        'id': 'm1',
         'date': '2026-09-21',
         'title': 'Swim',
         'location_type': 'Other',
@@ -57,9 +57,14 @@ void main() {
 
   test('rows without a date or title are skipped', () {
     final workouts = mapManualWorkoutRows([
-      {'id': 1, 'date': null, 'title': 'Swim', 'location_type': 'Gym'},
-      {'id': 2, 'date': '2026-09-21', 'title': '', 'location_type': 'Gym'},
-      {'id': 3, 'date': 'not a date', 'title': 'Run', 'location_type': 'Gym'},
+      {'id': 'm1', 'date': null, 'title': 'Swim', 'location_type': 'Gym'},
+      {'id': 'm2', 'date': '2026-09-21', 'title': '', 'location_type': 'Gym'},
+      {
+        'id': 'm3',
+        'date': 'not a date',
+        'title': 'Run',
+        'location_type': 'Gym'
+      },
     ]);
 
     expect(workouts, isEmpty);
@@ -67,7 +72,12 @@ void main() {
 
   test('an unknown location type falls back to Gym', () {
     final workout = mapManualWorkoutRows([
-      {'id': 1, 'date': '2026-09-21', 'title': 'Swim', 'location_type': 'Pool'},
+      {
+        'id': 'm1',
+        'date': '2026-09-21',
+        'title': 'Swim',
+        'location_type': 'Pool'
+      },
     ]).single;
 
     expect(workout.locationType, LocationType.gym);

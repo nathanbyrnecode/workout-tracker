@@ -153,12 +153,4 @@ void main() {
       recoveryStatus: WorkoutRecoveryStatus.loading,
     ),
   );
-
-  homeGolden(
-    'home after the unfinished workout check failed',
-    name: 'home_recovery_failed',
-    workout: () => FakeWorkoutNotifier(
-      recoveryStatus: WorkoutRecoveryStatus.failed,
-    ),
-  );
 }

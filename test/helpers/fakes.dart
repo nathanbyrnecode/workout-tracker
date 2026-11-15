@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/place_search/place_search_service.dart';
 import 'package:gym_tracker_app/data/theme_mode_storage.dart';
 import 'package:gym_tracker_app/models/app_notification.dart';
@@ -12,6 +16,8 @@ import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 
 /// Lets a test make a fake's next write fail. Notifiers expose only their
 /// state, so switches like this live on a separate object.
@@ -29,6 +35,10 @@ class WorkoutSpy {
 
   /// What the next [FakeWorkoutNotifier.endWorkout] reports.
   EndWorkoutOutcome endOutcome = EndWorkoutOutcome.saved;
+
+  /// When set with [EndWorkoutOutcome.savedLocally], the upload is still
+  /// running when ending returns, and completes with this.
+  Future<bool>? stillUploading;
 }
 
 /// What a [FakeAuthNotifier] was asked to do.
@@ -67,21 +77,23 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
 
   @override
   CurrentWorkoutStateData build() => (
-        workoutId: startedAt == null ? null : 1,
+        workoutId: startedAt == null ? null : testId(1),
         workoutStartDateTime: startedAt,
         workoutEndDateTime: null,
         isInProgress: startedAt != null,
         exercises: exercises,
         currentExercise: currentExercise,
         recoveryStatus: recoveryStatus,
-        isStartingWorkout: false,
       );
 
   @override
   Future<void> startWorkout() async => spy.starts++;
 
   @override
-  Future<void> restoreActiveWorkout() async => spy.retries++;
+  Future<Workout?> restoreActiveWorkout() async {
+    spy.retries++;
+    return null;
+  }
 
   /// Turn on to make the next discard fail.
   final failDiscard = FailSwitch();
@@ -102,19 +114,23 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   }) async {
     spy.endedWorkouts++;
     endedWith.add((title: title, type: locationType, place: place));
+    final kept = spy.endOutcome == EndWorkoutOutcome.saved ||
+        spy.endOutcome == EndWorkoutOutcome.savedLocally;
     return (
       outcome: spy.endOutcome,
-      workout: spy.endOutcome == EndWorkoutOutcome.saved
+      workout: kept
           ? Workout(
-              1,
+              testId(1),
               startedAt,
               startedAt?.add(const Duration(minutes: 5)),
               {for (final exercise in exercises) exercise.id: exercise},
               title: title,
               locationType: locationType,
               place: place,
+              synced: spy.endOutcome == EndWorkoutOutcome.saved,
             )
           : null,
+      stillUploading: spy.stillUploading,
     );
   }
 
@@ -259,35 +275,45 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
   FakeManualWorkoutsNotifier([this.workouts = const []]);
 
   final List<ManualWorkout> workouts;
-  final deletedIds = <int>[];
+  final deletedIds = <String>[];
   final added = <ManualWorkout>[];
 
   /// Turn on to make adds fail.
   final failAdds = FailSwitch();
 
+  /// Turn on to make adds keep the workout on the device only.
+  final keepLocally = FailSwitch();
+
+  /// Holds the still-running upload to return from the next add, if any.
+  final stillUploading = <Future<bool>>[];
+
   @override
   ManualWorkoutsStateData build() => (workouts: workouts);
 
   @override
-  Future<ManualWorkout?> addManualWorkout({
+  Future<LogWorkoutResult> addManualWorkout({
     required DateTime date,
     required String title,
     required LocationType locationType,
     Place? place,
   }) async {
     if (failAdds.on) {
-      return null;
+      return (workout: null, stillUploading: null);
     }
     final workout = ManualWorkout(
-      id: 1000 + added.length,
+      id: testId(1000 + added.length),
       date: date,
       title: title.trim(),
       locationType: locationType,
       place: place,
+      synced: !keepLocally.on,
     );
     added.add(workout);
     state = (workouts: [...state.workouts, workout]);
-    return workout;
+    return (
+      workout: workout,
+      stillUploading: stillUploading.isEmpty ? null : stillUploading.first,
+    );
   }
 
   @override
@@ -295,7 +321,7 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
 
   @override
   Future<bool> updateManualWorkout(
-    int id, {
+    String id, {
     required String title,
     required LocationType locationType,
     Place? place,
@@ -319,7 +345,7 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
   }
 
   @override
-  Future<bool> deleteManualWorkout(int id) async {
+  Future<bool> deleteManualWorkout(String id) async {
     deletedIds.add(id);
     state = (workouts: state.workouts.where((w) => w.id != id).toList());
     return true;
@@ -419,6 +445,11 @@ class FakeThemeModeStorage implements ThemeModeStorage {
   Future<void> write(String value) async => this.value = value;
 }
 
+/// A UUID-shaped workout ID for tests. IDs made from bigger numbers sort
+/// after smaller ones, as the old numeric IDs did.
+String testId(int n) =>
+    '00000000-0000-4000-8000-${n.toString().padLeft(12, '0')}';
+
 /// A finished workout for tests. Each exercise is a name and its sets as
 /// (weight, reps).
 Workout testWorkout(
@@ -435,7 +466,7 @@ Workout testWorkout(
   var exerciseId = id * 100;
   var setId = id * 1000;
   return Workout(
-    id,
+    testId(id),
     start,
     start.add(duration),
     {
@@ -464,7 +495,7 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
 
   /// Turn on to make edits and deletes report failure.
   final failWrites = FailSwitch();
-  final deletedIds = <int>[];
+  final deletedIds = <String>[];
 
   @override
   PastWorkoutsStateData build() => (workouts: workouts);
@@ -474,7 +505,7 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
 
   @override
   Future<bool> updateWorkout(
-    int workoutId, {
+    String workoutId, {
     required String title,
     required LocationType locationType,
     Place? place,
@@ -503,7 +534,7 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
   }
 
   @override
-  Future<bool> deleteWorkout(int workoutId) async {
+  Future<bool> deleteWorkout(String workoutId) async {
     if (failWrites.on) {
       return false;
     }
@@ -513,3 +544,174 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
     return true;
   }
 }
+
+/// Keeps workouts in memory instead of files. Values go through JSON on the
+/// way in and out, as they would on disk.
+class MemoryWorkoutStore implements LocalWorkoutStore {
+  final active = <String, String>{};
+  final pending = <String, Map<String, String>>{};
+
+  /// Turn on to make every write fail, like a full disk.
+  final failWrites = FailSwitch();
+
+  String _key(String userId, PendingKind kind) => '$userId/${kind.folder}';
+
+  Map<String, dynamic> _decode(String text) =>
+      jsonDecode(text) as Map<String, dynamic>;
+
+  void _checkWrite() {
+    if (failWrites.on) {
+      throw const FileSystemLikeException();
+    }
+  }
+
+  /// The pending entries of [kind] for [userId], by ID.
+  Map<String, Map<String, dynamic>> pendingFor(
+    String userId, [
+    PendingKind kind = PendingKind.workout,
+  ]) =>
+      {
+        for (final MapEntry(:key, :value)
+            in (pending[_key(userId, kind)] ?? {}).entries)
+          key: _decode(value),
+      };
+
+  @override
+  Future<Map<String, dynamic>?> readActive(String userId) async {
+    final text = active[userId];
+    return text == null ? null : _decode(text);
+  }
+
+  @override
+  Future<void> writeActive(String userId, Map<String, dynamic> json) async {
+    _checkWrite();
+    active[userId] = jsonEncode(json);
+  }
+
+  @override
+  Future<void> deleteActive(String userId) async {
+    _checkWrite();
+    active.remove(userId);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> readPending(
+    String userId,
+    PendingKind kind,
+  ) async =>
+      pendingFor(userId, kind).values.toList();
+
+  @override
+  Future<void> writePending(
+    String userId,
+    PendingKind kind,
+    String id,
+    Map<String, dynamic> json,
+  ) async {
+    _checkWrite();
+    (pending[_key(userId, kind)] ??= {})[id] = jsonEncode(json);
+  }
+
+  @override
+  Future<void> deletePending(String userId, PendingKind kind, String id) async {
+    _checkWrite();
+    pending[_key(userId, kind)]?.remove(id);
+  }
+
+  @override
+  Future<void> deleteUser(String userId) async {
+    _checkWrite();
+    active.remove(userId);
+    pending.removeWhere((key, _) => key.startsWith('$userId/'));
+  }
+}
+
+class FileSystemLikeException implements Exception {
+  const FileSystemLikeException();
+
+  @override
+  String toString() => 'FileSystemLikeException: write failed';
+}
+
+/// Records the messages the app would show in a SnackBar.
+class RecordingMessenger extends AppMessenger {
+  RecordingMessenger() : super(GlobalKey<ScaffoldMessengerState>());
+
+  final messages = <String>[];
+
+  @override
+  void show(String message) => messages.add(message);
+}
+
+/// Workouts waiting on the device, with a Sync that never touches the
+/// network. A successful sync moves them all to [synced].
+class FakeWorkoutSyncNotifier extends WorkoutSyncNotifier {
+  FakeWorkoutSyncNotifier({
+    this.workouts = const [],
+    this.manualWorkouts = const [],
+    this.syncing = false,
+  });
+
+  /// Starts as if a sync were already running.
+  final bool syncing;
+
+  final List<Workout> workouts;
+  final List<ManualWorkout> manualWorkouts;
+
+  /// Turn on to make Sync fail for everything waiting.
+  final failSync = FailSwitch();
+
+  /// How many times Sync ran.
+  final syncs = <int>[];
+
+  @override
+  WorkoutSyncStateData build() => (
+        pendingWorkouts: workouts,
+        pendingManualWorkouts: manualWorkouts,
+        uploading: const {},
+        isSyncing: syncing,
+      );
+
+  @override
+  Future<void> load() async {}
+
+  @override
+  Future<int> syncAll() async {
+    final waiting =
+        state.pendingWorkouts.length + state.pendingManualWorkouts.length;
+    syncs.add(waiting);
+    if (failSync.on) {
+      return waiting;
+    }
+    state = (
+      pendingWorkouts: const [],
+      pendingManualWorkouts: const [],
+      uploading: const {},
+      isSyncing: false,
+    );
+    return 0;
+  }
+}
+
+/// [workout] as it is before it reaches the server.
+Workout notSynced(Workout workout) => Workout(
+      workout.id,
+      workout.startTime,
+      workout.endTime,
+      workout.exercises,
+      title: workout.title,
+      locationType: workout.locationType,
+      place: workout.place,
+      synced: false,
+    );
+
+/// [workout] as it is before it reaches the server.
+ManualWorkout notSyncedManual(ManualWorkout workout) => ManualWorkout(
+      id: workout.id,
+      date: workout.date,
+      title: workout.title,
+      locationType: workout.locationType,
+      place: workout.place,
+      createdAt: workout.createdAt,
+      synced: false,
+    );

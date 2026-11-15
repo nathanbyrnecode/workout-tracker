@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/data/workout_history.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_history_card.dart';
-import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/util/date_format.dart';
 import 'package:gym_tracker_app/util/number_format.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 
 /// Home's Previous tab, as a sliver for Home's scroll view: finished workouts
 /// grouped by year and month, newest first. The year header sticks to the top
@@ -31,8 +31,7 @@ class PreviousWorkoutsArea extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.tokens;
-    final years =
-        groupWorkoutsByMonth(ref.watch(pastWorkoutsProvider).workouts);
+    final years = groupWorkoutsByMonth(ref.watch(allWorkoutsProvider));
 
     if (years.isEmpty) {
       return SliverToBoxAdapter(

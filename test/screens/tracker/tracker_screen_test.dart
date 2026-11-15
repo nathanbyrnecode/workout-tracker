@@ -15,6 +15,7 @@ import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/widgets/app_button.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 
 import '../../helpers/demo.dart';
 import '../../helpers/fakes.dart';
@@ -22,6 +23,7 @@ import '../../helpers/pump.dart';
 
 typedef Taps = ({
   FakeManualWorkoutsNotifier manual,
+  RecordingMessenger messenger,
   List<Workout> opened,
   List<ManualWorkout> openedManual,
   List<int> openedLive,
@@ -37,6 +39,7 @@ Future<Taps> pumpTracker(
       FakeManualWorkoutsNotifier(manual ?? demoManualWorkouts());
   final Taps taps = (
     manual: manualNotifier,
+    messenger: RecordingMessenger(),
     opened: [],
     openedManual: [],
     openedLive: [],
@@ -56,6 +59,7 @@ Future<Taps> pumpTracker(
       manualWorkoutsProvider.overrideWith(() => manualNotifier),
       placeSearchServiceProvider
           .overrideWithValue(const UnavailablePlaceSearchService()),
+      appMessengerProvider.overrideWithValue(taps.messenger),
     ],
   );
   return taps;
@@ -114,7 +118,7 @@ void main() {
     expect(find.text('PureGym Manchester Piccadilly'), findsOneWidget);
 
     await tester.tap(find.text('Push day'));
-    expect(taps.opened.single.id, 1);
+    expect(taps.opened.single.id, testId(1));
   });
 
   testWidgets('picking a day shows what was logged on it', (tester) async {
@@ -135,7 +139,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
 
     await tester.tap(find.text('Morning run'));
-    expect(taps.openedManual.single.id, 1);
+    expect(taps.openedManual.single.id, testId(1));
   });
 
   testWidgets('an empty day says so and offers to log a workout',
@@ -272,6 +276,31 @@ void main() {
       expect(find.text('Evening swim'), findsOneWidget);
     });
 
+    testWidgets('one that could not upload is listed and a message says so',
+        (tester) async {
+      final taps = await pumpTracker(tester);
+      taps.manual.keepLocally.on = true;
+      await openLogSheet(tester, 'Log workout');
+      await tester.enterText(find.byType(TextField).first, 'Hill walk');
+      await tester.pump();
+      await tester.tap(find.text('Add workout'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add workout'), findsNothing);
+      expect(find.text('Hill walk'), findsOneWidget);
+      expect(taps.messenger.messages, [workoutNotSavedMessage]);
+    });
+
+    testWidgets('a synced one shows no message', (tester) async {
+      final taps = await pumpTracker(tester);
+      await openLogSheet(tester, 'Log workout');
+      await tester.enterText(find.byType(TextField).first, 'Hill walk');
+      await tester.pump();
+      await tester.tap(find.text('Add workout'));
+      await tester.pumpAndSettle();
+      expect(taps.messenger.messages, isEmpty);
+    });
+
     testWidgets('a failed add keeps the sheet open with a message',
         (tester) async {
       final taps = await pumpTracker(tester);
@@ -363,7 +392,7 @@ void main() {
       manual: [
         ...demoManualWorkouts(),
         ManualWorkout(
-          id: 9,
+          id: testId(9),
           date: DateTime(2026, 10, 6),
           title: 'Lunchtime walk',
           locationType: demoManualWorkouts().first.locationType,

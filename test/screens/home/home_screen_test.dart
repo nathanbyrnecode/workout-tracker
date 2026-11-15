@@ -170,22 +170,6 @@ void main() {
     expect(find.text('INACTIVE'), findsOneWidget);
   });
 
-  testWidgets('recovery failed: explains and offers a retry', (tester) async {
-    final workout = FakeWorkoutNotifier(
-      recoveryStatus: WorkoutRecoveryStatus.failed,
-    );
-    await pumpHome(tester, workout: workout);
-
-    expect(
-      find.textContaining('Could not check your saved workout.'),
-      findsOneWidget,
-    );
-    expect(find.text('Start workout'), findsNothing);
-
-    await tester.tap(find.text('Retry workout recovery'));
-    expect(workout.spy.retries, 1);
-  });
-
   testWidgets('the toggle switches between Current and Previous',
       (tester) async {
     await pumpHome(tester, workout: FakeWorkoutNotifier());

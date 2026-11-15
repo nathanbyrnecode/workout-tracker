@@ -251,7 +251,7 @@ void main() {
     await tester.tap(find.widgetWithText(AppButton, 'Delete workout').last);
     await tester.pumpAndSettle();
 
-    expect(app.history.deletedIds, [2]);
+    expect(app.history.deletedIds, [testId(2)]);
     expect(find.byType(WorkoutDetailScreen), findsNothing);
     expect(find.text('OCTOBER'), findsOneWidget);
     expect(find.text('05/10/26'), findsNothing);
@@ -294,7 +294,7 @@ void main() {
     // Back on the Tracker, with that day still selected and now empty.
     expect(find.byType(TrackerScreen), findsOneWidget);
     expect(find.byType(WorkoutDetailScreen), findsNothing);
-    expect(app.history.deletedIds, [2]);
+    expect(app.history.deletedIds, [testId(2)]);
     expect(find.text('Yesterday'), findsOneWidget);
     expect(find.text('No workout logged on this day'), findsOneWidget);
     // The streak that ran through yesterday is broken.
@@ -374,7 +374,7 @@ void main() {
     await tester.tap(find.widgetWithText(AppButton, 'Delete workout').last);
     await tester.pumpAndSettle();
 
-    expect(app.manual.deletedIds, [3]);
+    expect(app.manual.deletedIds, [testId(3)]);
     expect(find.byType(TrackerScreen), findsOneWidget);
     expect(find.text('No workout logged on this day'), findsOneWidget);
   });
