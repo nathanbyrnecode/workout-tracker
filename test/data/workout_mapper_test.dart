@@ -7,9 +7,9 @@ void main() {
       () {
     final workouts = mapWorkoutRows(
       workoutRows: [
-        {'id': 1, 'start_time': '2026-07-25T09:00:00Z', 'end_time': null},
+        {'id': 'w1', 'start_time': '2026-07-25T09:00:00Z', 'end_time': null},
         {
-          'id': 2,
+          'id': 'w2',
           'start_time': '2026-07-25T09:00:00Z',
           'end_time': '2026-07-25T10:00:00Z'
         },
@@ -17,13 +17,13 @@ void main() {
       exerciseRows: [],
       setRows: [],
     );
-    expect(workouts.map((workout) => workout.id).toList(), [2]);
+    expect(workouts.map((workout) => workout.id).toList(), ['w2']);
   });
   test('maps Supabase workout rows into the existing workout model', () {
     final workouts = mapWorkoutRows(
       workoutRows: [
         {
-          'id': 1,
+          'id': 'w1',
           'start_time': '2026-07-25T09:00:00Z',
           'end_time': '2026-07-25T10:00:00Z',
         },
@@ -31,7 +31,7 @@ void main() {
       exerciseRows: [
         {
           'id': 2,
-          'workout_id': 1,
+          'workout_id': 'w1',
           'name': 'Squat',
           'start_time': '2026-07-25T09:05:00Z',
           'end_time': '2026-07-25T09:20:00Z',
@@ -48,7 +48,7 @@ void main() {
     );
 
     expect(workouts, hasLength(1));
-    expect(workouts.single.id, 1);
+    expect(workouts.single.id, 'w1');
     expect(workouts.single.startTime?.toUtc(), DateTime.utc(2026, 7, 25, 9));
     expect(workouts.single.endTime?.toUtc(), DateTime.utc(2026, 7, 25, 10));
 
@@ -62,7 +62,7 @@ void main() {
     final workouts = mapWorkoutRows(
       workoutRows: [
         {
-          'id': 1,
+          'id': 'w1',
           'start_time': '2026-07-25T09:00:00Z',
           'end_time': '2026-07-25T10:00:00Z',
           'title': 'Push day',
@@ -76,7 +76,7 @@ void main() {
       exerciseRows: [
         {
           'id': 2,
-          'workout_id': 1,
+          'workout_id': 'w1',
           'name': 'Squat',
           'start_time': '2026-07-25T09:05:00Z',
           'end_time': '2026-07-25T09:20:00Z',
@@ -111,7 +111,7 @@ void main() {
     final workout = mapWorkoutRows(
       workoutRows: [
         {
-          'id': 1,
+          'id': 'w1',
           'start_time': '2026-07-25T09:00:00Z',
           'end_time': '2026-07-25T10:00:00Z',
           'title': 'Legs',
@@ -134,12 +134,12 @@ void main() {
     final workouts = mapWorkoutRows(
       workoutRows: [
         {
-          'id': 1,
+          'id': 'w1',
           'start_time': '2026-07-25T09:00:00Z',
           'end_time': '2026-07-25T10:00:00Z',
         },
         {
-          'id': 2,
+          'id': 'w2',
           'start_time': '2026-07-26T09:00:00Z',
           'end_time': '2026-07-26T10:00:00Z',
           'title': '  ',
@@ -149,7 +149,7 @@ void main() {
       exerciseRows: [
         {
           'id': 2,
-          'workout_id': 1,
+          'workout_id': 'w1',
           'name': 'Squat',
           'start_time': '2026-07-25T09:05:00Z',
           'end_time': '2026-07-25T09:20:00Z',
@@ -174,7 +174,7 @@ void main() {
     final workout = mapWorkoutRows(
       workoutRows: [
         {
-          'id': 1,
+          'id': 'w1',
           'start_time': '2026-10-31T12:50:00Z',
           'end_time': '2026-10-31T14:10:00Z',
         },
@@ -182,7 +182,7 @@ void main() {
       exerciseRows: [
         {
           'id': 2,
-          'workout_id': 1,
+          'workout_id': 'w1',
           'name': 'Bench Press',
           'start_time': '2026-10-31T12:52:00Z',
           'end_time': '2026-10-31T13:18:00Z',
@@ -204,7 +204,7 @@ void main() {
     final workout = mapWorkoutRows(
       workoutRows: [
         {
-          'id': 1,
+          'id': 'w1',
           'start_time': '2026-07-25T09:00:00Z',
           'end_time': '2026-07-25T10:00:00Z',
         },
@@ -212,7 +212,7 @@ void main() {
       exerciseRows: [
         {
           'id': 2,
-          'workout_id': 1,
+          'workout_id': 'w1',
           'name': 'Squat',
           'start_time': '2026-07-25T09:05:00Z',
           'end_time': '2026-07-25T09:20:00Z',
@@ -231,7 +231,7 @@ void main() {
     final workout = mapWorkoutRows(
       workoutRows: [
         {
-          'id': 1,
+          'id': 'w1',
           'start_time': '2026-07-25T09:00:00Z',
           'end_time': '2026-07-25T10:00:00Z',
         },
@@ -239,14 +239,14 @@ void main() {
       exerciseRows: [
         {
           'id': 3,
-          'workout_id': 1,
+          'workout_id': 'w1',
           'name': 'Dips',
           'start_time': '2026-07-25T09:30:00Z',
           'end_time': '2026-07-25T09:40:00Z',
         },
         {
           'id': 2,
-          'workout_id': 1,
+          'workout_id': 'w1',
           'name': 'Bench Press',
           'start_time': '2026-07-25T09:05:00Z',
           'end_time': '2026-07-25T09:25:00Z',

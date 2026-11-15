@@ -95,17 +95,17 @@ Defined in `supabase/migrations/`. Every table has row level security; `anon`
 has no access.
 
 ```
-workouts        id bigint PK, user_id uuid → auth.users (cascade),
+workouts        id uuid PK (made by the app), user_id uuid → auth.users (cascade),
                 start_time, end_time, created_at,
                 title, location_type (Gym|Home|Park|Other),
                 place_name, place_address, place_lat, place_lng  (all nullable)
-exercises       id bigint PK, workout_id → workouts (cascade), name,
+exercises       id bigint PK, workout_id uuid → workouts (cascade), name,
                 start_time, end_time, exercise_number,
                 sets, reps, weight          (legacy columns, unused)
 exercise_sets   id bigint PK, exercise_id → exercises (cascade),
                 set_number, reps integer, weight double precision,
                 created_at timestamptz default now() (null on older rows)
-manual_workouts id bigint PK, user_id uuid → auth.users (cascade),
+manual_workouts id uuid PK (made by the app), user_id uuid → auth.users (cascade),
                 date date, title, location_type, place_* columns, created_at.
                 Many rows per date. Removed with the user by the cascade.
 apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
@@ -123,6 +123,13 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
   hosted project on 2026-10-06. The file's version matches the one recorded in
   the project's migration history. Builds from `redesign` select the new
   columns, so any other project they point at needs this migration too.
+- `20261115120000_offline_first_workouts.sql` makes the workout and manual
+  workout IDs UUIDs (`dev/decisions.md` 22), deletes unfinished workout rows,
+  and adds `save_workout(payload jsonb)`. That function inserts one finished
+  workout with its exercises and sets in a single transaction, owned by the
+  caller (`auth.uid()`), runs as the caller so RLS applies, and returns the
+  ID without changing anything if that ID is already saved. Builds from this
+  change need the migration on the project they point at.
 
 ### When rows are written
 

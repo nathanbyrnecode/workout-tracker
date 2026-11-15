@@ -10,6 +10,7 @@ import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 part 'current_workout_state.g.dart';
 
@@ -23,7 +24,7 @@ typedef EndWorkoutResult = ({EndWorkoutOutcome outcome, Workout? workout});
 const workoutRecoveryWindow = Duration(hours: 12);
 
 typedef CurrentWorkoutStateData = ({
-  int? workoutId,
+  String? workoutId,
   DateTime? workoutStartDateTime,
   DateTime? workoutEndDateTime,
   bool isInProgress,
@@ -71,7 +72,7 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
   }
 
   void _setState({
-    int? workoutId,
+    String? workoutId,
     DateTime? workoutStartDateTime,
     DateTime? workoutEndDateTime,
     bool? isInProgress,
@@ -199,13 +200,14 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       final row = await _client
           .from('workouts')
           .insert({
+            'id': const Uuid().v4(),
             'user_id': user.id,
             'start_time': startTime.toUtc().toIso8601String(),
             'created_at': startTime.toUtc().toIso8601String(),
           })
           .select('id')
           .single();
-      final rowId = (row['id'] as num).toInt();
+      final rowId = row['id'] as String;
 
       if (!ref.mounted ||
           generation != _recoveryGeneration ||
@@ -620,7 +622,7 @@ CurrentWorkoutStateData mapActiveWorkoutRow(
     }
   }
   return (
-    workoutId: (row['id'] as num).toInt(),
+    workoutId: row['id'] as String,
     workoutStartDateTime: startTime.toLocal(),
     workoutEndDateTime: null,
     isInProgress: true,

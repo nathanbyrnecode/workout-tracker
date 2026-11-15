@@ -67,7 +67,7 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
 
   @override
   CurrentWorkoutStateData build() => (
-        workoutId: startedAt == null ? null : 1,
+        workoutId: startedAt == null ? null : testId(1),
         workoutStartDateTime: startedAt,
         workoutEndDateTime: null,
         isInProgress: startedAt != null,
@@ -106,7 +106,7 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
       outcome: spy.endOutcome,
       workout: spy.endOutcome == EndWorkoutOutcome.saved
           ? Workout(
-              1,
+              testId(1),
               startedAt,
               startedAt?.add(const Duration(minutes: 5)),
               {for (final exercise in exercises) exercise.id: exercise},
@@ -259,7 +259,7 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
   FakeManualWorkoutsNotifier([this.workouts = const []]);
 
   final List<ManualWorkout> workouts;
-  final deletedIds = <int>[];
+  final deletedIds = <String>[];
   final added = <ManualWorkout>[];
 
   /// Turn on to make adds fail.
@@ -279,7 +279,7 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
       return null;
     }
     final workout = ManualWorkout(
-      id: 1000 + added.length,
+      id: testId(1000 + added.length),
       date: date,
       title: title.trim(),
       locationType: locationType,
@@ -295,7 +295,7 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
 
   @override
   Future<bool> updateManualWorkout(
-    int id, {
+    String id, {
     required String title,
     required LocationType locationType,
     Place? place,
@@ -319,7 +319,7 @@ class FakeManualWorkoutsNotifier extends ManualWorkoutsNotifier {
   }
 
   @override
-  Future<bool> deleteManualWorkout(int id) async {
+  Future<bool> deleteManualWorkout(String id) async {
     deletedIds.add(id);
     state = (workouts: state.workouts.where((w) => w.id != id).toList());
     return true;
@@ -419,6 +419,11 @@ class FakeThemeModeStorage implements ThemeModeStorage {
   Future<void> write(String value) async => this.value = value;
 }
 
+/// A UUID-shaped workout ID for tests. IDs made from bigger numbers sort
+/// after smaller ones, as the old numeric IDs did.
+String testId(int n) =>
+    '00000000-0000-4000-8000-${n.toString().padLeft(12, '0')}';
+
 /// A finished workout for tests. Each exercise is a name and its sets as
 /// (weight, reps).
 Workout testWorkout(
@@ -435,7 +440,7 @@ Workout testWorkout(
   var exerciseId = id * 100;
   var setId = id * 1000;
   return Workout(
-    id,
+    testId(id),
     start,
     start.add(duration),
     {
@@ -464,7 +469,7 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
 
   /// Turn on to make edits and deletes report failure.
   final failWrites = FailSwitch();
-  final deletedIds = <int>[];
+  final deletedIds = <String>[];
 
   @override
   PastWorkoutsStateData build() => (workouts: workouts);
@@ -474,7 +479,7 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
 
   @override
   Future<bool> updateWorkout(
-    int workoutId, {
+    String workoutId, {
     required String title,
     required LocationType locationType,
     Place? place,
@@ -503,7 +508,7 @@ class FakePastWorkoutsNotifier extends PastWorkoutsNotifier {
   }
 
   @override
-  Future<bool> deleteWorkout(int workoutId) async {
+  Future<bool> deleteWorkout(String workoutId) async {
     if (failWrites.on) {
       return false;
     }

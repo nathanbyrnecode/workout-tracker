@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 
 Map<String, dynamic> savedWorkout({String? endTime}) => {
-      'id': 42,
+      'id': 'w42',
       'start_time': '2026-09-30T09:00:00Z',
       'end_time': endTime,
       'exercises': [
@@ -42,7 +42,7 @@ void main() {
     final state = mapActiveWorkoutRow(savedWorkout(), now: now);
     expect(state.recoveryStatus, WorkoutRecoveryStatus.ready);
     expect(state.isInProgress, isTrue);
-    expect(state.workoutId, 42);
+    expect(state.workoutId, 'w42');
     expect(state.workoutStartDateTime?.toUtc(), DateTime.utc(2026, 9, 30, 9));
     expect(
         now.difference(state.workoutStartDateTime!), const Duration(hours: 8));

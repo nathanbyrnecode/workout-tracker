@@ -365,21 +365,22 @@ void main() {
     'recorded workout detail',
     name: 'detail',
     tab: AppTab.home,
-    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
+    screen: () => WorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
   );
 
   detailGolden(
     'manual workout detail',
     name: 'manual_detail',
     tab: AppTab.tracker,
-    screen: () => ManualWorkoutDetailScreen(workoutId: 1, onClose: () {}),
+    screen: () =>
+        ManualWorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
   );
 
   detailGolden(
     'edit workout sheet',
     name: 'sheet_edit_workout',
     tab: AppTab.home,
-    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
+    screen: () => WorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
     setUp: (tester) => tester.tap(find.text('Edit')),
   );
 
@@ -387,7 +388,7 @@ void main() {
     'delete workout sheet',
     name: 'sheet_delete_workout',
     tab: AppTab.home,
-    screen: () => WorkoutDetailScreen(workoutId: 1, onClose: () {}),
+    screen: () => WorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
     setUp: (tester) async {
       await tester.scrollUntilVisible(find.text('Delete workout'), 200);
       await tester.tap(find.text('Delete workout'));

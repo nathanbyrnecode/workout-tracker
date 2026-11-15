@@ -13,6 +13,10 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:uuid/uuid.dart';
+
+import '../helpers/fakes.dart';
+
 Future<void> signIn(SupabaseClient client, [String userId = 'user-a']) =>
     client.auth.recoverSession(jsonEncode({
       'access_token': 'test-token',
@@ -27,7 +31,7 @@ Future<void> signIn(SupabaseClient client, [String userId = 'user-a']) =>
     }));
 
 Map<String, dynamic> activeWorkout() => {
-      'id': 42,
+      'id': testId(42),
       'start_time': DateTime.now()
           .subtract(const Duration(hours: 8))
           .toUtc()
@@ -109,7 +113,7 @@ void main() {
     expect(query['select'], contains('exercise_sets'));
     response.complete(jsonResponse([activeWorkout()]));
     await recovery;
-    expect(container.read(currentWorkoutProvider).workoutId, 42);
+    expect(container.read(currentWorkoutProvider).workoutId, testId(42));
     await notifier.startWorkout();
     expect(requests, hasLength(1));
   });
@@ -317,7 +321,7 @@ void main() {
       final update =
           requests.firstWhere((request) => request.method == 'PATCH');
       expect(update.url.path, endsWith('/workouts'));
-      expect(update.url.queryParameters['id'], 'eq.42');
+      expect(update.url.queryParameters['id'], 'eq.${testId(42)}');
       expect(update.url.queryParameters['user_id'], 'eq.user-a');
       final body = jsonDecode(update.body) as Map<String, dynamic>;
       expect(body['title'], 'Push day');
@@ -329,7 +333,7 @@ void main() {
       expect(DateTime.parse(body['end_time'] as String).isUtc, isTrue);
 
       expect(result.outcome, EndWorkoutOutcome.saved);
-      expect(result.workout?.id, 42);
+      expect(result.workout?.id, testId(42));
       expect(result.workout?.title, 'Push day');
       expect(result.workout?.locationType, LocationType.park);
       expect(result.workout?.place?.name, 'Mayfield Park');
@@ -389,7 +393,7 @@ void main() {
       expect(result.outcome, EndWorkoutOutcome.failed);
       final state = container.read(currentWorkoutProvider);
       expect(state.isInProgress, isTrue);
-      expect(state.workoutId, 42);
+      expect(state.workoutId, testId(42));
       expect(state.exercises, hasLength(1));
     });
   });
@@ -407,7 +411,7 @@ void main() {
       final request = requests.single;
       expect(request.method, 'DELETE');
       expect(request.url.path, endsWith('/workouts'));
-      expect(request.url.queryParameters['id'], 'eq.42');
+      expect(request.url.queryParameters['id'], 'eq.${testId(42)}');
       expect(request.url.queryParameters['user_id'], 'eq.user-a');
       final state = container.read(currentWorkoutProvider);
       expect(state.isInProgress, isFalse);
@@ -423,7 +427,7 @@ void main() {
 
       expect(await notifier.discardWorkout(), isFalse);
       expect(container.read(currentWorkoutProvider).isInProgress, isTrue);
-      expect(container.read(currentWorkoutProvider).workoutId, 42);
+      expect(container.read(currentWorkoutProvider).workoutId, testId(42));
     });
   });
 
@@ -431,7 +435,7 @@ void main() {
     test('inserts a row for the calendar day and adds it to the list',
         () async {
       respond = (request) async => jsonResponse({
-            'id': 9,
+            'id': testId(9),
             'date': '2026-10-01',
             'title': 'Morning run',
             'location_type': 'Park',
@@ -452,7 +456,9 @@ void main() {
       final request = requests.single;
       expect(request.method, 'POST');
       expect(request.url.path, endsWith('/manual_workouts'));
-      expect(jsonDecode(request.body), {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(Uuid.isValidUUID(fromString: body.remove('id') as String), isTrue);
+      expect(body, {
         'user_id': 'user-a',
         'date': '2026-10-01',
         'title': 'Morning run',
@@ -462,17 +468,18 @@ void main() {
         'place_lat': null,
         'place_lng': null,
       });
-      expect(added?.id, 9);
+      expect(added?.id, testId(9));
       expect(added?.date, DateTime(2026, 10, 1));
       expect(container.read(manualWorkoutsProvider).workouts.single.title,
           'Morning run');
     });
 
     test('two adds on one day make two entries', () async {
-      var id = 0;
+      var hour = 0;
       respond = (request) async {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        return jsonResponse({...body, 'id': ++id});
+        return jsonResponse(
+            {...body, 'created_at': '2026-10-01T1${++hour}:00:00Z'});
       };
       final notifier = container.read(manualWorkoutsProvider.notifier);
       for (final title in ['Morning run', 'Evening swim']) {
@@ -524,7 +531,7 @@ void main() {
         if (request.url.path.endsWith('/workouts')) {
           return jsonResponse([
             {
-              'id': 7,
+              'id': testId(7),
               'start_time': '2026-10-05T09:00:00Z',
               'end_time': '2026-10-05T10:00:00Z',
               'title': 'Pull day',
@@ -544,11 +551,11 @@ void main() {
         () async {
       await loadHistory();
       respond = (_) async => jsonResponse([
-            {'id': 7}
+            {'id': testId(7)}
           ]);
       final saved =
           await container.read(pastWorkoutsProvider.notifier).updateWorkout(
-                7,
+                testId(7),
                 title: ' Back and biceps ',
                 locationType: LocationType.home,
               );
@@ -556,7 +563,7 @@ void main() {
       expect(saved, isTrue);
       final update = requests.single;
       expect(update.method, 'PATCH');
-      expect(update.url.queryParameters['id'], 'eq.7');
+      expect(update.url.queryParameters['id'], 'eq.${testId(7)}');
       expect(update.url.queryParameters['user_id'], 'eq.user-a');
       final body = jsonDecode(update.body) as Map<String, dynamic>;
       expect(body['title'], 'Back and biceps');
@@ -575,7 +582,7 @@ void main() {
       respond = (_) async => jsonResponse([]);
       final notifier = container.read(pastWorkoutsProvider.notifier);
       expect(
-        await notifier.updateWorkout(7,
+        await notifier.updateWorkout(testId(7),
             title: 'New', locationType: LocationType.home),
         isFalse,
       );
@@ -585,7 +592,7 @@ void main() {
       // An empty title never reaches the server.
       requests.clear();
       expect(
-        await notifier.updateWorkout(7,
+        await notifier.updateWorkout(testId(7),
             title: '   ', locationType: LocationType.home),
         isFalse,
       );
@@ -595,10 +602,12 @@ void main() {
     test('a delete removes the workout and reports it', () async {
       await loadHistory();
       respond = (_) async => jsonResponse([
-            {'id': 7}
+            {'id': testId(7)}
           ]);
       expect(
-        await container.read(pastWorkoutsProvider.notifier).deleteWorkout(7),
+        await container
+            .read(pastWorkoutsProvider.notifier)
+            .deleteWorkout(testId(7)),
         isTrue,
       );
       expect(requests.single.method, 'DELETE');
@@ -608,7 +617,7 @@ void main() {
     test('manual workouts can be edited and deleted', () async {
       respond = (_) async => jsonResponse([
             {
-              'id': 2,
+              'id': testId(2),
               'date': '2026-10-05',
               'title': 'Morning run',
               'location_type': 'Park',
@@ -619,11 +628,11 @@ void main() {
       requests.clear();
 
       respond = (_) async => jsonResponse([
-            {'id': 2}
+            {'id': testId(2)}
           ]);
       expect(
         await notifier.updateManualWorkout(
-          2,
+          testId(2),
           title: 'Evening run',
           locationType: LocationType.other,
           place: const Place(name: 'Canal path'),
@@ -633,7 +642,7 @@ void main() {
       final update = requests.single;
       expect(update.method, 'PATCH');
       expect(update.url.path, endsWith('/manual_workouts'));
-      expect(update.url.queryParameters['id'], 'eq.2');
+      expect(update.url.queryParameters['id'], 'eq.${testId(2)}');
       expect(jsonDecode(update.body), {
         'title': 'Evening run',
         'location_type': 'Other',
@@ -648,7 +657,7 @@ void main() {
       expect(edited.place?.name, 'Canal path');
 
       requests.clear();
-      expect(await notifier.deleteManualWorkout(2), isTrue);
+      expect(await notifier.deleteManualWorkout(testId(2)), isTrue);
       expect(requests.single.method, 'DELETE');
       expect(container.read(manualWorkoutsProvider).workouts, isEmpty);
     });
@@ -658,7 +667,7 @@ void main() {
       () async {
     respond = (_) async => jsonResponse([
           {
-            'id': 2,
+            'id': testId(2),
             'date': '2026-10-05',
             'title': 'Morning run',
             'location_type': 'Park',
@@ -668,7 +677,7 @@ void main() {
             'place_lng': null,
           },
           {
-            'id': 1,
+            'id': testId(1),
             'date': '2026-09-21',
             'title': 'Swim',
             'location_type': 'Other',
@@ -685,11 +694,10 @@ void main() {
     final request = requests.single;
     expect(request.url.path, endsWith('/manual_workouts'));
     expect(request.url.queryParameters['user_id'], 'eq.user-a');
-    expect(request.url.queryParameters['order'],
-        'date.desc.nullslast,id.desc.nullslast');
+    expect(request.url.queryParameters['order'], 'date.desc.nullslast');
 
     final workouts = container.read(manualWorkoutsProvider).workouts;
-    expect(workouts.map((workout) => workout.id), [2, 1]);
+    expect(workouts.map((workout) => workout.id), [testId(2), testId(1)]);
     expect(workouts.first.date, DateTime(2026, 10, 5));
     expect(workouts.first.place?.name, 'Mayfield Park');
 
@@ -727,9 +735,9 @@ void main() {
     await notifier.startWorkout();
     await Future<void>.delayed(Duration.zero);
     expect(requests.where((request) => request.method == 'POST'), hasLength(1));
-    response.complete(jsonResponse({'id': 43}));
+    response.complete(jsonResponse({'id': testId(43)}));
     await start;
-    expect(container.read(currentWorkoutProvider).workoutId, 43);
+    expect(container.read(currentWorkoutProvider).workoutId, testId(43));
     expect(container.read(currentWorkoutProvider).isStartingWorkout, isFalse);
   });
 }

@@ -10,7 +10,7 @@ import '../helpers/fakes.dart';
 final today = DateTime(2026, 10, 7);
 
 ManualWorkout manual(int id, DateTime date) => ManualWorkout(
-      id: id,
+      id: testId(id),
       date: date,
       title: 'Morning run',
       locationType: LocationType.park,
@@ -89,8 +89,8 @@ void main() {
         ManualEntry,
       ]);
       // Recorded workouts are in the order they happened.
-      expect((entries[0] as RecordedEntry).workout.id, 1);
-      expect((entries[1] as RecordedEntry).workout.id, 2);
+      expect((entries[0] as RecordedEntry).workout.id, testId(1));
+      expect((entries[1] as RecordedEntry).workout.id, testId(2));
     });
   });
 

@@ -19,7 +19,7 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
     required this.onClose,
   });
 
-  final int workoutId;
+  final String workoutId;
 
   /// Leaves the screen: Back, or after the workout is deleted.
   final VoidCallback onClose;

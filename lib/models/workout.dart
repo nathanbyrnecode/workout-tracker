@@ -6,13 +6,14 @@ import 'package:gym_tracker_app/models/place.dart';
 class Workout {
   static const fallbackTitle = 'Workout';
 
-  final int _id;
+  final String _id;
   final DateTime? _startTime;
   final DateTime? _endTime;
   final Map<int, Exercise> _exercises;
   final String? _title;
   final LocationType? _locationType;
   final Place? _place;
+  final bool _synced;
 
   Workout(
     this._id,
@@ -22,11 +23,14 @@ class Workout {
     String? title,
     LocationType? locationType,
     Place? place,
+    bool synced = true,
   })  : _title = title,
+        _synced = synced,
         _locationType = locationType,
         _place = place;
 
-  int get id => _id;
+  /// A UUID the app creates when the workout starts.
+  String get id => _id;
   DateTime? get startTime => _startTime;
   DateTime? get endTime => _endTime;
   Map<int, Exercise> get exercises => _exercises;
@@ -37,6 +41,10 @@ class Workout {
   /// Null for workouts saved before locations existed.
   LocationType? get locationType => _locationType;
   Place? get place => _place;
+
+  /// False while the workout is only on this device and has not reached the
+  /// server yet.
+  bool get synced => _synced;
 
   String get displayTitle {
     final title = _title?.trim();

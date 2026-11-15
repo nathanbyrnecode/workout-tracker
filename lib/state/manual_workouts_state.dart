@@ -7,6 +7,7 @@ import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
 import 'package:gym_tracker_app/models/place.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 part 'manual_workouts_state.g.dart';
 
@@ -43,14 +44,14 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
           .from('manual_workouts')
           .select(manualWorkoutColumns)
           .eq('user_id', user.id)
-          .order('date', ascending: false)
-          .order('id', ascending: false);
+          .order('date', ascending: false);
       if (!ref.mounted ||
           generation != _requestGeneration ||
           client.auth.currentUser?.id != user.id) {
         return;
       }
-      state = (workouts: mapManualWorkoutRows(rows));
+      state =
+          (workouts: mapManualWorkoutRows(rows)..sort(compareManualWorkouts),);
     } catch (error, stackTrace) {
       log(
         'Failed to retrieve manual workouts from Supabase.',
@@ -78,6 +79,7 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
       final row = await client
           .from('manual_workouts')
           .insert({
+            'id': const Uuid().v4(),
             'user_id': user.id,
             'date': formatCalendarDate(date),
             'title': title.trim(),
@@ -90,12 +92,8 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
         return null;
       }
       // Newest day first, then newest entry first, as the load orders them.
-      state = (
-        workouts: [...state.workouts, added]..sort((a, b) {
-            final byDate = b.date.compareTo(a.date);
-            return byDate != 0 ? byDate : b.id.compareTo(a.id);
-          }),
-      );
+      state =
+          (workouts: [...state.workouts, added]..sort(compareManualWorkouts),);
       return added;
     } catch (error, stackTrace) {
       log(
@@ -110,7 +108,7 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
   /// Changes a manual workout's title and location. Returns whether the
   /// change was saved.
   Future<bool> updateManualWorkout(
-    int id, {
+    String id, {
     required String title,
     required LocationType locationType,
     Place? place,
@@ -141,6 +139,7 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
               ManualWorkout(
                 id: id,
                 date: workout.date,
+                createdAt: workout.createdAt,
                 title: title.trim(),
                 locationType: locationType,
                 place: place,
@@ -161,7 +160,7 @@ class ManualWorkoutsNotifier extends _$ManualWorkoutsNotifier {
   }
 
   /// Deletes a manual workout. Returns whether it was deleted.
-  Future<bool> deleteManualWorkout(int id) async {
+  Future<bool> deleteManualWorkout(String id) async {
     final client = ref.read(supabaseClientProvider);
     final user = client.auth.currentUser;
     if (user == null) {

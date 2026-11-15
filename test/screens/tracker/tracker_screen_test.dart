@@ -114,7 +114,7 @@ void main() {
     expect(find.text('PureGym Manchester Piccadilly'), findsOneWidget);
 
     await tester.tap(find.text('Push day'));
-    expect(taps.opened.single.id, 1);
+    expect(taps.opened.single.id, testId(1));
   });
 
   testWidgets('picking a day shows what was logged on it', (tester) async {
@@ -135,7 +135,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
 
     await tester.tap(find.text('Morning run'));
-    expect(taps.openedManual.single.id, 1);
+    expect(taps.openedManual.single.id, testId(1));
   });
 
   testWidgets('an empty day says so and offers to log a workout',
@@ -363,7 +363,7 @@ void main() {
       manual: [
         ...demoManualWorkouts(),
         ManualWorkout(
-          id: 9,
+          id: testId(9),
           date: DateTime(2026, 10, 6),
           title: 'Lunchtime walk',
           locationType: demoManualWorkouts().first.locationType,

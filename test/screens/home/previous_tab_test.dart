@@ -98,7 +98,7 @@ void main() {
   testWidgets('tapping a card opens that workout', (tester) async {
     final opened = await pumpPrevious(tester, history: demoHistory());
     await tester.tap(find.text('05/10/26'));
-    expect(opened.single.id, 2);
+    expect(opened.single.id, testId(2));
   });
 
   testWidgets('year and month headers stick, and the next month takes over',
