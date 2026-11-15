@@ -1,9 +1,10 @@
 # FittenUp: agent guide
 
 FittenUp is a workout tracker for iOS and Android (Dart package name
-`gym_tracker_app`). The app is being redesigned to match the handoff in
-`design/workout-tracker/`. This file is the source of truth for every coding
-agent; `CLAUDE.md` imports it.
+`gym_tracker_app`). The app was built from the design handoff in
+`design/workout-tracker/` and has changed a lot since; the shipped app and its
+goldens are now the reference (see "Design rules"). This file is the source of
+truth for every coding agent; `CLAUDE.md` imports it.
 
 ## Stack
 
@@ -36,7 +37,7 @@ lib/theme/                     AppTokens, AppTypography, ThemeData
 test/                          mirrors lib/; test/helpers/ for shared harnesses
 supabase/migrations/           timestamped SQL files; every table has RLS
 supabase/functions/            Deno edge functions
-design/workout-tracker/        redesign spec, prototype, reference screenshots
+design/workout-tracker/        original handoff (historical; see "Design rules")
 dev/                           internal docs for agents and contributors
 ```
 
@@ -76,12 +77,17 @@ look at the images, and commit them. Never commit goldens rendered on macOS.
 
 ## Design rules
 
-- `design/workout-tracker/README.md` is the spec and
-  `design/workout-tracker/screens/` is the visual truth. Where the prototype
-  and the README disagree, the README wins.
-- Start from `design/workout-tracker/INDEX.md`. It maps each README section to
-  prototype line ranges and screenshots, so you never need to read the whole
-  117 KB HTML file.
+- **The visual truth is the golden images on `main`** (`test/**/goldens/`).
+  They show every screen and sheet as it ships, in both themes. A change should
+  alter only the goldens its task asks it to change.
+- **The design for new work is in the bead.** Ideas are explored in a
+  Claude Design canvas outside the repo; when one is approved, its screenshots
+  and a description go on the bead. Build from that, not from the canvas.
+- **`design/workout-tracker/` is historical.** It is the original handoff and
+  is out of date: many screens have changed since. Read it for background
+  (for example, the intent behind a screen), never as the target. Where it
+  disagrees with the goldens or the code on `main`, they win. Do not "fix" a
+  screen to match its old screenshot.
 - Colours, radii and spacing come only from `AppTokens` (`context.tokens`).
   No `Color(0x…)` and no `Colors.*` outside `lib/theme/`.
 - Liquid glass goes on exactly two things: the bottom tab bar and the
@@ -124,8 +130,9 @@ Work is tracked with [beads](https://github.com/steveyegge/beads) (`bd`).
 - `tool/check_colours.sh` passes.
 - Goldens exist, in both themes, for every screen the change touched, and are
   added or updated on Linux.
-- The `design-reviewer` agent has compared those goldens with
-  `design/workout-tracker/screens/` and its findings are fixed or listed in the PR.
+- The `design-reviewer` agent has compared those goldens with the goldens on
+  `main` and the design in the bead, and its findings are fixed or listed in
+  the PR.
 - The bead is closed with a note: `bd close <id> --reason "<what changed>"`.
 
 ## Never
