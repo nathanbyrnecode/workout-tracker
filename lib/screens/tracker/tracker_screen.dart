@@ -218,6 +218,7 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
               '${formatVolume(totals.volume)} kg',
           locationType: workout.displayLocationType,
           place: workout.place,
+          synced: workout.synced,
           onTap: () => widget.onOpenWorkout(workout),
         );
       case LiveEntry(:final totals):
@@ -237,6 +238,7 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
           subtitle: 'Logged manually',
           locationType: workout.locationType,
           place: workout.place,
+          synced: workout.synced,
           onTap: () => widget.onOpenManualWorkout(workout),
         );
     }

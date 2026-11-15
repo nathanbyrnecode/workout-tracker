@@ -9,6 +9,7 @@ import 'package:gym_tracker_app/widgets/dashed_border.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/workout_form_sheet.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/not_synced_marker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A manually logged workout: its date, type and place. It has no exercises.
@@ -117,6 +118,7 @@ class ManualWorkoutDetailScreen extends ConsumerWidget {
               ),
             ),
             DetailTitle(workout.title),
+            if (!workout.synced) const NotSyncedMarker(showLabel: true),
             Row(
               spacing: t.spacing.gap8,
               children: [

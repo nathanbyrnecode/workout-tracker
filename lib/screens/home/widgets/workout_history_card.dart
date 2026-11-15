@@ -7,6 +7,7 @@ import 'package:gym_tracker_app/util/date_format.dart';
 import 'package:gym_tracker_app/util/number_format.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/tappable_card.dart';
+import 'package:gym_tracker_app/widgets/not_synced_marker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A finished workout on the Previous tab: its date, where it was, and four
@@ -52,6 +53,10 @@ class WorkoutHistoryCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: t.spacing.gap10),
+                if (!workout.synced) ...[
+                  const NotSyncedMarker(),
+                  SizedBox(width: t.spacing.gap8),
+                ],
                 Icon(LucideIcons.chevronRight, size: 16, color: t.muted),
               ],
             ),

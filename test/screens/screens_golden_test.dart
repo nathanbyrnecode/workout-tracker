@@ -33,6 +33,7 @@ import 'package:gym_tracker_app/state/user_authentication_state.dart';
 import 'package:gym_tracker_app/widgets/app_button.dart';
 import 'package:gym_tracker_app/widgets/app_shell.dart';
 import 'package:gym_tracker_app/widgets/app_tab_bar.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 
 import '../helpers/demo.dart';
 import '../helpers/fakes.dart';
@@ -109,6 +110,10 @@ void screenGolden(
   FakeWorkoutNotifier Function()? workout,
   List<AppNotification> notifications = const [],
   bool emptyHistory = false,
+
+  /// Moves the most recent demo workout from the server to the device, so
+  /// it shows as not synced.
+  bool firstNotSynced = false,
   bool previousTab = false,
   bool? hasUnread,
   bool placeSearch = false,
@@ -123,8 +128,20 @@ void screenGolden(
       currentWorkoutProvider.overrideWith(workout ?? FakeWorkoutNotifier.new),
       userAuthenticationProvider.overrideWith(FakeAuthNotifier.new),
       pastWorkoutsProvider.overrideWith(
-        () => FakePastWorkoutsNotifier(emptyHistory ? [] : demoHistory()),
+        () => FakePastWorkoutsNotifier(
+          emptyHistory
+              ? []
+              : firstNotSynced
+                  ? demoHistory().skip(1).toList()
+                  : demoHistory(),
+        ),
       ),
+      if (firstNotSynced)
+        workoutSyncProvider.overrideWith(
+          () => FakeWorkoutSyncNotifier(
+            workouts: [notSynced(demoHistory().first)],
+          ),
+        ),
       manualWorkoutsProvider.overrideWith(
         () => FakeManualWorkoutsNotifier(
           emptyHistory ? [] : demoManualWorkouts(),
@@ -347,6 +364,43 @@ void main() {
     'workout summary',
     name: 'summary',
     builder: (context) => WorkoutSummaryScreen(workout: demoHistory().first),
+  );
+
+  // ── Not synced (fit-35g.5) ─────────────────────────────────────────────
+  goldenTest(
+    'workout summary for a workout not synced yet',
+    name: 'summary_not_synced',
+    builder: (context) =>
+        WorkoutSummaryScreen(workout: notSynced(demoHistory().first)),
+  );
+
+  screenGolden(
+    'home with a workout waiting to sync',
+    name: 'home_not_synced',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    firstNotSynced: true,
+  );
+
+  screenGolden(
+    'previous tab with a workout not synced yet',
+    name: 'home_previous_not_synced',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    previousTab: true,
+    firstNotSynced: true,
+  );
+
+  screenGolden(
+    'workout detail for a workout not synced yet',
+    name: 'detail_not_synced',
+    hasUnread: true,
+    tab: AppTab.home,
+    firstNotSynced: true,
+    screen: () =>
+        WorkoutDetailScreen(workoutId: demoHistory().first.id, onClose: () {}),
   );
 
   // ── Log workout (fit-epic.12) ──────────────────────────────────────────

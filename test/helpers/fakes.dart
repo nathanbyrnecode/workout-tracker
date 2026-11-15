@@ -16,6 +16,7 @@ import 'package:gym_tracker_app/state/manual_workouts_state.dart';
 import 'package:gym_tracker_app/state/notifications_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
 import 'package:gym_tracker_app/state/user_authentication_state.dart';
+import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:gym_tracker_app/widgets/app_messenger.dart';
 
 /// Lets a test make a fake's next write fail. Notifiers expose only their
@@ -641,3 +642,61 @@ class RecordingMessenger extends AppMessenger {
   @override
   void show(String message) => messages.add(message);
 }
+
+/// Workouts waiting on the device, with a Sync that never touches the
+/// network. A successful sync moves them all to [synced].
+class FakeWorkoutSyncNotifier extends WorkoutSyncNotifier {
+  FakeWorkoutSyncNotifier({
+    this.workouts = const [],
+    this.manualWorkouts = const [],
+  });
+
+  final List<Workout> workouts;
+  final List<ManualWorkout> manualWorkouts;
+
+  /// Turn on to make Sync fail for everything waiting.
+  final failSync = FailSwitch();
+
+  /// How many times Sync ran.
+  final syncs = <int>[];
+
+  @override
+  WorkoutSyncStateData build() => (
+        pendingWorkouts: workouts,
+        pendingManualWorkouts: manualWorkouts,
+        uploading: const {},
+        isSyncing: false,
+      );
+
+  @override
+  Future<void> load() async {}
+
+  @override
+  Future<int> syncAll() async {
+    final waiting =
+        state.pendingWorkouts.length + state.pendingManualWorkouts.length;
+    syncs.add(waiting);
+    if (failSync.on) {
+      return waiting;
+    }
+    state = (
+      pendingWorkouts: const [],
+      pendingManualWorkouts: const [],
+      uploading: const {},
+      isSyncing: false,
+    );
+    return 0;
+  }
+}
+
+/// [workout] as it is before it reaches the server.
+Workout notSynced(Workout workout) => Workout(
+      workout.id,
+      workout.startTime,
+      workout.endTime,
+      workout.exercises,
+      title: workout.title,
+      locationType: workout.locationType,
+      place: workout.place,
+      synced: false,
+    );

@@ -5,6 +5,7 @@ import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/tappable_card.dart';
+import 'package:gym_tracker_app/widgets/not_synced_marker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// One entry on the selected day: a recorded workout, the workout in
@@ -20,6 +21,7 @@ class TrackerEntryCard extends StatelessWidget {
     this.muted = false,
     this.locationType,
     this.place,
+    this.synced = true,
   });
 
   final IconData icon;
@@ -33,6 +35,9 @@ class TrackerEntryCard extends StatelessWidget {
   /// Null hides the location chip, as for the workout in progress.
   final LocationType? locationType;
   final Place? place;
+
+  /// False marks an entry that has not reached the server yet.
+  final bool synced;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +104,7 @@ class TrackerEntryCard extends StatelessWidget {
                 ],
               ),
             ),
+            if (!synced) const NotSyncedMarker(),
             Icon(LucideIcons.chevronRight, size: 16, color: t.muted),
           ],
         ),

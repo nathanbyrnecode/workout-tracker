@@ -13,6 +13,7 @@ import 'package:gym_tracker_app/util/number_format.dart';
 import 'package:gym_tracker_app/widgets/location_chip.dart';
 import 'package:gym_tracker_app/widgets/workout_form_sheet.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/not_synced_marker.dart';
 
 /// A recorded workout in full: when and where it was, how long it took, its
 /// totals and every set. Edit changes its name and location; Delete removes
@@ -98,6 +99,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
           spacing: t.spacing.gap8,
           children: [
             DetailTitle(workout.displayTitle),
+            if (!workout.synced) const NotSyncedMarker(showLabel: true),
             Row(
               spacing: t.spacing.gap8,
               children: [
