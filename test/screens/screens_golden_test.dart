@@ -189,6 +189,7 @@ void detailGolden(
   required String name,
   required AppTab tab,
   required Widget Function() screen,
+  bool firstNotSynced = false,
   Future<void> Function(WidgetTester tester)? setUp,
 }) {
   goldenTest(
@@ -196,8 +197,17 @@ void detailGolden(
     name: name,
     overrides: [
       clockProvider.overrideWithValue(() => demoNow),
-      pastWorkoutsProvider
-          .overrideWith(() => FakePastWorkoutsNotifier(demoHistory())),
+      pastWorkoutsProvider.overrideWith(
+        () => FakePastWorkoutsNotifier(
+          firstNotSynced ? demoHistory().skip(1).toList() : demoHistory(),
+        ),
+      ),
+      if (firstNotSynced)
+        workoutSyncProvider.overrideWith(
+          () => FakeWorkoutSyncNotifier(
+            workouts: [notSynced(demoHistory().first)],
+          ),
+        ),
       manualWorkoutsProvider.overrideWith(
         () => FakeManualWorkoutsNotifier(demoManualWorkouts()),
       ),
@@ -393,10 +403,9 @@ void main() {
     firstNotSynced: true,
   );
 
-  screenGolden(
+  detailGolden(
     'workout detail for a workout not synced yet',
     name: 'detail_not_synced',
-    hasUnread: true,
     tab: AppTab.home,
     firstNotSynced: true,
     screen: () =>
