@@ -120,7 +120,7 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
   authorised by joining up to the owning workout in their RLS policies.
 - Workouts reach the server only once finished, so every row has an
   `end_time`. Unfinished rows written by older builds were deleted by
-  `20261115120000_offline_first_workouts.sql`.
+  `20261115125648_offline_first_workouts.sql`.
 - `title` and `location_type` are null on rows written before the redesign
   (or by an older build). The UI falls back
   to `Workout.displayTitle` ("Workout") and `displayLocationType` (Gym).
@@ -129,13 +129,15 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
   hosted project on 2026-10-06. The file's version matches the one recorded in
   the project's migration history. Builds from `redesign` select the new
   columns, so any other project they point at needs this migration too.
-- `20261115120000_offline_first_workouts.sql` makes the workout and manual
+- `20261115125648_offline_first_workouts.sql` makes the workout and manual
   workout IDs UUIDs (`dev/decisions.md` 22), deletes unfinished workout rows,
   and adds `save_workout(payload jsonb)`. That function inserts one finished
   workout with its exercises and sets in a single transaction, owned by the
   caller (`auth.uid()`), runs as the caller so RLS applies, and returns the
-  ID without changing anything if that ID is already saved. Builds from this
-  change need the migration on the project they point at.
+  ID without changing anything if that ID is already saved. Applied to the
+  hosted project on 2026-11-15; the file's version matches the one recorded
+  in its migration history. Builds from this change need the migration on
+  the project they point at, and older builds can no longer save there.
 
 ### When rows are written
 
