@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:gym_tracker_app/theme/app_theme.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/widgets/app_background.dart';
 import 'package:gym_tracker_app/widgets/app_tab_bar.dart';
@@ -46,37 +47,51 @@ class AppShell extends StatelessWidget {
         ? 0.0
         : max(0.0, inset + 8 - tabBarBottom);
 
-    return Scaffold(
-      backgroundColor: t.bg,
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const AppBackground(),
-          child,
-          if (floatingActions != null)
+    // SnackBars float just above whatever is lowest on screen: the floating
+    // actions if there are any, otherwise the tab bar.
+    final snackBarBottom = (floatingActions != null
+            ? floatingActionsBottom + t.spacing.floatingButtonHeight
+            : tabBarBottom + AppTabBar.height) +
+        lift +
+        t.spacing.gap12;
+    final theme = Theme.of(context);
+
+    return Theme(
+      data: theme.copyWith(
+        snackBarTheme: appSnackBarTheme(t, bottom: snackBarBottom),
+      ),
+      child: Scaffold(
+        backgroundColor: t.bg,
+        resizeToAvoidBottomInset: false,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const AppBackground(),
+            child,
+            if (floatingActions != null)
+              Positioned(
+                left: t.spacing.screen,
+                right: t.spacing.screen,
+                bottom: floatingActionsBottom + lift,
+                child: floatingActions!,
+              ),
+            // Keyed so the bar keeps its state when the floating actions above
+            // come and go; without it the bubble jumps instead of sliding.
             Positioned(
-              left: t.spacing.screen,
-              right: t.spacing.screen,
-              bottom: floatingActionsBottom + lift,
-              child: floatingActions!,
-            ),
-          // Keyed so the bar keeps its state when the floating actions above
-          // come and go; without it the bubble jumps instead of sliding.
-          Positioned(
-            key: const ValueKey('tab-bar'),
-            left: 0,
-            right: 0,
-            bottom: tabBarBottom + lift,
-            child: Center(
-              child: AppTabBar(
-                selected: selected,
-                onSelected: onSelected,
-                hasUnread: hasUnread,
+              key: const ValueKey('tab-bar'),
+              left: 0,
+              right: 0,
+              bottom: tabBarBottom + lift,
+              child: Center(
+                child: AppTabBar(
+                  selected: selected,
+                  onSelected: onSelected,
+                  hasUnread: hasUnread,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -26,10 +26,35 @@ ThemeData buildAppTheme(Brightness brightness) {
       scrim: tokens.scrim,
     ),
     dividerColor: tokens.line,
+    snackBarTheme: appSnackBarTheme(tokens),
     extensions: [tokens],
   );
   return base.copyWith(textTheme: _textTheme(base.textTheme, tokens.fg));
 }
+
+/// SnackBars float as a card: the sheet colour with a hairline border, the
+/// app's corner radius and body text, instead of Material's dark strip.
+/// [bottom] is the gap to the bottom of the screen; `AppShell` raises it so
+/// messages clear the tab bar and floating actions.
+SnackBarThemeData appSnackBarTheme(AppTokens tokens, {double bottom = 16}) =>
+    SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: tokens.sheet,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radii.iconButton),
+        side: BorderSide(color: tokens.line),
+      ),
+      contentTextStyle: AppTypography.bodySmall.copyWith(color: tokens.fg),
+      actionTextColor: tokens.accentText,
+      closeIconColor: tokens.muted,
+      insetPadding: EdgeInsets.fromLTRB(
+        tokens.spacing.screen,
+        0,
+        tokens.spacing.screen,
+        bottom,
+      ),
+    );
 
 /// Material 3's text theme carries its own letter spacing and line heights,
 /// which every `Text` inherits unless its style overrides them. That made

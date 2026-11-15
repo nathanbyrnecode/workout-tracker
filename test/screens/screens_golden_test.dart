@@ -34,6 +34,7 @@ import 'package:gym_tracker_app/widgets/app_button.dart';
 import 'package:gym_tracker_app/widgets/app_shell.dart';
 import 'package:gym_tracker_app/widgets/app_tab_bar.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
+import 'package:gym_tracker_app/widgets/app_messenger.dart';
 
 import '../helpers/demo.dart';
 import '../helpers/fakes.dart';
@@ -388,6 +389,30 @@ void main() {
     'workout summary',
     name: 'summary',
     builder: (context) => WorkoutSummaryScreen(workout: demoHistory().first),
+  );
+
+  // ── SnackBar ───────────────────────────────────────────────────────────
+  Future<void> showSnackBar(WidgetTester tester) async {
+    ScaffoldMessenger.of(tester.element(find.byType(Scaffold).last))
+        .showSnackBar(const SnackBar(content: Text(workoutNotSavedMessage)));
+  }
+
+  screenGolden(
+    'a message on Home, above the floating actions',
+    name: 'snackbar_home',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    setUp: showSnackBar,
+  );
+
+  screenGolden(
+    'a message on the Tracker, above the tab bar',
+    name: 'snackbar_tracker',
+    hasUnread: true,
+    tab: AppTab.tracker,
+    screen: _tracker,
+    setUp: showSnackBar,
   );
 
   // ── Not synced (fit-35g.5) ─────────────────────────────────────────────
