@@ -105,9 +105,12 @@ workouts        id uuid PK (made by the app), user_id uuid → auth.users (casca
                 place_name, place_address, place_lat, place_lng  (all nullable)
 exercises       id bigint PK, workout_id uuid → workouts (cascade), name,
                 start_time, end_time, exercise_number,
+                type (strength|cardio, default strength),
+                lap_seconds integer[] (default empty, cardio only),
                 sets, reps, weight          (legacy columns, unused)
 exercise_sets   id bigint PK, exercise_id → exercises (cascade),
                 set_number, reps integer, weight double precision,
+                unit (kg|lb, default kg; weight is in this unit),
                 created_at timestamptz default now() (null on older rows)
 manual_workouts id uuid PK (made by the app), user_id uuid → auth.users (cascade),
                 date date, title, location_type, place_* columns, created_at.
@@ -138,6 +141,14 @@ apple_auth_tokens  user_id PK → auth.users (cascade), encrypted refresh token.
   hosted project on 2026-11-15; the file's version matches the one recorded
   in its migration history. Builds from this change need the migration on
   the project they point at, and older builds can no longer save there.
+- `20261121112446_add_set_weight_unit.sql` and
+  `20261121112459_add_exercise_type_and_laps.sql` add the columns above and
+  teach `save_workout` to store them. A payload from an older build still
+  saves, as kg and strength. Applied to the hosted project on 2026-11-21; the
+  files' versions match the ones recorded in its migration history. Builds
+  that select these columns need both migrations on the project they point
+  at. Older builds read a set's `weight` without its unit, so they show lb
+  sets as kg.
 
 ### When rows are written
 
