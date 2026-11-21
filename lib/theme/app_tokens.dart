@@ -333,6 +333,9 @@ class AppRadii {
   double get setRow => 16;
   double get input => 16;
   double get iconButton => 14;
+
+  /// The kg/lb toggle's track and the CARDIO pill.
+  double get tag => 9;
   double get chip => 7;
 
   /// Set rows inside a completed exercise or a detail card.
@@ -360,12 +363,13 @@ class AppSpacing {
   double get cardPadding => 16;
   double get cardPaddingLarge => 20;
 
-  /// The gap scale: 6, 8, 10, 12, 14, 18, 22.
+  /// The gap scale: 6, 8, 10, 12, 14, 16, 18, 22.
   double get gap6 => 6;
   double get gap8 => 8;
   double get gap10 => 10;
   double get gap12 => 12;
   double get gap14 => 14;
+  double get gap16 => 16;
   double get gap18 => 18;
   double get gap22 => 22;
 

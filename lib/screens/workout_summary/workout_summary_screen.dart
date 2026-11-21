@@ -42,7 +42,12 @@ class WorkoutSummaryScreen extends ConsumerWidget {
         : (workout.endTime ?? start).difference(start);
     final exercises = workout.exercises.values.toList();
     final totals = workoutTotals(exercises);
-    final largest = exercises.fold<double>(
+    // Cardio has no volume, so it gets no bar.
+    final strength = [
+      for (final exercise in exercises)
+        if (!exercise.isCardio) exercise,
+    ];
+    final largest = strength.fold<double>(
       0,
       (most, exercise) => max(most, setsVolume(exercise.sets.values)),
     );
@@ -134,45 +139,47 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                   ],
                 ),
                 SizedBox(height: t.spacing.gap22),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: t.card,
-                    borderRadius: BorderRadius.circular(t.radii.card),
-                    border: Border.all(color: t.line),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: t.spacing.gap14,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'VOLUME BY EXERCISE',
-                            style: AppTypography.labelSmall.copyWith(
-                              letterSpacing: 1.4,
-                              color: t.muted,
+                if (strength.isNotEmpty || exercises.isEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: t.card,
+                      borderRadius: BorderRadius.circular(t.radii.card),
+                      border: Border.all(color: t.line),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: t.spacing.gap14,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'VOLUME BY EXERCISE',
+                              style: AppTypography.labelSmall.copyWith(
+                                letterSpacing: 1.4,
+                                color: t.muted,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${formatVolume(totals.volume)} kg',
-                            style: AppTypography.stat.copyWith(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                            Text(
+                              '${formatVolume(totals.volume)} kg',
+                              style: AppTypography.stat.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      for (final exercise in exercises)
-                        _VolumeBar(exercise: exercise, largest: largest),
-                    ],
+                          ],
+                        ),
+                        for (final exercise in strength)
+                          _VolumeBar(exercise: exercise, largest: largest),
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(height: t.spacing.gap22),
+                  SizedBox(height: t.spacing.gap22),
+                ],
                 AppButton(
                   label: 'Done',
                   style: AppButtonStyle.inverse,

@@ -38,13 +38,16 @@ const trackerWeeks = 17;
 
 /// Builds the per-day map the whole Tracker is derived from.
 ///
-/// A recorded workout counts only if it has a saved set. The live workout
-/// counts from its first saved set, before it is ended, on the day it started.
+/// A recorded workout counts only if it has a saved set or cardio time. The
+/// live workout counts from its first saved set or the first time a cardio
+/// timer is started ([liveHasCardio]), before it is ended, on the day it
+/// started.
 TrackerDays buildTrackerDays({
   required Iterable<Workout> workouts,
   required Iterable<ManualWorkout> manualWorkouts,
   DateTime? liveStart,
   WorkoutTotals? liveTotals,
+  bool liveHasCardio = false,
 }) {
   final recorded = <DateTime, List<TrackerEntry>>{};
   for (final workout in workouts) {
@@ -53,7 +56,8 @@ TrackerDays buildTrackerDays({
       continue;
     }
     final totals = workoutTotals(workout.exercises.values);
-    if (totals.sets > 0) {
+    if (totals.sets > 0 ||
+        workout.exercises.values.any((exercise) => exercise.hasCardioTime)) {
       recorded.putIfAbsent(dayOf(start), () => []).add(
             RecordedEntry(workout, totals),
           );
@@ -68,7 +72,9 @@ TrackerDays buildTrackerDays({
   }
 
   final days = <DateTime, List<TrackerEntry>>{...recorded};
-  if (liveStart != null && liveTotals != null && liveTotals.sets > 0) {
+  if (liveStart != null &&
+      liveTotals != null &&
+      (liveTotals.sets > 0 || liveHasCardio)) {
     days.putIfAbsent(dayOf(liveStart), () => []).add(LiveEntry(liveTotals));
   }
   for (final manual in manualWorkouts) {

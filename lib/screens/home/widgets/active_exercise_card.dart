@@ -179,7 +179,7 @@ class _SetRow extends StatelessWidget {
           Expanded(
             child: ValueWithUnit(
               value: formatWeight(set.weight),
-              unit: 'kg',
+              unit: set.unit.name,
               valueStyle: AppTypography.setValue,
               unitStyle: AppTypography.bodySmall,
             ),

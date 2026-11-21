@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:gym_tracker_app/data/local_workout_store.dart';
 import 'package:gym_tracker_app/data/place_search/place_search_service.dart';
 import 'package:gym_tracker_app/data/theme_mode_storage.dart';
+import 'package:gym_tracker_app/models/cardio_timer.dart';
 import 'package:gym_tracker_app/models/app_notification.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
 import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
@@ -72,8 +74,14 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   final spy = WorkoutSpy();
   final removedSetIds = <int>[];
   final startedExercises = <String>[];
+  final startedTypes = <ExerciseType>[];
+
+  /// The cardio actions asked for, in order.
+  final cardioActions = <String>[];
   final addedSets = <({double weight, int reps})>[];
+  final addedUnits = <WeightUnit>[];
   final updatedSets = <({int id, double weight, int reps})>[];
+  final updatedUnits = <WeightUnit?>[];
 
   @override
   CurrentWorkoutStateData build() => (
@@ -142,19 +150,46 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
       removedSetIds.add(setId);
 
   @override
-  Future<void> startExercise(String name) async => startedExercises.add(name);
+  Future<void> startExercise(
+    String name, {
+    ExerciseType type = ExerciseType.strength,
+  }) async {
+    startedExercises.add(name);
+    startedTypes.add(type);
+  }
 
   @override
-  Future<void> addSet({required double weight, required int reps}) async =>
-      addedSets.add((weight: weight, reps: reps));
+  Future<void> startCardio() async => cardioActions.add('start');
+
+  @override
+  Future<void> pauseCardio() async => cardioActions.add('pause');
+
+  @override
+  Future<void> resumeCardio() async => cardioActions.add('resume');
+
+  @override
+  Future<void> startNewLap() async => cardioActions.add('lap');
+
+  @override
+  Future<void> addSet({
+    required double weight,
+    required int reps,
+    WeightUnit unit = WeightUnit.kg,
+  }) async {
+    addedSets.add((weight: weight, reps: reps));
+    addedUnits.add(unit);
+  }
 
   @override
   Future<void> updateSet(
     int setId, {
     required double weight,
     required int reps,
-  }) async =>
-      updatedSets.add((id: setId, weight: weight, reps: reps));
+    WeightUnit? unit,
+  }) async {
+    updatedSets.add((id: setId, weight: weight, reps: reps));
+    updatedUnits.add(unit);
+  }
 }
 
 /// A user with an optional first name, signed in unless told otherwise.

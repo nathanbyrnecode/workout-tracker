@@ -1,9 +1,11 @@
 import 'package:gym_tracker_app/data/location_mapper.dart';
 import 'package:gym_tracker_app/data/manual_workout_mapper.dart';
+import 'package:gym_tracker_app/models/cardio_timer.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 
 /// The JSON kept on the device for the active workout and for workouts that
@@ -160,17 +162,61 @@ Map<String, dynamic> _encodeExercise(Exercise exercise) => {
       'start_time': _encodeTime(exercise.startTime),
       'end_time':
           exercise.endTime == null ? null : _encodeTime(exercise.endTime!),
+      'type': exercise.type.name,
+      'lap_seconds': [for (final lap in exercise.cardio.laps) lap.inSeconds],
+      // Only on the device, so a running timer survives the app being killed.
+      if (exercise.isCardio && exercise.endTime == null)
+        'cardio_timer': _encodeLiveTimer(exercise.cardio),
       'sets': [
         for (final set in exercise.sets.values)
           {
             'id': set.id,
             'weight': set.weight,
             'reps': set.reps,
+            'unit': set.unit.name,
             'created_at':
                 set.savedAt == null ? null : _encodeTime(set.savedAt!),
           },
       ],
     };
+
+Map<String, dynamic> _encodeLiveTimer(CardioTimer timer) => {
+      'lap_ms': [for (final lap in timer.laps) lap.inMilliseconds],
+      'running_since':
+          timer.runningSince == null ? null : _encodeTime(timer.runningSince!),
+      'paused_at': timer.pausedAt == null ? null : _encodeTime(timer.pausedAt!),
+    };
+
+CardioTimer _decodeTimer(Map<String, dynamic> exercise) {
+  final live = exercise['cardio_timer'];
+  if (live is Map<String, dynamic>) {
+    return CardioTimer(
+      laps: [
+        for (final lap in _list(live, 'lap_ms'))
+          Duration(milliseconds: _lapValue(lap)),
+      ],
+      runningSince:
+          live['running_since'] == null ? null : _time(live, 'running_since'),
+      pausedAt: live['paused_at'] == null ? null : _time(live, 'paused_at'),
+    );
+  }
+  // Exercises saved before types existed have no laps.
+  final seconds = exercise['lap_seconds'];
+  if (seconds == null) {
+    return const CardioTimer();
+  }
+  if (seconds is! List) {
+    throw const FormatException('Lap times are not a list.');
+  }
+  return CardioTimer.fromLapSeconds(seconds.map(_lapValue));
+}
+
+int _lapValue(Object? value) {
+  if (value is! num) {
+    throw const FormatException('A lap has no time.');
+  }
+  return value.toInt();
+}
 
 Exercise _decodeExercise(Object? value) {
   if (value is! Map<String, dynamic>) {
@@ -181,6 +227,8 @@ Exercise _decodeExercise(Object? value) {
     {},
     _int(value, 'id'),
     _time(value, 'start_time'),
+    type: ExerciseType.fromName(value['type']),
+    cardio: _decodeTimer(value),
   );
   if (value['end_time'] != null) {
     exercise.setEndTime(_time(value, 'end_time'));
@@ -199,6 +247,7 @@ Exercise _decodeExercise(Object? value) {
       reps.toInt(),
       _int(set, 'id'),
       savedAt: set['created_at'] == null ? null : _time(set, 'created_at'),
+      unit: WeightUnit.fromName(set['unit']),
     ));
   }
   return exercise;

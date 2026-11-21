@@ -2,10 +2,12 @@ import 'dart:developer';
 
 import 'package:gym_tracker_app/data/location_mapper.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
+import 'package:gym_tracker_app/models/cardio_timer.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -70,14 +72,18 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
       }
       final exerciseRows = await client
           .from('exercises')
-          .select('id, workout_id, name, start_time, end_time')
+          .select(
+            'id, workout_id, name, start_time, end_time, type, lap_seconds',
+          )
           .inFilter('workout_id', workoutRows.map((row) => row['id']).toList())
           .order('start_time', ascending: true);
       final setRows = exerciseRows.isEmpty
           ? <Map<String, dynamic>>[]
           : await client
               .from('exercise_sets')
-              .select('id, exercise_id, set_number, weight, reps, created_at')
+              .select(
+                'id, exercise_id, set_number, weight, reps, unit, created_at',
+              )
               .inFilter(
                   'exercise_id', exerciseRows.map((row) => row['id']).toList())
               .order('id', ascending: true);
@@ -256,6 +262,11 @@ List<Workout> mapWorkoutRows({
       {},
       exerciseId,
       exerciseStart,
+      type: ExerciseType.fromName(row['type']),
+      cardio: CardioTimer.fromLapSeconds(
+        (row['lap_seconds'] as List<dynamic>? ?? const [])
+            .map((lap) => (lap as num).toInt()),
+      ),
     )..setEndTime(exerciseEnd);
     exercises[exerciseId] = exercise;
     workout.addExercise(exercise);
@@ -277,6 +288,7 @@ List<Workout> mapWorkoutRows({
         reps.toInt(),
         setId,
         savedAt: _parseDateTime(row['created_at']),
+        unit: WeightUnit.fromName(row['unit']),
       ),
     );
   }

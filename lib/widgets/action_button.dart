@@ -13,6 +13,7 @@ class ActionButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.leading,
   }) : _stop = false;
 
   const ActionButton.stop({
@@ -20,11 +21,15 @@ class ActionButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
   })  : icon = null,
+        leading = null,
         _stop = true;
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+
+  /// Drawn in place of [icon], for a glyph the icon font does not have.
+  final Widget? leading;
   final bool _stop;
 
   @override
@@ -51,7 +56,8 @@ class ActionButton extends StatelessWidget {
             height: t.spacing.floatingButtonHeight,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              spacing: _stop || icon != null ? t.spacing.gap8 : 0,
+              spacing:
+                  _stop || icon != null || leading != null ? t.spacing.gap8 : 0,
               children: [
                 if (_stop)
                   Container(
@@ -62,6 +68,8 @@ class ActionButton extends StatelessWidget {
                       borderRadius: BorderRadius.circular(3),
                     ),
                   )
+                else if (leading != null)
+                  leading!
                 else if (icon != null)
                   Icon(icon, size: 20, color: foreground),
                 Flexible(

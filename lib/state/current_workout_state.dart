@@ -5,10 +5,12 @@ import 'package:gym_tracker_app/data/supabase_client_provider.dart';
 import 'package:gym_tracker_app/data/workout_history.dart';
 import 'package:gym_tracker_app/data/workout_json.dart';
 import 'package:gym_tracker_app/data/workout_upload.dart';
+import 'package:gym_tracker_app/models/cardio_timer.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
@@ -111,12 +113,17 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
   }
 
   Exercise _cloneExerciseWithSets(
-      Exercise exercise, Map<int, ExerciseSet> sets) {
+    Exercise exercise,
+    Map<int, ExerciseSet> sets, {
+    CardioTimer? cardio,
+  }) {
     final updated = Exercise(
       exercise.name,
       sets,
       exercise.id,
       exercise.startTime,
+      type: exercise.type,
+      cardio: cardio ?? exercise.cardio,
     );
     if (exercise.endTime != null) {
       updated.setEndTime(exercise.endTime!);
@@ -279,10 +286,11 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
   /// then waits up to [uploadWait] for it to upload (see
   /// `WorkoutSyncNotifier`).
   ///
-  /// A workout with no finished exercises has nothing worth keeping, so it is
-  /// dropped and the outcome is [EndWorkoutOutcome.discarded]. If it cannot be
-  /// kept on the device the workout stays in progress so the user can try
-  /// again.
+  /// A cardio exercise still in progress is saved with its time so far, or
+  /// dropped if it has none. A workout with no finished exercises has nothing
+  /// worth keeping, so it is dropped and the outcome is
+  /// [EndWorkoutOutcome.discarded]. If it cannot be kept on the device the
+  /// workout stays in progress so the user can try again.
   Future<EndWorkoutResult> endWorkout({
     required String title,
     required LocationType locationType,
@@ -299,7 +307,14 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
       );
     }
 
-    if (state.exercises.isEmpty) {
+    final endTime = _now();
+    final current = state.currentExercise;
+    final cardio = current != null && current.isCardio
+        ? _finishedCardio(current, endTime)
+        : null;
+    final exercises = [...state.exercises, if (cardio != null) cardio];
+
+    if (exercises.isEmpty) {
       return await discardWorkout()
           ? (
               outcome: EndWorkoutOutcome.discarded,
@@ -316,8 +331,8 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     final workout = Workout(
       workoutId,
       startTime,
-      _now(),
-      {for (final exercise in state.exercises) exercise.id: exercise},
+      endTime,
+      {for (final exercise in exercises) exercise.id: exercise},
       title: title.trim(),
       locationType: locationType,
       place: place,
@@ -383,23 +398,79 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     return true;
   }
 
-  Future<void> startExercise(String name) async {
+  /// Adds an exercise. A cardio exercise's timer does not start until
+  /// [startCardio].
+  Future<void> startExercise(
+    String name, {
+    ExerciseType type = ExerciseType.strength,
+  }) async {
     if (!state.isInProgress || state.currentExercise != null) {
       return;
     }
     _setState(
-      currentExercise: Exercise(name, {}, _nextLocalId(), _now()),
+      currentExercise: Exercise(name, {}, _nextLocalId(), _now(), type: type),
     );
     await _persist();
   }
 
-  /// Finishes the exercise in progress. One with no sets is dropped.
+  /// Opens lap 1 of the active cardio exercise and starts timing.
+  Future<void> startCardio() => _changeCardio((timer, now) => timer.start(now));
+
+  /// Stops timing the active cardio exercise.
+  Future<void> pauseCardio() => _changeCardio((timer, now) => timer.pause(now));
+
+  /// Carries on timing the current lap.
+  Future<void> resumeCardio() =>
+      _changeCardio((timer, now) => timer.resume(now));
+
+  /// Closes the current lap and opens a new one. From paused it also resumes.
+  Future<void> startNewLap() =>
+      _changeCardio((timer, now) => timer.newLap(now));
+
+  /// Every change is written to the device straight away, so the timer is
+  /// right if the app is killed.
+  Future<void> _changeCardio(
+    CardioTimer Function(CardioTimer timer, DateTime now) change,
+  ) async {
+    final exercise = state.currentExercise;
+    if (!state.isInProgress || exercise == null || !exercise.isCardio) {
+      return;
+    }
+    final updated = change(exercise.cardio, _now());
+    if (identical(updated, exercise.cardio)) {
+      return;
+    }
+    _setState(
+      currentExercise:
+          _cloneExerciseWithSets(exercise, exercise.sets, cardio: updated),
+    );
+    await _persist();
+  }
+
+  /// [exercise] finished at [end], or null if it has no active time.
+  Exercise? _finishedCardio(Exercise exercise, DateTime end) {
+    final timer = exercise.cardio.finish(end);
+    if (timer.laps.isEmpty) {
+      return null;
+    }
+    return _cloneExerciseWithSets(exercise, exercise.sets, cardio: timer)
+      ..setEndTime(end);
+  }
+
+  /// Finishes the exercise in progress. One with no sets, or a cardio
+  /// exercise with no active time, is dropped.
   Future<void> endExercise() async {
     final currentExercise = state.currentExercise;
     if (currentExercise == null) {
       return;
     }
-    if (currentExercise.sets.isNotEmpty) {
+    if (currentExercise.isCardio) {
+      final finished = _finishedCardio(currentExercise, _now());
+      _setState(
+        exercises: finished == null ? null : [...state.exercises, finished],
+        clearCurrentExercise: true,
+      );
+    } else if (currentExercise.sets.isNotEmpty) {
       final finished =
           _cloneExerciseWithSets(currentExercise, currentExercise.sets)
             ..setEndTime(_now());
@@ -413,27 +484,33 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     await _persist();
   }
 
-  Future<void> addSet({required double weight, required int reps}) async {
+  Future<void> addSet({
+    required double weight,
+    required int reps,
+    WeightUnit unit = WeightUnit.kg,
+  }) async {
     final currentExercise = state.currentExercise;
     if (reps < 0 || weight < 0 || !weight.isFinite || currentExercise == null) {
       return;
     }
     final setId = _nextLocalId();
     final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
-    updatedSets[setId] = ExerciseSet(weight, reps, setId, savedAt: _now());
+    updatedSets[setId] =
+        ExerciseSet(weight, reps, setId, savedAt: _now(), unit: unit);
     _setState(
       currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
     );
     await _persist();
   }
 
-  /// Changes the weight and reps of a set in the active exercise. The set
-  /// keeps its place and the time it was first saved, so the rest timer does
-  /// not restart.
+  /// Changes the weight, reps and unit of a set in the active exercise. The
+  /// set keeps its place and the time it was first saved, so the rest timer
+  /// does not restart. With no [unit] it keeps the one it has.
   Future<void> updateSet(
     int setId, {
     required double weight,
     required int reps,
+    WeightUnit? unit,
   }) async {
     final currentExercise = state.currentExercise;
     final existing = currentExercise?.sets[setId];
@@ -448,8 +525,13 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     }
     // Replacing the value under the same key keeps the set's position.
     final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
-    updatedSets[setId] =
-        ExerciseSet(weight, reps, setId, savedAt: existing.savedAt);
+    updatedSets[setId] = ExerciseSet(
+      weight,
+      reps,
+      setId,
+      savedAt: existing.savedAt,
+      unit: unit ?? existing.unit,
+    );
     _setState(
       currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
     );

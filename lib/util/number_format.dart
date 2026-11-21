@@ -35,6 +35,16 @@ String formatElapsed(Duration duration) {
   return '${seconds ~/ 3600}h ${seconds % 3600 ~/ 60}m';
 }
 
+/// Formats a cardio time: `09:05`, and from an hour up `1:02:09`.
+String formatActiveTime(Duration duration) {
+  final elapsed = duration.isNegative ? Duration.zero : duration;
+  final minutes = elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return elapsed.inHours > 0
+      ? '${elapsed.inHours}:$minutes:$seconds'
+      : '$minutes:$seconds';
+}
+
 /// Formats a distance in miles, as the design does: `0.4 mi`, `12 mi`.
 String formatDistance(double meters) {
   final miles = meters / 1609.344;
