@@ -4,6 +4,7 @@ import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 
 /// The JSON kept on the device for the active workout and for workouts that
@@ -166,6 +167,7 @@ Map<String, dynamic> _encodeExercise(Exercise exercise) => {
             'id': set.id,
             'weight': set.weight,
             'reps': set.reps,
+            'unit': set.unit.name,
             'created_at':
                 set.savedAt == null ? null : _encodeTime(set.savedAt!),
           },
@@ -199,6 +201,7 @@ Exercise _decodeExercise(Object? value) {
       reps.toInt(),
       _int(set, 'id'),
       savedAt: set['created_at'] == null ? null : _time(set, 'created_at'),
+      unit: WeightUnit.fromName(set['unit']),
     ));
   }
   return exercise;

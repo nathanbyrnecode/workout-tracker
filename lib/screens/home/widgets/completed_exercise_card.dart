@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gym_tracker_app/data/workout_stats.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/screens/home/widgets/set_number_tile.dart';
 import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/theme/app_typography.dart';
@@ -134,6 +135,7 @@ class CompletedExerciseCard extends StatelessWidget {
                         number: index + 1,
                         weight: set.weight,
                         reps: set.reps,
+                        unit: set.unit,
                       ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(2, 6, 2, 0),
@@ -161,7 +163,10 @@ class CompletedExerciseCard extends StatelessWidget {
 
   String _topSetLabel(Exercise exercise) {
     final top = topSet(exercise.sets.values);
-    return top == null ? '—' : '${formatWeight(top.weight)} KG × ${top.reps}';
+    return top == null
+        ? '—'
+        : '${formatWeight(top.weight)} ${top.unit.name.toUpperCase()} '
+            '× ${top.reps}';
   }
 }
 
@@ -173,12 +178,14 @@ class CompactSetRow extends StatelessWidget {
     required this.number,
     required this.weight,
     required this.reps,
+    required this.unit,
     this.mutedUnits = true,
   });
 
   final int number;
   final double weight;
   final int reps;
+  final WeightUnit unit;
 
   /// Small grey "kg" and "reps", as in the open completed exercise. The
   /// detail screen writes them in the same style as the numbers.
@@ -209,7 +216,7 @@ class CompactSetRow extends StatelessWidget {
           Expanded(
             child: ValueWithUnit(
               value: formatWeight(weight),
-              unit: 'kg',
+              unit: unit.name,
               valueStyle: AppTypography.setValueSmall,
               unitStyle: unitStyle,
               mutedUnit: mutedUnits,
@@ -225,7 +232,8 @@ class CompactSetRow extends StatelessWidget {
             ),
           ),
           Text(
-            formatVolume(weight * reps),
+            // Volume is always in kg, whatever unit the set is in.
+            formatVolume(unit.toKg(weight) * reps),
             style: AppTypography.monoSmall.copyWith(color: t.muted),
           ),
         ],

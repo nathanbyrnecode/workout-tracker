@@ -9,6 +9,7 @@ import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
@@ -413,27 +414,33 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     await _persist();
   }
 
-  Future<void> addSet({required double weight, required int reps}) async {
+  Future<void> addSet({
+    required double weight,
+    required int reps,
+    WeightUnit unit = WeightUnit.kg,
+  }) async {
     final currentExercise = state.currentExercise;
     if (reps < 0 || weight < 0 || !weight.isFinite || currentExercise == null) {
       return;
     }
     final setId = _nextLocalId();
     final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
-    updatedSets[setId] = ExerciseSet(weight, reps, setId, savedAt: _now());
+    updatedSets[setId] =
+        ExerciseSet(weight, reps, setId, savedAt: _now(), unit: unit);
     _setState(
       currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
     );
     await _persist();
   }
 
-  /// Changes the weight and reps of a set in the active exercise. The set
-  /// keeps its place and the time it was first saved, so the rest timer does
-  /// not restart.
+  /// Changes the weight, reps and unit of a set in the active exercise. The
+  /// set keeps its place and the time it was first saved, so the rest timer
+  /// does not restart. With no [unit] it keeps the one it has.
   Future<void> updateSet(
     int setId, {
     required double weight,
     required int reps,
+    WeightUnit? unit,
   }) async {
     final currentExercise = state.currentExercise;
     final existing = currentExercise?.sets[setId];
@@ -448,8 +455,13 @@ class CurrentWorkoutNotifier extends _$CurrentWorkoutNotifier {
     }
     // Replacing the value under the same key keeps the set's position.
     final updatedSets = Map<int, ExerciseSet>.from(currentExercise.sets);
-    updatedSets[setId] =
-        ExerciseSet(weight, reps, setId, savedAt: existing.savedAt);
+    updatedSets[setId] = ExerciseSet(
+      weight,
+      reps,
+      setId,
+      savedAt: existing.savedAt,
+      unit: unit ?? existing.unit,
+    );
     _setState(
       currentExercise: _cloneExerciseWithSets(currentExercise, updatedSets),
     );

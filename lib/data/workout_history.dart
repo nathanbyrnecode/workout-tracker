@@ -1,4 +1,7 @@
+import 'package:gym_tracker_app/models/exercise.dart';
+import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 
 typedef WorkoutMonth = ({int month, List<Workout> workouts});
@@ -45,4 +48,36 @@ LocationType defaultLocationType(Iterable<Workout> workouts) {
     }
   }
   return latest?.locationType ?? LocationType.fallback;
+}
+
+/// The unit a first set starts in: that of the latest set in this workout,
+/// else in the most recent past workout with sets, else kg.
+WeightUnit defaultWeightUnit({
+  required Iterable<Exercise> current,
+  required Iterable<Workout> history,
+}) {
+  final inWorkout = _lastSet(current);
+  if (inWorkout != null) {
+    return inWorkout.unit;
+  }
+  final dated = [
+    for (final workout in history)
+      if (workout.startTime != null) workout,
+  ]..sort((a, b) => b.startTime!.compareTo(a.startTime!));
+  for (final workout in dated) {
+    final last = _lastSet(workout.exercises.values);
+    if (last != null) {
+      return last.unit;
+    }
+  }
+  return WeightUnit.kg;
+}
+
+ExerciseSet? _lastSet(Iterable<Exercise> exercises) {
+  for (final exercise in exercises.toList().reversed) {
+    if (exercise.sets.isNotEmpty) {
+      return exercise.sets.values.last;
+    }
+  }
+  return null;
 }

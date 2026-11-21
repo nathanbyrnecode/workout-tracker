@@ -333,6 +333,9 @@ class AppRadii {
   double get setRow => 16;
   double get input => 16;
   double get iconButton => 14;
+
+  /// The kg/lb toggle's track and the CARDIO pill.
+  double get tag => 9;
   double get chip => 7;
 
   /// Set rows inside a completed exercise or a detail card.

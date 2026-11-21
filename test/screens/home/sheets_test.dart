@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/screens/home/widgets/home_screen/current_workout_area.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/new_exercise_sheet.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/set_sheet.dart';
@@ -132,7 +133,7 @@ void main() {
       await tester.tap(find.text('Add set'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.bySemanticsLabel('Increase weight · kg'));
+      await tester.tap(find.bySemanticsLabel('Increase weight'));
       await tester.pump();
       expect(field(tester, 0), '5');
       await tester.tap(find.bySemanticsLabel('Increase reps'));
@@ -140,7 +141,7 @@ void main() {
       expect(field(tester, 1), '2');
 
       for (var i = 0; i < 4; i++) {
-        await tester.tap(find.bySemanticsLabel('Decrease weight · kg'));
+        await tester.tap(find.bySemanticsLabel('Decrease weight'));
         await tester.tap(find.bySemanticsLabel('Decrease reps'));
         await tester.pump();
       }
@@ -166,6 +167,112 @@ void main() {
     });
   });
 
+  group('unit toggle', () {
+    Finder toLb() => find.bySemanticsLabel('Weight in kg. Switch to lb');
+    Finder toKg() => find.bySemanticsLabel('Weight in lb. Switch to kg');
+
+    Future<FakeWorkoutNotifier> openAddSet(
+      WidgetTester tester,
+      List<ExerciseSet> sets,
+    ) async {
+      final workout = await pumpWorkout(tester, currentExercise: active(sets));
+      await tester.tap(find.text('Add set'));
+      await tester.pumpAndSettle();
+      return workout;
+    }
+
+    testWidgets('switching converts the weight and is saved with the set',
+        (tester) async {
+      final workout = await openAddSet(tester, [ExerciseSet(24, 8, 1)]);
+      await tester.tap(toLb());
+      await tester.pump();
+      expect(field(tester, 0), '53');
+      expect(toKg(), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(InkWell, 'Add set').last);
+      await tester.pumpAndSettle();
+      expect(workout.addedSets, [(weight: 53.0, reps: 8)]);
+      expect(workout.addedUnits, [WeightUnit.lb]);
+    });
+
+    testWidgets('a tap on the unit already selected also switches',
+        (tester) async {
+      await openAddSet(tester, [ExerciseSet(24, 8, 1)]);
+      await tester.tap(find.text('KG'));
+      await tester.pump();
+      expect(toKg(), findsOneWidget);
+    });
+
+    testWidgets('its tap target is at least 44 tall', (tester) async {
+      await openAddSet(tester, [ExerciseSet(24, 8, 1)]);
+      expect(tester.getSize(toLb()).height, greaterThanOrEqualTo(44));
+    });
+
+    testWidgets('switching back restores the value, until it is edited',
+        (tester) async {
+      await openAddSet(tester, [
+        ExerciseSet(46, 8, 1, unit: WeightUnit.lb),
+      ]);
+      await tester.tap(toKg());
+      await tester.pump();
+      expect(field(tester, 0), '21');
+      await tester.tap(toLb());
+      await tester.pump();
+      expect(field(tester, 0), '46');
+
+      await tester.tap(toKg());
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).at(0), '21.5');
+      await tester.tap(toLb());
+      await tester.pump();
+      expect(field(tester, 0), '47.5');
+    });
+
+    testWidgets('the stepper moves by 5 in lb', (tester) async {
+      await openAddSet(tester, [
+        ExerciseSet(53, 8, 1, unit: WeightUnit.lb),
+      ]);
+      await tester.tap(find.bySemanticsLabel('Increase weight'));
+      await tester.pump();
+      expect(field(tester, 0), '58');
+    });
+
+    testWidgets('a new set opens with the last set of the exercise',
+        (tester) async {
+      await openAddSet(tester, [
+        ExerciseSet(60, 8, 1),
+        ExerciseSet(135, 5, 2, unit: WeightUnit.lb),
+      ]);
+      expect(field(tester, 0), '135');
+      expect(toKg(), findsOneWidget);
+    });
+
+    test('a first set is 20 kg converted to the current unit', () {
+      expect(newSetValues([], unit: WeightUnit.kg),
+          (weight: 20.0, reps: 10, unit: WeightUnit.kg));
+      expect(newSetValues([], unit: WeightUnit.lb),
+          (weight: 44.0, reps: 10, unit: WeightUnit.lb));
+    });
+
+    testWidgets('editing keeps and shows the set\'s own unit', (tester) async {
+      final workout = await pumpWorkout(
+        tester,
+        currentExercise: active([ExerciseSet(53, 8, 71, unit: WeightUnit.lb)]),
+      );
+      expect(find.text('53 lb'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel(RegExp('Set 1 options')));
+      await tester.pumpAndSettle();
+      expect(find.text('53 lb × 8 reps'), findsOneWidget);
+      await tester.tap(find.text('Edit set'));
+      await tester.pumpAndSettle();
+      expect(toKg(), findsOneWidget);
+
+      await tester.tap(find.text('Save changes'));
+      await tester.pumpAndSettle();
+      expect(workout.updatedUnits, [WeightUnit.lb]);
+    });
+  });
+
   group('set menu', () {
     testWidgets('Edit set opens the set pre-filled and saves the change',
         (tester) async {
@@ -186,7 +293,7 @@ void main() {
       expect(field(tester, 0), '24');
       expect(field(tester, 1), '8');
 
-      await tester.tap(find.bySemanticsLabel('Increase weight · kg'));
+      await tester.tap(find.bySemanticsLabel('Increase weight'));
       await tester.pump();
       await tester.tap(find.text('Save changes'));
       await tester.pumpAndSettle();
@@ -219,11 +326,11 @@ void main() {
       result = await showSetSheet(
         context: context,
         number: 4,
-        initial: (weight: 60, reps: 8),
+        initial: (weight: 60, reps: 8, unit: WeightUnit.lb),
       );
     });
     await tester.tap(find.text('Add set'));
     await tester.pumpAndSettle();
-    expect(result, (weight: 60.0, reps: 8));
+    expect(result, (weight: 60.0, reps: 8, unit: WeightUnit.lb));
   });
 }

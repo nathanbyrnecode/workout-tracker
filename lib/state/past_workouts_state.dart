@@ -6,6 +6,7 @@ import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -77,7 +78,9 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
           ? <Map<String, dynamic>>[]
           : await client
               .from('exercise_sets')
-              .select('id, exercise_id, set_number, weight, reps, created_at')
+              .select(
+                'id, exercise_id, set_number, weight, reps, unit, created_at',
+              )
               .inFilter(
                   'exercise_id', exerciseRows.map((row) => row['id']).toList())
               .order('id', ascending: true);
@@ -277,6 +280,7 @@ List<Workout> mapWorkoutRows({
         reps.toInt(),
         setId,
         savedAt: _parseDateTime(row['created_at']),
+        unit: WeightUnit.fromName(row['unit']),
       ),
     );
   }

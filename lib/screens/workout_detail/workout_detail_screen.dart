@@ -254,6 +254,7 @@ class _ExerciseCard extends StatelessWidget {
               number: index + 1,
               weight: set.weight,
               reps: set.reps,
+              unit: set.unit,
               mutedUnits: false,
             ),
         ],

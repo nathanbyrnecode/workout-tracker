@@ -33,24 +33,28 @@ class WorkoutActionArea extends ConsumerWidget {
   }
 
   Future<void> _addSet(BuildContext context, WidgetRef ref) async {
-    final sets = ref.read(currentWorkoutProvider).currentExercise?.sets.values;
+    final workout = ref.read(currentWorkoutProvider);
+    final sets = workout.currentExercise?.sets.values;
     if (sets == null) {
       return;
     }
     final values = await showSetSheet(
       context: context,
       number: sets.length + 1,
-      // A new set starts from the one before it.
-      initial: sets.isEmpty
-          ? defaultSetValues
-          : (weight: sets.last.weight, reps: sets.last.reps),
+      initial: newSetValues(
+        sets,
+        unit: defaultWeightUnit(
+          current: workout.exercises,
+          history: ref.read(allWorkoutsProvider),
+        ),
+      ),
     );
     if (values == null) {
       return;
     }
     await ref
         .read(currentWorkoutProvider.notifier)
-        .addSet(weight: values.weight, reps: values.reps);
+        .addSet(weight: values.weight, reps: values.reps, unit: values.unit);
   }
 
   Future<void> _endWorkout(BuildContext context, WidgetRef ref) async {

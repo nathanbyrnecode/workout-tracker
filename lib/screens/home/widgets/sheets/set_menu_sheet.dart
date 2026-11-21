@@ -28,7 +28,7 @@ Future<SetMenuAction?> showSetMenuSheet({
           children: [
             Text('Set $number', style: AppTypography.cardTitleLarge),
             Text(
-              '${formatWeight(set.weight)} kg × ${set.reps} reps',
+              '${formatWeight(set.weight)} ${set.unit.name} × ${set.reps} reps',
               style: AppTypography.monoSmall.copyWith(color: t.muted),
             ),
           ],

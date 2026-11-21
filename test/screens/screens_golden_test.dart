@@ -290,6 +290,20 @@ void main() {
   );
 
   screenGolden(
+    'set sheet switched to lb',
+    name: 'sheet_set_add_lb',
+    hasUnread: true,
+    tab: AppTab.home,
+    screen: _home,
+    workout: _liveWorkout,
+    setUp: (tester) async {
+      await tester.tap(find.text('Add set'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Weight in kg. Switch to lb'));
+    },
+  );
+
+  screenGolden(
     'set sheet when editing',
     name: 'sheet_set_edit',
     hasUnread: true,

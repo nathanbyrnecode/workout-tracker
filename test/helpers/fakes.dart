@@ -10,6 +10,7 @@ import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
 import 'package:gym_tracker_app/models/manual_workout.dart';
 import 'package:gym_tracker_app/models/place.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/manual_workouts_state.dart';
@@ -73,7 +74,9 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   final removedSetIds = <int>[];
   final startedExercises = <String>[];
   final addedSets = <({double weight, int reps})>[];
+  final addedUnits = <WeightUnit>[];
   final updatedSets = <({int id, double weight, int reps})>[];
+  final updatedUnits = <WeightUnit?>[];
 
   @override
   CurrentWorkoutStateData build() => (
@@ -145,16 +148,25 @@ class FakeWorkoutNotifier extends CurrentWorkoutNotifier {
   Future<void> startExercise(String name) async => startedExercises.add(name);
 
   @override
-  Future<void> addSet({required double weight, required int reps}) async =>
-      addedSets.add((weight: weight, reps: reps));
+  Future<void> addSet({
+    required double weight,
+    required int reps,
+    WeightUnit unit = WeightUnit.kg,
+  }) async {
+    addedSets.add((weight: weight, reps: reps));
+    addedUnits.add(unit);
+  }
 
   @override
   Future<void> updateSet(
     int setId, {
     required double weight,
     required int reps,
-  }) async =>
-      updatedSets.add((id: setId, weight: weight, reps: reps));
+    WeightUnit? unit,
+  }) async {
+    updatedSets.add((id: setId, weight: weight, reps: reps));
+    updatedUnits.add(unit);
+  }
 }
 
 /// A user with an optional first name, signed in unless told otherwise.

@@ -40,7 +40,7 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
         final values = await showSetSheet(
           context: context,
           number: number,
-          initial: (weight: set.weight, reps: set.reps),
+          initial: (weight: set.weight, reps: set.reps, unit: set.unit),
           editing: true,
         );
         if (values != null) {
@@ -48,6 +48,7 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
             set.id,
             weight: values.weight,
             reps: values.reps,
+            unit: values.unit,
           );
         }
       case null:
