@@ -185,7 +185,12 @@ class _NumberTile extends StatelessWidget {
       // The label row is 32 tall to the eye. It is laid out at 44, taking 6
       // from the space above and below, so the unit toggle's tap target
       // reaches 44 without moving anything.
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+      padding: EdgeInsets.fromLTRB(
+        t.spacing.gap14,
+        t.spacing.gap8,
+        t.spacing.gap14,
+        t.spacing.gap14,
+      ),
       decoration: BoxDecoration(
         color: t.card2,
         borderRadius: BorderRadius.circular(t.radii.card),
@@ -307,7 +312,7 @@ class _UnitSegment extends StatelessWidget {
     return Container(
       height: 28,
       constraints: const BoxConstraints(minWidth: 34),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.symmetric(horizontal: t.spacing.gap8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: selected ? t.card2 : t.card2.withValues(alpha: 0),

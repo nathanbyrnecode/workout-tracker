@@ -106,7 +106,7 @@ class _CardioExerciseCardState extends ConsumerState<CardioExerciseCard>
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 16,
+        spacing: t.spacing.gap16,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,7 +202,7 @@ class _CardioPill extends StatelessWidget {
     final t = context.tokens;
     return Container(
       height: 28,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: EdgeInsets.symmetric(horizontal: t.spacing.gap10),
       decoration: BoxDecoration(
         color: t.card2,
         borderRadius: BorderRadius.circular(t.radii.tag),
@@ -237,7 +237,10 @@ class _LapRow extends StatelessWidget {
     final t = context.tokens;
     return Container(
       height: 56,
-      padding: const EdgeInsets.only(left: 10, right: 16),
+      padding: EdgeInsets.only(
+        left: t.spacing.gap10,
+        right: t.spacing.gap16,
+      ),
       decoration: BoxDecoration(
         color: t.card2,
         borderRadius: BorderRadius.circular(t.radii.setRow),

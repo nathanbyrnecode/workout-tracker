@@ -363,12 +363,13 @@ class AppSpacing {
   double get cardPadding => 16;
   double get cardPaddingLarge => 20;
 
-  /// The gap scale: 6, 8, 10, 12, 14, 18, 22.
+  /// The gap scale: 6, 8, 10, 12, 14, 16, 18, 22.
   double get gap6 => 6;
   double get gap8 => 8;
   double get gap10 => 10;
   double get gap12 => 12;
   double get gap14 => 14;
+  double get gap16 => 16;
   double get gap18 => 18;
   double get gap22 => 22;
 

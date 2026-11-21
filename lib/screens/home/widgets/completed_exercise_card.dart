@@ -142,7 +142,12 @@ class CompletedExerciseCard extends StatelessWidget {
             ),
             if (open && exercise.isCardio && laps.length >= 2)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: EdgeInsets.fromLTRB(
+                  t.spacing.cardPadding,
+                  0,
+                  t.spacing.cardPadding,
+                  t.spacing.cardPadding,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: t.spacing.gap8,
@@ -212,7 +217,7 @@ class CompactLapRow extends StatelessWidget {
     final t = context.tokens;
     return Container(
       height: 44,
-      padding: const EdgeInsets.only(left: 8, right: 26),
+      padding: EdgeInsets.only(left: t.spacing.gap8, right: 26),
       decoration: BoxDecoration(
         color: t.card2,
         borderRadius: BorderRadius.circular(t.radii.rowSmall),

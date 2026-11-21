@@ -78,7 +78,7 @@ class _NewExerciseFormState extends State<_NewExerciseForm> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: t.spacing.gap16),
         Text('TYPE', style: labelStyle),
         SizedBox(height: t.spacing.gap8),
         Semantics(
@@ -112,7 +112,7 @@ class _NewExerciseFormState extends State<_NewExerciseForm> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: t.spacing.gap16),
         AppButton(
           label: 'Add exercise',
           onPressed: _hasName ? _confirm : null,
@@ -157,7 +157,7 @@ class _TypeTile extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(t.spacing.gap14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: t.spacing.gap14,

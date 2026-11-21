@@ -3,8 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gym_tracker_app/models/cardio_timer.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
+import 'package:gym_tracker_app/models/weight_unit.dart';
+import 'package:gym_tracker_app/models/workout.dart';
 import 'package:gym_tracker_app/screens/home/home_screen.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_action_area.dart';
+import 'package:gym_tracker_app/screens/workout_detail/workout_detail_screen.dart';
+import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
 import 'package:gym_tracker_app/state/past_workouts_state.dart';
@@ -88,6 +92,47 @@ void _cardioGolden(
   );
 }
 
+/// A strength exercise with one set in kg and two in lb.
+Exercise _mixedUnits({bool done = true}) {
+  final exercise = Exercise(
+    'Incline DB press',
+    {
+      4: ExerciseSet(22, 10, 4, savedAt: _ago(50)),
+      5: ExerciseSet(53, 8, 5, savedAt: _ago(38), unit: WeightUnit.lb),
+      7: ExerciseSet(57.5, 6, 7, savedAt: _ago(20), unit: WeightUnit.lb),
+    },
+    2,
+    _ago(55),
+  );
+  return done ? (exercise..setEndTime(_now)) : exercise;
+}
+
+Exercise _finishedRun() =>
+    _treadmill(CardioTimer.fromLapSeconds(const [612, 540]))..setEndTime(_now);
+
+Workout _mixedWorkout() {
+  final strength = _mixedUnits();
+  final run = _finishedRun();
+  return Workout(
+    testId(1),
+    _workoutStart,
+    _now,
+    {strength.id: strength, run.id: run},
+    title: 'Push and run',
+  );
+}
+
+Workout _cardioOnlyWorkout() {
+  final run = _finishedRun();
+  return Workout(
+    testId(2),
+    _workoutStart,
+    _now,
+    {run.id: run},
+    title: 'Morning run',
+  );
+}
+
 FakeWorkoutNotifier _active(CardioTimer timer) => FakeWorkoutNotifier(
       startedAt: _workoutStart,
       exercises: _doneExercises(),
@@ -168,5 +213,69 @@ void main() {
       ],
     ),
     setUp: (tester) => tester.tap(find.text('Treadmill run')),
+  );
+
+  // Sets in lb everywhere a set is listed.
+  _cardioGolden(
+    'active exercise with sets in kg and lb',
+    name: 'units_active_exercise',
+    workout: () => FakeWorkoutNotifier(
+      startedAt: _workoutStart,
+      currentExercise: _mixedUnits(done: false),
+    ),
+  );
+
+  _cardioGolden(
+    'set menu for a set in lb',
+    name: 'units_set_menu',
+    workout: () => FakeWorkoutNotifier(
+      startedAt: _workoutStart,
+      currentExercise: _mixedUnits(done: false),
+    ),
+    setUp: (tester) =>
+        tester.tap(find.bySemanticsLabel(RegExp('Set 2 options'))),
+  );
+
+  _cardioGolden(
+    'finished exercise opened, with sets in kg and lb',
+    name: 'units_completed_expanded',
+    workout: () => FakeWorkoutNotifier(
+      startedAt: _workoutStart,
+      exercises: [_mixedUnits()],
+    ),
+    setUp: (tester) => tester.tap(find.text('Incline DB press')),
+  );
+
+  goldenTest(
+    'workout detail with lb sets and cardio laps',
+    name: 'detail_units_cardio',
+    overrides: [
+      clockProvider.overrideWithValue(() => _now),
+      pastWorkoutsProvider.overrideWith(
+        () => FakePastWorkoutsNotifier([_mixedWorkout()]),
+      ),
+    ],
+    setUp: (tester) async {
+      await tester.ensureVisible(find.text('Lap 2'));
+      await tester.pumpAndSettle();
+    },
+    builder: (context) => AppShell(
+      selected: AppTab.home,
+      onSelected: (_) {},
+      hasUnread: true,
+      child: WorkoutDetailScreen(workoutId: testId(1), onClose: () {}),
+    ),
+  );
+
+  goldenTest(
+    'summary leaves cardio out of the volume bars',
+    name: 'summary_units_cardio',
+    builder: (context) => WorkoutSummaryScreen(workout: _mixedWorkout()),
+  );
+
+  goldenTest(
+    'summary of a cardio-only workout has no volume card',
+    name: 'summary_cardio_only',
+    builder: (context) => WorkoutSummaryScreen(workout: _cardioOnlyWorkout()),
   );
 }
