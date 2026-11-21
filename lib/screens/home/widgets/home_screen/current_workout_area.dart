@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/screens/home/widgets/active_exercise_card.dart';
+import 'package:gym_tracker_app/screens/home/widgets/cardio_exercise_card.dart';
 import 'package:gym_tracker_app/screens/home/widgets/completed_exercise_card.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/set_menu_sheet.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/set_sheet.dart';
@@ -97,7 +98,14 @@ class _CurrentWorkoutAreaState extends ConsumerState<CurrentWorkoutArea> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (active != null)
-            ActiveExerciseCard(exercise: active, onSetMenu: _openSetMenu),
+            if (active.isCardio)
+              CardioExerciseCard(
+                key: ValueKey(active.id),
+                exercise: active,
+                onNewLap: ref.read(currentWorkoutProvider.notifier).startNewLap,
+              )
+            else
+              ActiveExerciseCard(exercise: active, onSetMenu: _openSetMenu),
           for (final exercise in finished)
             Padding(
               padding: EdgeInsets.only(

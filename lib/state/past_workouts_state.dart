@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:gym_tracker_app/data/location_mapper.dart';
 import 'package:gym_tracker_app/data/supabase_client_provider.dart';
+import 'package:gym_tracker_app/models/cardio_timer.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/location_type.dart';
@@ -71,7 +72,9 @@ class PastWorkoutsNotifier extends _$PastWorkoutsNotifier {
       }
       final exerciseRows = await client
           .from('exercises')
-          .select('id, workout_id, name, start_time, end_time')
+          .select(
+            'id, workout_id, name, start_time, end_time, type, lap_seconds',
+          )
           .inFilter('workout_id', workoutRows.map((row) => row['id']).toList())
           .order('start_time', ascending: true);
       final setRows = exerciseRows.isEmpty
@@ -259,6 +262,11 @@ List<Workout> mapWorkoutRows({
       {},
       exerciseId,
       exerciseStart,
+      type: ExerciseType.fromName(row['type']),
+      cardio: CardioTimer.fromLapSeconds(
+        (row['lap_seconds'] as List<dynamic>? ?? const [])
+            .map((lap) => (lap as num).toInt()),
+      ),
     )..setEndTime(exerciseEnd);
     exercises[exerciseId] = exercise;
     workout.addExercise(exercise);

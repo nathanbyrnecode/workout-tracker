@@ -97,6 +97,10 @@ class _TrackerScreenState extends ConsumerState<TrackerScreen> {
         ...live.exercises,
         if (liveExercise != null) liveExercise,
       ]),
+      liveHasCardio: [
+        ...live.exercises,
+        if (liveExercise != null) liveExercise,
+      ].any((exercise) => exercise.hasCardioTime),
     );
     final selected = _selected ?? today;
     final entries = days[selected] ?? const <TrackerEntry>[];

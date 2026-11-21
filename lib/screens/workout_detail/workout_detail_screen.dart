@@ -218,8 +218,11 @@ class _ExerciseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final duration =
-        (exercise.endTime ?? exercise.startTime).difference(exercise.startTime);
+    final duration = exercise.isCardio
+        ? exercise.activeTime
+        : (exercise.endTime ?? exercise.startTime)
+            .difference(exercise.startTime);
+    final laps = exercise.cardio.laps;
     return Container(
       padding: EdgeInsets.all(t.spacing.cardPadding),
       decoration: BoxDecoration(
@@ -249,6 +252,9 @@ class _ExerciseCard extends StatelessWidget {
               ],
             ),
           ),
+          if (laps.length >= 2)
+            for (final (index, lap) in laps.indexed)
+              CompactLapRow(number: index + 1, time: lap),
           for (final (index, set) in exercise.sets.values.indexed)
             CompactSetRow(
               number: index + 1,

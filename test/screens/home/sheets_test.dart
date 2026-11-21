@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gym_tracker_app/models/cardio_timer.dart';
 import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/models/exercise_set.dart';
 import 'package:gym_tracker_app/models/weight_unit.dart';
 import 'package:gym_tracker_app/screens/home/widgets/home_screen/current_workout_area.dart';
-import 'package:gym_tracker_app/screens/home/widgets/sheets/new_exercise_sheet.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/set_sheet.dart';
 import 'package:gym_tracker_app/screens/home/widgets/workout_action_area/workout_action_area.dart';
 import 'package:gym_tracker_app/state/clock_provider.dart';
@@ -53,28 +53,97 @@ String field(WidgetTester tester, int index) =>
 
 void main() {
   group('new exercise', () {
-    testWidgets('starts an exercise with the typed name', (tester) async {
+    Finder addButton() => find.widgetWithText(InkWell, 'Add exercise').last;
+
+    testWidgets('adds an exercise with the typed name, as strength',
+        (tester) async {
       final workout = await pumpWorkout(tester);
       await tester.tap(find.text('Add exercise'));
       await tester.pumpAndSettle();
       expect(find.text('New exercise'), findsOneWidget);
+      expect(find.text('e.g. Bench press'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), '  Bench press ');
-      await tester.tap(find.text('Start exercise'));
+      await tester.pump();
+      await tester.tap(addButton());
       await tester.pumpAndSettle();
       expect(workout.startedExercises, ['Bench press']);
+      expect(workout.startedTypes, [ExerciseType.strength]);
       expect(find.text('New exercise'), findsNothing);
     });
 
-    testWidgets('an empty name becomes "Exercise N"', (tester) async {
-      final done = Exercise('Squat', {1: ExerciseSet(60, 8, 1)}, 1, now)
-        ..setEndTime(now);
-      final workout = await pumpWorkout(tester, exercises: [done]);
+    testWidgets('picking Cardio adds a cardio exercise', (tester) async {
+      final workout = await pumpWorkout(tester);
       await tester.tap(find.text('Add exercise'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Start exercise'));
+      await tester.tap(find.text('Cardio'));
+      await tester.pump();
+      expect(find.text('e.g. Treadmill run'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Treadmill run');
+      await tester.pump();
+      await tester.tap(addButton());
       await tester.pumpAndSettle();
-      expect(workout.startedExercises, ['Exercise 2']);
+      expect(workout.startedExercises, ['Treadmill run']);
+      expect(workout.startedTypes, [ExerciseType.cardio]);
+    });
+
+    testWidgets('the type goes back to Strength each time it opens',
+        (tester) async {
+      await pumpWorkout(tester);
+      await tester.tap(find.text('Add exercise'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cardio'));
+      await tester.pump();
+      await tester.tapAt(const Offset(195, 40));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add exercise'));
+      await tester.pumpAndSettle();
+      expect(find.text('e.g. Bench press'), findsOneWidget);
+    });
+
+    testWidgets('the tiles report which one is selected', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pumpWorkout(tester);
+      await tester.tap(find.text('Add exercise'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSemantics(
+          find.bySemanticsLabel('Strength. Sets, reps & weight'),
+        ),
+        matchesSemantics(
+          label: 'Strength. Sets, reps & weight',
+          hasCheckedState: true,
+          isChecked: true,
+          isInMutuallyExclusiveGroup: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Cardio. Timed, with laps')),
+        matchesSemantics(
+          label: 'Cardio. Timed, with laps',
+          hasCheckedState: true,
+          isInMutuallyExclusiveGroup: true,
+          hasTapAction: true,
+        ),
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('it does nothing until the name has text', (tester) async {
+      final workout = await pumpWorkout(tester);
+      await tester.tap(find.text('Add exercise'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(addButton());
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '   ');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(workout.startedExercises, isEmpty);
+      expect(find.text('New exercise'), findsOneWidget);
     });
 
     testWidgets('dismissing the sheet starts nothing', (tester) async {
@@ -84,12 +153,6 @@ void main() {
       await tester.tapAt(const Offset(195, 40));
       await tester.pumpAndSettle();
       expect(workout.startedExercises, isEmpty);
-    });
-
-    test('default names count the exercises already in the workout', () {
-      expect(exerciseNameOrDefault('', existingExercises: 0), 'Exercise 1');
-      expect(exerciseNameOrDefault('   ', existingExercises: 3), 'Exercise 4');
-      expect(exerciseNameOrDefault(' Row ', existingExercises: 3), 'Row');
     });
   });
 

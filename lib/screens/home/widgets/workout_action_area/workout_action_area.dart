@@ -2,34 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_tracker_app/data/workout_history.dart';
 import 'package:gym_tracker_app/data/workout_stats.dart';
+import 'package:gym_tracker_app/models/cardio_timer.dart';
+import 'package:gym_tracker_app/models/exercise.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/end_workout_sheet.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/new_exercise_sheet.dart';
 import 'package:gym_tracker_app/screens/home/widgets/sheets/set_sheet.dart';
 import 'package:gym_tracker_app/screens/workout_summary/workout_summary_screen.dart';
 import 'package:gym_tracker_app/state/current_workout_state.dart';
+import 'package:gym_tracker_app/theme/app_tokens.dart';
 import 'package:gym_tracker_app/widgets/action_button.dart';
 import 'package:gym_tracker_app/widgets/app_messenger.dart';
 import 'package:gym_tracker_app/widgets/floating_action_row.dart';
+import 'package:gym_tracker_app/widgets/media_glyph.dart';
 import 'package:gym_tracker_app/state/workout_sync_state.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// The floating actions for Home. What it shows depends on the workout:
-/// start, add exercise / end workout, or add set / end exercise.
+/// start, add exercise / end workout, add set / end exercise, or for cardio
+/// start, pause or resume / end exercise.
 class WorkoutActionArea extends ConsumerWidget {
   const WorkoutActionArea({super.key});
 
   Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
-    final typed = await showNewExerciseSheet(context: context);
-    if (typed == null) {
+    final exercise = await showNewExerciseSheet(context: context);
+    if (exercise == null) {
       return;
     }
-    final workout = ref.read(currentWorkoutProvider);
-    await ref.read(currentWorkoutProvider.notifier).startExercise(
-          exerciseNameOrDefault(
-            typed,
-            existingExercises: workout.exercises.length,
-          ),
-        );
+    await ref
+        .read(currentWorkoutProvider.notifier)
+        .startExercise(exercise.name, type: exercise.type);
   }
 
   Future<void> _addSet(BuildContext context, WidgetRef ref) async {
@@ -115,7 +116,12 @@ class WorkoutActionArea extends ConsumerWidget {
       );
     }
 
-    final exerciseInProgress = workout.currentExercise != null;
+    final current = workout.currentExercise;
+    if (current != null && current.isCardio) {
+      return _cardioActions(context, current, notifier);
+    }
+
+    final exerciseInProgress = current != null;
     return FloatingActionRow(
       children: [
         Expanded(
@@ -135,6 +141,53 @@ class WorkoutActionArea extends ConsumerWidget {
                 ? notifier.endExercise
                 : () => _endWorkout(context, ref),
             label: exerciseInProgress ? 'End exercise' : 'End workout',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _cardioActions(
+    BuildContext context,
+    Exercise exercise,
+    CurrentWorkoutNotifier notifier,
+  ) {
+    final (label, shape, action) = switch (exercise.cardio.status) {
+      CardioStatus.notStarted => (
+          'Start',
+          MediaGlyphShape.play,
+          notifier.startCardio,
+        ),
+      CardioStatus.running => (
+          'Pause',
+          MediaGlyphShape.pause,
+          notifier.pauseCardio,
+        ),
+      CardioStatus.paused => (
+          'Resume',
+          MediaGlyphShape.play,
+          notifier.resumeCardio,
+        ),
+    };
+    return FloatingActionRow(
+      children: [
+        Expanded(
+          flex: 7,
+          child: ActionButton.primary(
+            onPressed: action,
+            leading: MediaGlyph(
+              shape: shape,
+              size: 20,
+              color: context.tokens.accentInk,
+            ),
+            label: label,
+          ),
+        ),
+        Expanded(
+          flex: 5,
+          child: ActionButton.stop(
+            onPressed: notifier.endExercise,
+            label: 'End exercise',
           ),
         ),
       ],

@@ -24,7 +24,7 @@ enum AppButtonStyle {
 }
 
 /// A full-width button in one of the design's fills. With a null [onPressed]
-/// it is shown at 40% opacity and ignores taps.
+/// it is shown at [disabledOpacity] and ignores taps.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -34,6 +34,7 @@ class AppButton extends StatelessWidget {
     this.height,
     this.radius,
     this.textStyle = AppTypography.button,
+    this.disabledOpacity = 0.4,
   });
 
   final String label;
@@ -46,6 +47,7 @@ class AppButton extends StatelessWidget {
   /// Defaults to the button radius, 18.
   final double? radius;
   final TextStyle textStyle;
+  final double disabledOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +62,7 @@ class AppButton extends StatelessWidget {
     };
 
     return Opacity(
-      opacity: onPressed == null ? 0.4 : 1,
+      opacity: onPressed == null ? disabledOpacity : 1,
       child: Material(
         color: fill,
         shape: RoundedRectangleBorder(

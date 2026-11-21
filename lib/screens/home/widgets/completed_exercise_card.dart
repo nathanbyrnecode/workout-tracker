@@ -10,6 +10,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A finished exercise. Collapsed it shows the name and totals; tapping it
 /// opens its sets in place with the top set and average weight underneath.
+/// A cardio exercise shows its active time instead, and opens its laps when
+/// it has two or more.
 class CompletedExerciseCard extends StatelessWidget {
   const CompletedExerciseCard({
     super.key,
@@ -30,6 +32,14 @@ class CompletedExerciseCard extends StatelessWidget {
     final totals = workoutTotals([exercise]);
     final duration =
         (exercise.endTime ?? exercise.startTime).difference(exercise.startTime);
+    final laps = exercise.cardio.laps;
+    final subtitle = exercise.isCardio
+        ? laps.length >= 2
+            ? 'Cardio · ${laps.length} laps'
+            : 'Cardio'
+        : '${formatCount(totals.sets, 'set')} · '
+            '${formatCount(totals.reps, 'rep')} · '
+            '${formatElapsed(duration)}';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -82,9 +92,7 @@ class CompletedExerciseCard extends StatelessWidget {
                               style: AppTypography.cardTitle,
                             ),
                             Text(
-                              '${formatCount(totals.sets, 'set')} · '
-                              '${formatCount(totals.reps, 'rep')} · '
-                              '${formatElapsed(duration)}',
+                              subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.bodySmall
@@ -96,12 +104,21 @@ class CompletedExerciseCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                          if (exercise.isCardio)
+                            Text(
+                              formatActiveTime(exercise.activeTime),
+                              style: AppTypography.stat.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          else
+                            Text(
+                              formatVolume(totals.volume),
+                              style: AppTypography.stat.copyWith(fontSize: 17),
+                            ),
                           Text(
-                            formatVolume(totals.volume),
-                            style: AppTypography.stat.copyWith(fontSize: 17),
-                          ),
-                          Text(
-                            'kg vol',
+                            exercise.isCardio ? 'time' : 'kg vol',
                             style: AppTypography.bodySmall.copyWith(
                               fontSize: 11,
                               color: t.muted,
@@ -123,7 +140,19 @@ class CompletedExerciseCard extends StatelessWidget {
                 ),
               ),
             ),
-            if (open)
+            if (open && exercise.isCardio && laps.length >= 2)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: t.spacing.gap8,
+                  children: [
+                    for (final (index, lap) in laps.indexed)
+                      CompactLapRow(number: index + 1, time: lap),
+                  ],
+                ),
+              ),
+            if (open && !exercise.isCardio)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Column(
@@ -167,6 +196,55 @@ class CompletedExerciseCard extends StatelessWidget {
         ? '—'
         : '${formatWeight(top.weight)} ${top.unit.name.toUpperCase()} '
             '× ${top.reps}';
+  }
+}
+
+/// A 44-tall lap row: number, "Lap N" and the lap's time. Used in the open
+/// completed exercise and on the workout detail screen.
+class CompactLapRow extends StatelessWidget {
+  const CompactLapRow({super.key, required this.number, required this.time});
+
+  final int number;
+  final Duration time;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.only(left: 8, right: 26),
+      decoration: BoxDecoration(
+        color: t.card2,
+        borderRadius: BorderRadius.circular(t.radii.rowSmall),
+      ),
+      child: Row(
+        spacing: t.spacing.gap12,
+        children: [
+          SetNumberTile(
+            number: number,
+            size: 28,
+            radius: t.radii.tileSmall,
+            fontSize: 12,
+          ),
+          Expanded(
+            child: Text(
+              'Lap $number',
+              style: AppTypography.bodySmall.copyWith(
+                fontSize: 12,
+                color: t.muted,
+              ),
+            ),
+          ),
+          Text(
+            formatActiveTime(time),
+            style: AppTypography.stat.copyWith(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
